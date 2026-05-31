@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id                      String   @id @default(cuid())
+  name                    String
+  imageUrl                String?  @db.VarChar(2048)
+  imageSource             String   @default("url")
+  uploadedImagePath       String?  @db.VarChar(2048)
+  shortDescription        String
+  longDescriptionMarkdown String   @db.LongText
+  enabledAmounts          String   @default("[0.1,1,10,30,50]")
+  defaultAmount           Float    @default(1)
+  defaultQuantity         Int      @default(1)
+  maxQuantity             Int      @default(99)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model Article {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.LongText
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.LongText
+  secret    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id                  String    @id @default(cuid())
+  orderNumber         String    @unique
+  paypalOrderId       String?   @unique
+  paypalCaptureId     String?
+  productNameSnapshot String
+  productImageSnapshot String?   @db.VarChar(2048)
+  buyerEmail          String
+  buyerNickname       String?
+  unitAmount          Float
+  quantity            Int
+  totalAmount         Float
+  currency            String    @default("USD")
+  status              String    @default("created")
+  paypalRawSummary    String?   @db.LongText
+  buyerEmailStatus    String    @default("pending")
+  adminEmailStatus    String    @default("pending")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  paidAt              DateTime?
+}
+
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  paypalEventId String   @unique
+  eventType     String
+  resourceId    String?
+  payload       String   @db.LongText
+  processed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
