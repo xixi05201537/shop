@@ -58,7 +58,7 @@ model Order {
   paypalCaptureId     String?
   productNameSnapshot String
   productImageSnapshot String?   @db.VarChar(2048)
-  buyerEmail          String
+  buyerEmail          String?
   buyerNickname       String?
   unitAmount          Float
   quantity            Int

@@ -45,7 +45,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             </tr>
             <tr>
               <th>Buyer email</th>
-              <td>{order.buyerEmail}</td>
+              <td>{order.buyerEmail || "-"}</td>
             </tr>
             <tr>
               <th>Buyer nickname</th>

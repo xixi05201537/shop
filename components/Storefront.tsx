@@ -44,7 +44,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const checkoutRef = useRef({ amount, quantity, email, nickname });
-  const emailInputRef = useRef<HTMLInputElement>(null);
   const paypalRenderedRef = useRef(false);
   const paypalButtonsRef = useRef<PaypalButtonsInstance | null>(null);
   const total = useMemo(() => amount * quantity, [amount, quantity]);
@@ -83,11 +82,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
       paypalRenderedRef.current = true;
       paypalButtonsRef.current = window.paypal.Buttons({
         onClick: async (_data: unknown, actions?: { reject?: () => Promise<void> | void; resolve?: () => Promise<void> | void }) => {
-          const current = checkoutRef.current;
-          if (!isValidEmail(current.email)) {
-            blockPaypalUntilEmail();
-            return actions?.reject ? actions.reject() : Promise.reject(new Error("Email is required"));
-          }
           setMessage("");
           return actions?.resolve ? actions.resolve() : Promise.resolve();
         },
@@ -135,7 +129,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
         onCancel: () => setMessage("Payment was cancelled. Your order is still waiting here."),
         onError: (error: unknown) => {
           const readable = formatPaypalError(error);
-          if (readable === "Email is required") return;
           setMessage(readable);
         },
       });
@@ -149,16 +142,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
 
     return () => window.clearInterval(interval);
   }, [config.paypalClientId]);
-
-  function blockPaypalUntilEmail() {
-    setMessage("Please enter a valid email before PayPal opens.");
-    emailInputRef.current?.focus();
-    emailInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-
-  function isValidEmail(value: string) {
-    return /^\S+@\S+\.\S+$/.test(value);
-  }
 
   async function readJsonResponse(response: Response) {
     const text = await response.text();
@@ -246,19 +229,14 @@ export function Storefront({ product, config }: { product: ProductView; config: 
 
           <div className="buyer-grid">
             <label>
-              Email <strong>*</strong>
+              Email
               <input
-                ref={emailInputRef}
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  if (message === "Please enter a valid email before PayPal opens.") setMessage("");
-                }}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                required
               />
             </label>
             <label>
@@ -280,7 +258,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             )}
             <p>
               {config.paypalClientId
-                ? "Enter a valid email before choosing PayPal or card checkout."
+                ? "PayPal and eligible card options appear here."
                 : "Set PayPal client ID in .env to enable real payments."}
             </p>
             {config.paypalClientId ? (

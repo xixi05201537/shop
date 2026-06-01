@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 const schema = z.object({
   amount: z.number().positive(),
   quantity: z.number().int().min(1),
-  email: z.string().email(),
+  email: z.string().email().optional().or(z.literal("")),
   nickname: z.string().max(80).optional().nullable(),
 });
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         orderNumber: number,
         productNameSnapshot: product.name,
         productImageSnapshot: product.uploadedImagePath || product.imageUrl,
-        buyerEmail: parsed.data.email,
+        buyerEmail: parsed.data.email || null,
         buyerNickname: parsed.data.nickname?.trim() || null,
         unitAmount: parsed.data.amount,
         quantity: parsed.data.quantity,

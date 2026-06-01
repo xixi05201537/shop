@@ -27,7 +27,7 @@ export default async function SuccessPage({ params }: { params: Promise<{ orderI
           </div>
           <div>
             <dt>Email</dt>
-            <dd>{order.buyerEmail}</dd>
+            <dd>{order.buyerEmail || "-"}</dd>
           </div>
           <div>
             <dt>Total</dt>

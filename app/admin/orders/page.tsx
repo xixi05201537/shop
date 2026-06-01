@@ -54,7 +54,7 @@ export default async function OrdersAdmin({
                 <td>
                   <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
                 </td>
-                <td>{order.buyerEmail}</td>
+                <td>{order.buyerEmail || "-"}</td>
                 <td>{formatUsd(order.totalAmount)}</td>
                 <td>{order.status}</td>
                 <td>{order.createdAt.toLocaleString()}</td>

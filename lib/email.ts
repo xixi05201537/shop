@@ -5,7 +5,7 @@ import type { Order } from "@prisma/client";
 function renderTemplate(template: string, order: Order) {
   const values: Record<string, string> = {
     orderId: order.orderNumber,
-    email: order.buyerEmail,
+    email: order.buyerEmail || "",
     nickname: order.buyerNickname || "friend",
     productName: order.productNameSnapshot,
     amount: order.unitAmount.toFixed(2),
@@ -45,6 +45,7 @@ async function transporter() {
 
 export async function sendBuyerEmail(order: Order) {
   const { config, mailer } = await transporter();
+  if (!order.buyerEmail) return "skipped";
   if (config.buyerEmailEnabled !== "true") return "disabled";
   await mailer.sendMail({
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
