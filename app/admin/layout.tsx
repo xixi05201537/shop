@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Home, LogOut, Mail, Package, ReceiptText, Settings, Sparkles } from "lucide-react";
+import { FileText, Home, LogOut, Mail, Package, ReceiptText, Sparkles } from "lucide-react";
 import { getAdminSession } from "@/lib/auth";
 import "./admin.css";
 
@@ -22,9 +22,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/orders">
             <ReceiptText size={18} /> Orders
-          </Link>
-          <Link href="/admin/paypal">
-            <Settings size={18} /> PayPal
           </Link>
           <Link href="/admin/email">
             <Mail size={18} /> Email

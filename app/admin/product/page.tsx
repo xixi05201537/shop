@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProductAdmin() {
+export default async function ProductAdmin({ searchParams }: { searchParams: Promise<{ uploaded?: string }> }) {
+  const query = await searchParams;
   const product = await prisma.product.findFirst();
   const amounts = product ? parseAmounts(product.enabledAmounts).join(",") : "0.1,1,10,30,50";
+  const uploadedPath = query.uploaded || product?.uploadedImagePath || "";
 
   return (
     <>
@@ -20,7 +22,7 @@ export default async function ProductAdmin() {
           </label>
           <label>
             Image source
-            <select name="imageSource" defaultValue={product?.imageSource || "url"}>
+            <select name="imageSource" defaultValue={query.uploaded ? "upload" : product?.imageSource || "url"}>
               <option value="url">Image URL</option>
               <option value="upload">Uploaded image</option>
             </select>
@@ -31,7 +33,7 @@ export default async function ProductAdmin() {
           </label>
           <label>
             Uploaded image path
-            <input name="uploadedImagePath" defaultValue={product?.uploadedImagePath || ""} placeholder="/uploads/file.png" />
+            <input name="uploadedImagePath" defaultValue={uploadedPath} placeholder="/uploads/file.png" />
           </label>
           <label>
             Enabled amounts
@@ -58,7 +60,7 @@ export default async function ProductAdmin() {
           Detail Markdown
           <textarea name="longDescriptionMarkdown" defaultValue={product?.longDescriptionMarkdown} />
         </label>
-        <label>
+        <label className="checkbox-row">
           <span>
             <input name="isActive" type="checkbox" defaultChecked={product?.isActive ?? true} /> Product active
           </span>

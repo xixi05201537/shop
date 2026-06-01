@@ -6,7 +6,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="login-page">
       <section className="admin-card login-card">
         <h1 className="display">Pink Admin</h1>
-        <p>Manage your product, orders, PayPal, emails, and tiny floating link.</p>
+        <p>Manage your product, orders, emails, and tiny floating link.</p>
         <form className="admin-form" action="/api/admin/login" method="post">
           <label>
             Email

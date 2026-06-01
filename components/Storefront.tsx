@@ -23,10 +23,15 @@ type ProductView = {
   maxQuantity: number;
 };
 
+type PaypalButtonsInstance = {
+  close?: () => void;
+  render: (selector: string) => Promise<void>;
+};
+
 declare global {
   interface Window {
     paypal?: {
-      Buttons: (options: Record<string, unknown>) => { render: (selector: string) => Promise<void> };
+      Buttons: (options: Record<string, unknown>) => PaypalButtonsInstance;
     };
   }
 }
@@ -39,7 +44,9 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const checkoutRef = useRef({ amount, quantity, email, nickname });
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const paypalRenderedRef = useRef(false);
+  const paypalButtonsRef = useRef<PaypalButtonsInstance | null>(null);
   const total = useMemo(() => amount * quantity, [amount, quantity]);
 
   const imageSrc =
@@ -61,7 +68,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     const existing = document.querySelector("script[data-paypal-sdk]");
     if (existing) return;
     const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${config.paypalClientId}&currency=USD&components=buttons`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${config.paypalClientId}&currency=USD&components=buttons&intent=capture&commit=true`;
     script.dataset.paypalSdk = "true";
     script.async = true;
     document.body.appendChild(script);
@@ -74,65 +81,65 @@ export function Storefront({ product, config }: { product: ProductView; config: 
       if (!window.paypal || !container || paypalRenderedRef.current) return;
       window.clearInterval(interval);
       paypalRenderedRef.current = true;
-      void window.paypal
-        .Buttons({
-          onClick: async () => {
-            const current = checkoutRef.current;
-            if (!isValidEmail(current.email)) {
-              setMessage("Please enter a valid email before PayPal opens.");
-              return Promise.reject(new Error("Email is required"));
-            }
-            setMessage("");
-            return Promise.resolve();
-          },
-          createOrder: async () => {
-            const current = checkoutRef.current;
-            setLoading(true);
-            try {
-              const response = await fetch("/api/checkout/create-order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(current),
-              });
-              const data = await readJsonResponse(response);
-              if (!response.ok) throw new Error(data.error || "Unable to create PayPal order.");
-              localStorage.setItem("pinkBuyerEmail", current.email);
-              localStorage.setItem("pinkBuyerNickname", current.nickname);
-              sessionStorage.setItem("pinkLocalOrderId", data.localOrderId);
-              return data.paypalOrderId;
-            } catch (error) {
-              const text = error instanceof Error ? error.message : "Unable to create PayPal order.";
-              setMessage(text);
-              throw error;
-            } finally {
-              setLoading(false);
-            }
-          },
-          onApprove: async (data: { orderID: string }) => {
-            setLoading(true);
-            const response = await fetch("/api/checkout/capture-order", {
+      paypalButtonsRef.current = window.paypal.Buttons({
+        onClick: async (_data: unknown, actions?: { reject?: () => Promise<void> | void; resolve?: () => Promise<void> | void }) => {
+          const current = checkoutRef.current;
+          if (!isValidEmail(current.email)) {
+            blockPaypalUntilEmail();
+            return actions?.reject ? actions.reject() : Promise.reject(new Error("Email is required"));
+          }
+          setMessage("");
+          return actions?.resolve ? actions.resolve() : Promise.resolve();
+        },
+        createOrder: async () => {
+          const current = checkoutRef.current;
+          setLoading(true);
+          try {
+            const response = await fetch("/api/checkout/create-order", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                paypalOrderId: data.orderID,
-                localOrderId: sessionStorage.getItem("pinkLocalOrderId"),
-              }),
+              body: JSON.stringify(current),
             });
-            const result = await readJsonResponse(response);
+            const data = await readJsonResponse(response);
+            if (!response.ok) throw new Error(data.error || "Unable to create PayPal order.");
+            localStorage.setItem("pinkBuyerEmail", current.email);
+            localStorage.setItem("pinkBuyerNickname", current.nickname);
+            sessionStorage.setItem("pinkLocalOrderId", data.localOrderId);
+            return data.paypalOrderId;
+          } catch (error) {
+            const text = error instanceof Error ? error.message : "Unable to create PayPal order.";
+            setMessage(text);
+            throw error;
+          } finally {
             setLoading(false);
-            if (!response.ok) {
-              setMessage(result.error || "Payment captured by PayPal, but local confirmation failed.");
-              return;
-            }
-            window.location.href = `/success/${result.orderId}`;
-          },
-          onCancel: () => setMessage("Payment was cancelled. Your order is still waiting here."),
-          onError: (error: unknown) => {
-            const readable = formatPaypalError(error);
-            if (readable === "Email is required") return;
-            setMessage(readable);
-          },
-        })
+          }
+        },
+        onApprove: async (data: { orderID: string }) => {
+          setLoading(true);
+          const response = await fetch("/api/checkout/capture-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              paypalOrderId: data.orderID,
+              localOrderId: sessionStorage.getItem("pinkLocalOrderId"),
+            }),
+          });
+          const result = await readJsonResponse(response);
+          setLoading(false);
+          if (!response.ok) {
+            setMessage(result.error || "Payment captured by PayPal, but local confirmation failed.");
+            return;
+          }
+          window.location.href = `/success/${result.orderId}`;
+        },
+        onCancel: () => setMessage("Payment was cancelled. Your order is still waiting here."),
+        onError: (error: unknown) => {
+          const readable = formatPaypalError(error);
+          if (readable === "Email is required") return;
+          setMessage(readable);
+        },
+      });
+      void paypalButtonsRef.current
         .render("#paypal-buttons")
         .catch((error: Error) => {
           paypalRenderedRef.current = false;
@@ -143,11 +150,10 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     return () => window.clearInterval(interval);
   }, [config.paypalClientId]);
 
-  function validateBuyer() {
-    if (!isValidEmail(email)) {
-      setMessage("Please enter a valid email before paying.");
-      throw new Error("Email is required");
-    }
+  function blockPaypalUntilEmail() {
+    setMessage("Please enter a valid email before PayPal opens.");
+    emailInputRef.current?.focus();
+    emailInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function isValidEmail(value: string) {
@@ -176,29 +182,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
       return value.error_message || value.message || "PayPal reported an error. Please check the card form.";
     }
     return "PayPal reported an error. Please check the card form.";
-  }
-
-  async function createDemoOrder() {
-    try {
-      validateBuyer();
-      setLoading(true);
-      const response = await fetch("/api/checkout/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, quantity, email, nickname, demoPaid: true }),
-      });
-      const data = await readJsonResponse(response);
-      setLoading(false);
-      if (!response.ok) {
-        setMessage(data.error || "Unable to create demo order.");
-        return;
-      }
-      localStorage.setItem("pinkBuyerEmail", email);
-      localStorage.setItem("pinkBuyerNickname", nickname);
-      window.location.href = `/success/${data.localOrderId}`;
-    } catch {
-      setLoading(false);
-    }
   }
 
   return (
@@ -264,7 +247,19 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           <div className="buyer-grid">
             <label>
               Email <strong>*</strong>
-              <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
+              <input
+                ref={emailInputRef}
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (message === "Please enter a valid email before PayPal opens.") setMessage("");
+                }}
+                placeholder="you@example.com"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                required
+              />
             </label>
             <label>
               Nickname
@@ -281,11 +276,13 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             {config.paypalClientId ? (
               <div id="paypal-buttons" />
             ) : (
-              <button className="primary-button" type="button" onClick={createDemoOrder} disabled={loading}>
-                Demo checkout
-              </button>
+              <div className="notice">PayPal checkout is not configured.</div>
             )}
-            <p>{config.paypalClientId ? "PayPal and eligible card options appear here." : "Add PayPal client ID in admin to enable real payments."}</p>
+            <p>
+              {config.paypalClientId
+                ? "Enter a valid email before choosing PayPal or card checkout."
+                : "Set PayPal client ID in .env to enable real payments."}
+            </p>
             {config.paypalClientId ? (
               <p className="paypal-hint">
                 Card checkout names must use English letters. If PayPal reports unsupported last-name characters,

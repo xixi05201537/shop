@@ -67,12 +67,6 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             </tr>
           </tbody>
         </table>
-        <form action="/api/admin/orders/resend" method="post" className="admin-actions" style={{ marginTop: 18 }}>
-          <input type="hidden" name="id" value={order.id} />
-          <button className="admin-button" type="submit">
-            Resend emails
-          </button>
-        </form>
       </section>
     </>
   );

@@ -32,9 +32,9 @@ export async function setConfigValues(values: Record<string, string>, secretKeys
 export async function getPublicConfig(): Promise<PublicConfig> {
   const config = await getConfigMap();
   return {
-    paypalClientId: config.paypalClientId || process.env.PAYPAL_CLIENT_ID || "",
-    paypalEnv: config.paypalEnv || process.env.PAYPAL_ENV || "sandbox",
-    supportEmail: config.supportEmail || process.env.SUPPORT_EMAIL || "support@example.com",
+    paypalClientId: process.env.PAYPAL_CLIENT_ID || "",
+    paypalEnv: process.env.PAYPAL_ENV || "sandbox",
+    supportEmail: config.supportEmail || "support@example.com",
     floatingEnabled: (config.floatingEnabled || "false") === "true",
     floatingUrl: config.floatingUrl || "/article/about",
     floatingOpenMode: config.floatingOpenMode || "current",

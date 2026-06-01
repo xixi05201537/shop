@@ -1,10 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { adminCookieName, verifyAdminToken } from "@/lib/session";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path.startsWith("/admin") && path !== "/admin/login") {
-    const token = request.cookies.get("pink_admin_session")?.value;
-    if (!token) {
+  const isAdminPage = path.startsWith("/admin") && path !== "/admin/login";
+  const isAdminApi = path.startsWith("/api/admin") && path !== "/api/admin/login";
+
+  if (isAdminPage || isAdminApi) {
+    const token = request.cookies.get(adminCookieName)?.value;
+    if (!(await verifyAdminToken(token))) {
+      if (isAdminApi) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
@@ -12,5 +19,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

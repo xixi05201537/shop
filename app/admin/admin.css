@@ -105,24 +105,47 @@
   flex-wrap: wrap;
 }
 
-.admin-button {
+.admin-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 44px;
-  border: 0;
   border-radius: 8px;
   padding: 0 18px;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 1rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.admin-button {
+  border: 0;
   background: var(--cherry);
   color: #fff;
-  font-weight: 1000;
 }
 
 .secondary-button {
-  min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0 18px;
   background: #fff;
   color: var(--cherry);
-  font-weight: 1000;
+}
+
+.checkbox-row {
+  align-self: start;
+}
+
+.checkbox-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
 }
 
 .admin-table {
@@ -229,6 +252,78 @@
   width: min(440px, 100%);
 }
 
+.upload-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.upload-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.file-input {
+  padding: 10px;
+}
+
+.file-input::file-selector-button {
+  min-height: 38px;
+  margin-right: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: #fff;
+  color: var(--cherry);
+  font-weight: 900;
+}
+
+.upload-dropzone {
+  display: grid;
+  gap: 6px;
+  border: 1px dashed rgba(169, 31, 82, 0.32);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.upload-dropzone strong,
+.upload-result-card > span {
+  color: var(--cherry);
+  font-weight: 1000;
+}
+
+.upload-dropzone span,
+.upload-result-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.upload-result-card {
+  display: grid;
+  gap: 14px;
+}
+
+.upload-result-card code {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.upload-result-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
 .rich-preview {
   min-height: 120px;
   border: 1px solid var(--line);
@@ -279,7 +374,8 @@
 
 @media (max-width: 900px) {
   .admin-grid,
-  .stat-grid {
+  .stat-grid,
+  .upload-grid {
     grid-template-columns: 1fr;
   }
 

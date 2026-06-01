@@ -1,21 +1,11 @@
 import { cookies } from "next/headers";
-import { SignJWT, jwtVerify } from "jose";
-
-const cookieName = "pink_admin_session";
-
-function secret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret-change-me");
-}
+import { NextResponse } from "next/server";
+import { adminCookieName, createAdminToken, verifyAdminToken } from "@/lib/session";
 
 export async function createSession(adminId: string) {
-  const token = await new SignJWT({ adminId })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(secret());
-
+  const token = await createAdminToken(adminId);
   const jar = await cookies();
-  jar.set(cookieName, token, {
+  jar.set(adminCookieName, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: (process.env.APP_URL || "").startsWith("https://"),
@@ -26,18 +16,16 @@ export async function createSession(adminId: string) {
 
 export async function destroySession() {
   const jar = await cookies();
-  jar.delete(cookieName);
+  jar.delete(adminCookieName);
 }
 
 export async function getAdminSession() {
   const jar = await cookies();
-  const token = jar.get(cookieName)?.value;
-  if (!token) return null;
+  const token = jar.get(adminCookieName)?.value;
+  return verifyAdminToken(token);
+}
 
-  try {
-    const verified = await jwtVerify(token, secret());
-    return verified.payload as { adminId: string };
-  } catch {
-    return null;
-  }
+export async function requireAdminApi() {
+  if (await getAdminSession()) return null;
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }

@@ -18,6 +18,9 @@ export async function POST(request: Request) {
       ? await prisma.order.findUnique({ where: { id: parsed.data.localOrderId } })
       : await prisma.order.findUnique({ where: { paypalOrderId: parsed.data.paypalOrderId } });
     if (!order) return NextResponse.json({ error: "Local order not found." }, { status: 404 });
+    if (order.paypalOrderId !== parsed.data.paypalOrderId) {
+      return NextResponse.json({ error: "PayPal order did not match local order." }, { status: 400 });
+    }
 
     const capture = await capturePaypalOrder(parsed.data.paypalOrderId);
     const purchaseUnits = capture.purchase_units as Array<Record<string, unknown>> | undefined;

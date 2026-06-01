@@ -42,24 +42,6 @@ export async function saveProductForm(formData: FormData) {
   revalidatePath("/");
 }
 
-export async function savePaypalForm(formData: FormData) {
-  const existing = await prisma.siteConfig.findMany({
-    where: { key: { in: ["paypalClientSecret"] } },
-  });
-  const currentSecret = existing.find((item) => item.key === "paypalClientSecret")?.value || "";
-  const nextSecret = String(formData.get("paypalClientSecret") || "");
-
-  await setConfigValues(
-    {
-      paypalClientId: String(formData.get("paypalClientId") || ""),
-      paypalClientSecret: nextSecret || currentSecret,
-      paypalEnv: String(formData.get("paypalEnv") || "sandbox"),
-      paypalWebhookId: String(formData.get("paypalWebhookId") || ""),
-    },
-    ["paypalClientSecret"],
-  );
-}
-
 export async function saveEmailForm(formData: FormData) {
   const existing = await prisma.siteConfig.findMany({
     where: { key: { in: ["smtpPassword"] } },
@@ -77,6 +59,7 @@ export async function saveEmailForm(formData: FormData) {
       smtpFromName: String(formData.get("smtpFromName") || ""),
       supportEmail: String(formData.get("supportEmail") || ""),
       adminNotifyEmail: String(formData.get("adminNotifyEmail") || ""),
+      uploadDir: String(formData.get("uploadDir") || "./public/uploads"),
       buyerEmailEnabled: formData.get("buyerEmailEnabled") === "on" ? "true" : "false",
       adminEmailEnabled: formData.get("adminEmailEnabled") === "on" ? "true" : "false",
       buyerEmailSubject: String(formData.get("buyerEmailSubject") || ""),

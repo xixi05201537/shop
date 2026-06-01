@@ -4,18 +4,15 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const defaultConfigs = {
-  paypalClientId: process.env.PAYPAL_CLIENT_ID || "",
-  paypalClientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
-  paypalEnv: process.env.PAYPAL_ENV || "sandbox",
-  paypalWebhookId: process.env.PAYPAL_WEBHOOK_ID || "",
-  smtpHost: process.env.SMTP_HOST || "",
-  smtpPort: process.env.SMTP_PORT || "587",
-  smtpUser: process.env.SMTP_USER || "",
-  smtpPassword: process.env.SMTP_PASSWORD || "",
-  smtpFromEmail: process.env.SMTP_FROM_EMAIL || "",
-  smtpFromName: process.env.SMTP_FROM_NAME || "Pink Pay Shop",
-  supportEmail: process.env.SUPPORT_EMAIL || "support@example.com",
-  adminNotifyEmail: process.env.ADMIN_NOTIFY_EMAIL || "owner@example.com",
+  smtpHost: "",
+  smtpPort: "587",
+  smtpUser: "",
+  smtpPassword: "",
+  smtpFromEmail: "",
+  smtpFromName: "Pink Pay Shop",
+  supportEmail: "support@example.com",
+  adminNotifyEmail: "owner@example.com",
+  uploadDir: "./public/uploads",
   buyerEmailEnabled: "true",
   adminEmailEnabled: "true",
   buyerEmailSubject: "Thank you for your purchase",
@@ -36,6 +33,14 @@ async function main() {
   const email = process.env.ADMIN_EMAIL || "admin@example.com";
   const password = process.env.ADMIN_PASSWORD || "admin123456";
   const passwordHash = await bcrypt.hash(password, 12);
+
+  await prisma.siteConfig.deleteMany({
+    where: {
+      key: {
+        in: ["paypalClientId", "paypalClientSecret", "paypalEnv", "paypalWebhookId"],
+      },
+    },
+  });
 
   await prisma.admin.upsert({
     where: { email },

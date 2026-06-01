@@ -1,16 +1,13 @@
-import { getConfigMap } from "@/lib/config";
-
 function paypalBase(env: string) {
   return env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 }
 
 export async function getPaypalSettings() {
-  const config = await getConfigMap();
   return {
-    clientId: config.paypalClientId || process.env.PAYPAL_CLIENT_ID || "",
-    clientSecret: config.paypalClientSecret || process.env.PAYPAL_CLIENT_SECRET || "",
-    env: config.paypalEnv || process.env.PAYPAL_ENV || "sandbox",
-    webhookId: config.paypalWebhookId || process.env.PAYPAL_WEBHOOK_ID || "",
+    clientId: process.env.PAYPAL_CLIENT_ID || "",
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
+    env: process.env.PAYPAL_ENV || "sandbox",
+    webhookId: process.env.PAYPAL_WEBHOOK_ID || "",
   };
 }
 

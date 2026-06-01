@@ -45,6 +45,10 @@ export default async function EmailAdmin() {
             Admin notify email
             <input name="adminNotifyEmail" defaultValue={config.adminNotifyEmail || ""} />
           </label>
+          <label>
+            Upload directory
+            <input name="uploadDir" defaultValue={config.uploadDir || "./public/uploads"} />
+          </label>
         </div>
         <label>
           Buyer subject

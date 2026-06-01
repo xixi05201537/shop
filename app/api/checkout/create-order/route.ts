@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createPaypalOrder } from "@/lib/paypal";
-import { formatUsd, orderNumber, parseAmounts } from "@/lib/format";
+import { orderNumber, parseAmounts } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { markOrderPaid } from "@/lib/order-service";
 
 const schema = z.object({
   amount: z.number().positive(),
   quantity: z.number().int().min(1),
   email: z.string().email(),
   nickname: z.string().max(80).optional().nullable(),
-  demoPaid: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -43,16 +41,10 @@ export async function POST(request: Request) {
         quantity: parsed.data.quantity,
         totalAmount,
         currency: "USD",
-        status: parsed.data.demoPaid ? "paid" : "created",
-        paidAt: parsed.data.demoPaid ? new Date() : null,
+        status: "created",
       },
     });
     orderIdToFail = order.id;
-
-    if (parsed.data.demoPaid) {
-      await markOrderPaid(order.id, "demo-capture", { demo: true, total: formatUsd(totalAmount) });
-      return NextResponse.json({ localOrderId: order.id });
-    }
 
     const paypalOrder = await createPaypalOrder(totalAmount, number);
     await prisma.order.update({
