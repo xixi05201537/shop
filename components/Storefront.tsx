@@ -241,7 +241,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             </label>
             <label>
               Nickname
-              <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Cupcake" />
+              <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
             </label>
           </div>
 
@@ -256,17 +256,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             ) : (
               <div className="notice">PayPal checkout is not configured.</div>
             )}
-            <p>
-              {config.paypalClientId
-                ? "PayPal and eligible card options appear here."
-                : "Set PayPal client ID in .env to enable real payments."}
-            </p>
-            {config.paypalClientId ? (
-              <p className="paypal-hint">
-                Card checkout names must use English letters. If PayPal reports unsupported last-name characters,
-                use pinyin or English in the PayPal cardholder name fields.
-              </p>
-            ) : null}
           </div>
 
           {loading ? <div className="notice">Preparing your PayPal checkout...</div> : null}
@@ -280,8 +269,8 @@ export function Storefront({ product, config }: { product: ProductView; config: 
 
       <section className="container details-section">
         <div className="section-title">
-          <span>Details</span>
-          <h2 className="display">A little more about it</h2>
+          <span>Live Stream Details</span>
+          <h2 className="display">About Misaki&apos;s live stream deposit</h2>
         </div>
         <article className="prose">
           <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{product.longDescriptionMarkdown}</ReactMarkdown>

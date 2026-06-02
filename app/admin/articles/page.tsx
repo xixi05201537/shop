@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { prisma } from "@/lib/prisma";
+import { requestBaseUrl } from "@/lib/request-url";
 
 export const dynamic = "force-dynamic";
 
 export default async function ArticlesAdmin() {
   const articles = await prisma.article.findMany({ orderBy: { updatedAt: "desc" } });
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  const appUrl = await requestBaseUrl();
 
   return (
     <>

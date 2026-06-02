@@ -1,8 +1,8 @@
 
 > shop@1.0.0 start
-> node .next/standalone/server.js
+> node scripts/start.mjs
 
 ▲ Next.js 16.2.6
-- Local:         http://localhost:3000
-- Network:       http://0.0.0.0:3000
+- Local:         http://localhost:4000
+- Network:       http://0.0.0.0:4000
 ✓ Ready in 0ms

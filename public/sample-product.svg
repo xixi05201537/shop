@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
-  <title id="title">Pink Cloud Digital Gift</title>
-  <desc id="desc">A cute pink digital gift card with clouds, sparkles, and ribbons.</desc>
+  <title id="title">Misaki Live Stream Depoist</title>
+  <desc id="desc">A cute pink Misaki live stream deposit card with clouds, sparkles, ribbons, and a sweet label.</desc>
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop stop-color="#fff5f8"/>
@@ -33,9 +33,16 @@
     <ellipse cx="878" cy="260" rx="62" ry="54"/>
     <ellipse cx="944" cy="280" rx="96" ry="38"/>
   </g>
+  <g transform="translate(600 414)" text-anchor="middle">
+    <rect x="-148" y="-32" width="296" height="58" rx="29" fill="#fff8fb" stroke="#9ee6cf" stroke-width="8"/>
+    <text x="0" y="8" fill="#d93672" font-size="30" font-family="Verdana, sans-serif" font-weight="700">MISAKI LIVE</text>
+    <path d="M-176-4l12 12 12-12" fill="none" stroke="#d93672" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M152-4l12 12 12-12" fill="none" stroke="#d93672" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
   <g fill="#a91f52" font-family="Georgia, serif" text-anchor="middle">
-    <text x="600" y="445" font-size="88" font-weight="700">Pink Cloud</text>
-    <text x="600" y="525" font-size="44" font-family="Verdana, sans-serif" font-weight="700">DIGITAL GIFT</text>
+    <text x="600" y="510" font-size="78" font-weight="700">Live Stream</text>
+    <text x="600" y="585" font-size="58" font-family="Verdana, sans-serif" font-weight="700">DEPOIST</text>
+    <text x="600" y="636" font-size="28" font-family="Verdana, sans-serif" font-weight="700" fill="#d93672">PAYPAL BOOKING</text>
   </g>
   <g fill="#d93672">
     <path d="M138 282l18 36 40 6-29 28 7 40-36-19-35 19 7-40-29-28 40-6z"/>

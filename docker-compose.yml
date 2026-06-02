@@ -2,35 +2,9 @@ services:
   pink-pay-shop:
     build: .
     ports:
-      - "3000:3000"
+      - "4000:4000"
     env_file:
       - .env
-    environment:
-      DATABASE_URL: mysql://shop:shop_password@mysql:3306/pink_pay_shop
-    depends_on:
-      mysql:
-        condition: service_healthy
     volumes:
       - ./uploads:/app/public/uploads
     restart: unless-stopped
-
-  mysql:
-    image: mysql:8.4
-    environment:
-      MYSQL_DATABASE: pink_pay_shop
-      MYSQL_USER: shop
-      MYSQL_PASSWORD: shop_password
-      MYSQL_ROOT_PASSWORD: root_password
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_password"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-    restart: unless-stopped
-
-volumes:
-  mysql-data:

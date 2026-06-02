@@ -10,11 +10,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form className="admin-form" action="/api/admin/login" method="post">
           <label>
             Email
-            <input name="email" type="email" defaultValue="admin@example.com" required />
+            <input name="email" type="email" defaultValue="" required />
           </label>
           <label>
             Password
-            <input name="password" type="password" defaultValue="admin123456" required />
+            <input name="password" type="password" defaultValue="" required />
           </label>
           {query.error ? <div className="notice">Invalid email or password.</div> : null}
           <button className="admin-button" type="submit">

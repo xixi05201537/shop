@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { prisma } from "@/lib/prisma";
+import { requestBaseUrl } from "@/lib/request-url";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const article = await prisma.article.findUnique({ where: { id } });
   if (!article) notFound();
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  const appUrl = await requestBaseUrl();
   const publicPath = `/article/${article.slug}`;
   const publicUrl = new URL(publicPath, appUrl).toString();
 

@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pink Pay Shop",
-  description: "A cute single-product PayPal checkout site.",
+  title: "Misaki shop",
+  description: "A cute Misaki live stream PayPal checkout site.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
