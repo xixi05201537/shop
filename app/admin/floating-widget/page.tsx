@@ -8,12 +8,12 @@ export default async function FloatingAdmin() {
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">Floating Widget</h1>
+        <h1 className="display">浮窗</h1>
       </header>
       <form className="admin-card admin-form" action="/api/admin/floating-widget" method="post">
         <label>
           <span>
-            <input name="floatingEnabled" type="checkbox" defaultChecked={config.floatingEnabled === "true"} /> Enabled
+            <input name="floatingEnabled" type="checkbox" defaultChecked={config.floatingEnabled === "true"} /> 启用浮窗
           </span>
         </label>
         <div className="admin-grid">
@@ -22,35 +22,39 @@ export default async function FloatingAdmin() {
             <input name="floatingUrl" defaultValue={config.floatingUrl || "/article/about"} />
           </label>
           <label>
-            Label
+            文字
             <input name="floatingLabel" defaultValue={config.floatingLabel || "i"} />
           </label>
           <label>
-            Open mode
+            图片 URL
+            <input name="floatingImageUrl" placeholder="例如：/uploads/widget.png 或 https://..." defaultValue={config.floatingImageUrl || ""} />
+          </label>
+          <label>
+            打开方式
             <select name="floatingOpenMode" defaultValue={config.floatingOpenMode || "current"}>
-              <option value="current">Current window</option>
-              <option value="new">New window</option>
+              <option value="current">当前窗口</option>
+              <option value="new">新窗口</option>
             </select>
           </label>
           <label>
-            Size
+            尺寸
             <select name="floatingSize" defaultValue={config.floatingSize || "medium"}>
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
+              <option value="small">小</option>
+              <option value="medium">中</option>
             </select>
           </label>
           <label>
-            Position
+            位置
             <select name="floatingPosition" defaultValue={config.floatingPosition || "right-bottom"}>
-              <option value="right-bottom">Right bottom</option>
-              <option value="left-bottom">Left bottom</option>
-              <option value="right-middle">Right middle</option>
-              <option value="left-middle">Left middle</option>
+              <option value="right-bottom">右下角</option>
+              <option value="left-bottom">左下角</option>
+              <option value="right-middle">右侧居中</option>
+              <option value="left-middle">左侧居中</option>
             </select>
           </label>
         </div>
         <button className="admin-button" type="submit">
-          Save floating widget
+          保存浮窗
         </button>
       </form>
     </>

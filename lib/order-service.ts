@@ -20,25 +20,35 @@ export async function markOrderPaid(orderId: string, paypalCaptureId?: string, r
 
   let buyerEmailStatus = order.buyerEmailStatus;
   let adminEmailStatus = order.adminEmailStatus;
+  let buyerEmailError: string | null = order.buyerEmailError;
+  let adminEmailError: string | null = order.adminEmailError;
 
   if (buyerEmailStatus !== "sent") {
     try {
       buyerEmailStatus = await sendBuyerEmail(order);
-    } catch {
+      buyerEmailError = null;
+    } catch (error) {
       buyerEmailStatus = "failed";
+      buyerEmailError = emailErrorMessage(error);
     }
   }
 
   if (adminEmailStatus !== "sent") {
     try {
       adminEmailStatus = await sendAdminEmail(order);
-    } catch {
+      adminEmailError = null;
+    } catch (error) {
       adminEmailStatus = "failed";
+      adminEmailError = emailErrorMessage(error);
     }
   }
 
   return prisma.order.update({
     where: { id: order.id },
-    data: { buyerEmailStatus, adminEmailStatus },
+    data: { buyerEmailStatus, buyerEmailError, adminEmailStatus, adminEmailError },
   });
+}
+
+export function emailErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message.slice(0, 2000) : "Unknown email delivery error.";
 }

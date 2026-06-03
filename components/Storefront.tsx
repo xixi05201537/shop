@@ -284,7 +284,12 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           target={config.floatingOpenMode === "new" ? "_blank" : undefined}
           aria-label="Floating link"
         >
-          {config.floatingLabel}
+          {config.floatingImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={config.floatingImageUrl} alt="" />
+          ) : (
+            config.floatingLabel
+          )}
         </Link>
       ) : null}
     </main>

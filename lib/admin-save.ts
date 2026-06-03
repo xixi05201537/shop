@@ -79,6 +79,7 @@ export async function saveFloatingForm(formData: FormData) {
     floatingSize: String(formData.get("floatingSize") || "medium"),
     floatingPosition: String(formData.get("floatingPosition") || "right-bottom"),
     floatingLabel: String(formData.get("floatingLabel") || "i"),
+    floatingImageUrl: String(formData.get("floatingImageUrl") || ""),
   });
   revalidatePath("/");
 }

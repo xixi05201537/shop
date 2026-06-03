@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { ShipOrderDialog } from "./ShipOrderDialog";
 
 export const dynamic = "force-dynamic";
 
@@ -12,57 +14,108 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">Order</h1>
+        <h1 className="display">订单详情</h1>
+        <ShipOrderDialog orderId={order.id} trackingNumber={order.trackingNumber} />
       </header>
       <section className="admin-card">
         <dl className="stat-grid">
           <div className="stat-card">
-            <span>Order</span>
+            <span>订单号</span>
             <strong>{order.orderNumber}</strong>
           </div>
           <div className="stat-card">
-            <span>Status</span>
-            <strong>{order.status}</strong>
+            <span>状态</span>
+            <strong>{orderStatusLabel(order.status)}</strong>
           </div>
           <div className="stat-card">
-            <span>Total</span>
+            <span>总金额</span>
             <strong>{formatUsd(order.totalAmount)}</strong>
           </div>
           <div className="stat-card">
-            <span>Quantity</span>
+            <span>数量</span>
             <strong>{order.quantity}</strong>
           </div>
         </dl>
         <table className="admin-table">
           <tbody>
             <tr>
-              <th>PayPal order ID</th>
+              <th>PayPal 订单 ID</th>
               <td>{order.paypalOrderId || "-"}</td>
             </tr>
             <tr>
-              <th>PayPal capture ID</th>
+              <th>PayPal 捕获 ID</th>
               <td>{order.paypalCaptureId || "-"}</td>
             </tr>
             <tr>
-              <th>Buyer email</th>
+              <th>买家邮箱</th>
               <td>{order.buyerEmail || "-"}</td>
             </tr>
             <tr>
-              <th>Buyer nickname</th>
+              <th>买家昵称</th>
               <td>{order.buyerNickname || "-"}</td>
             </tr>
             <tr>
-              <th>Product</th>
+              <th>商品</th>
               <td>{order.productNameSnapshot}</td>
             </tr>
             <tr>
-              <th>Email status</th>
+              <th>邮件状态</th>
               <td>
-                Buyer: {order.buyerEmailStatus}, Admin: {order.adminEmailStatus}
+                买家：{emailStatusLabel(order.buyerEmailStatus)}，管理员：{emailStatusLabel(order.adminEmailStatus)}
               </td>
             </tr>
             <tr>
-              <th>Paid at</th>
+              <th>买家邮件记录</th>
+              <td>
+                <div className="email-log-row">
+                  <span>{emailStatusLabel(order.buyerEmailStatus)}</span>
+                  <form action="/api/admin/orders/resend" method="post">
+                    <input type="hidden" name="id" value={order.id} />
+                    <input type="hidden" name="target" value="buyer" />
+                    <button className="secondary-button" type="submit">
+                      重发买家邮件
+                    </button>
+                  </form>
+                </div>
+                {order.buyerEmailError ? <p className="error-text">{order.buyerEmailError}</p> : null}
+              </td>
+            </tr>
+            <tr>
+              <th>管理员邮件记录</th>
+              <td>
+                <div className="email-log-row">
+                  <span>{emailStatusLabel(order.adminEmailStatus)}</span>
+                  <form action="/api/admin/orders/resend" method="post">
+                    <input type="hidden" name="id" value={order.id} />
+                    <input type="hidden" name="target" value="admin" />
+                    <button className="secondary-button" type="submit">
+                      重发管理员邮件
+                    </button>
+                  </form>
+                </div>
+                {order.adminEmailError ? <p className="error-text">{order.adminEmailError}</p> : null}
+              </td>
+            </tr>
+            <tr>
+              <th>发货信息</th>
+              <td>
+                <div className="email-log-row">
+                  <span>运单号：{order.trackingNumber || "-"}</span>
+                  <span>发货时间：{order.shippedAt?.toLocaleString() || "-"}</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>发货邮件记录</th>
+              <td>
+                <div className="email-log-row">
+                  <span>{emailStatusLabel(order.shipmentEmailStatus)}</span>
+                </div>
+                {order.shipmentEmailError ? <p className="error-text">{order.shipmentEmailError}</p> : null}
+              </td>
+            </tr>
+            <tr>
+              <th>支付时间</th>
               <td>{order.paidAt?.toLocaleString() || "-"}</td>
             </tr>
           </tbody>

@@ -12,18 +12,18 @@ export default async function ArticlesAdmin() {
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">Articles</h1>
+        <h1 className="display">文章</h1>
       </header>
       <section className="admin-card">
         <form className="admin-form" action="/api/admin/articles" method="post">
           <div className="admin-grid">
             <label>
-              Slug
-              <input name="slug" placeholder="about" required />
+              链接标识
+              <input name="slug" placeholder="例如：about" required />
             </label>
             <label>
-              Title
-              <input name="title" placeholder="About this tiny shop" required />
+              标题
+              <input name="title" placeholder="关于这个小店" required />
             </label>
           </div>
           <label>
@@ -32,11 +32,11 @@ export default async function ArticlesAdmin() {
           </label>
           <label>
             <span>
-              <input name="published" type="checkbox" defaultChecked /> Published
+              <input name="published" type="checkbox" defaultChecked /> 发布
             </span>
           </label>
           <button className="admin-button" type="submit">
-            Create article
+            创建文章
           </button>
         </form>
       </section>
@@ -44,11 +44,11 @@ export default async function ArticlesAdmin() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Slug</th>
-              <th>Public link</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>标题</th>
+              <th>链接标识</th>
+              <th>公开链接</th>
+              <th>状态</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -68,12 +68,12 @@ export default async function ArticlesAdmin() {
                       <CopyLinkButton value={publicUrl} />
                     </div>
                   </td>
-                  <td>{article.published ? "Published" : "Draft"}</td>
+                  <td>{article.published ? "已发布" : "草稿"}</td>
                   <td>
-                    <Link href={`/admin/articles/${article.id}`}>Edit</Link>{" "}
+                    <Link href={`/admin/articles/${article.id}`}>编辑</Link>{" "}
                     <form action="/api/admin/articles/delete" method="post" style={{ display: "inline" }}>
                       <input type="hidden" name="id" value={article.id} />
-                      <button type="submit">Delete</button>
+                      <button type="submit">删除</button>
                     </form>
                   </td>
                 </tr>

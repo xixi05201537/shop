@@ -67,7 +67,13 @@ model Order {
   status              String    @default("created")
   paypalRawSummary    String?   @db.LongText
   buyerEmailStatus    String    @default("pending")
+  buyerEmailError     String?   @db.LongText
   adminEmailStatus    String    @default("pending")
+  adminEmailError     String?   @db.LongText
+  trackingNumber      String?
+  shippedAt           DateTime?
+  shipmentEmailStatus String    @default("pending")
+  shipmentEmailError  String?   @db.LongText
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   paidAt              DateTime?

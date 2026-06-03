@@ -16,28 +16,28 @@ export default async function AdminHome() {
     <>
       <header className="admin-header">
         <div>
-          <h1 className="display">Overview</h1>
-          <p>Everything cozy and commercial in one small cockpit.</p>
+          <h1 className="display">概览</h1>
+          <p>在这里查看店铺订单、收入和文章数据。</p>
         </div>
         <Link className="secondary-button" href="/">
-          View shop
+          查看店铺
         </Link>
       </header>
       <section className="stat-grid">
         <div className="stat-card">
-          <span>Total orders</span>
+          <span>订单总数</span>
           <strong>{orders}</strong>
         </div>
         <div className="stat-card">
-          <span>Paid orders</span>
+          <span>已支付订单</span>
           <strong>{paidOrders}</strong>
         </div>
         <div className="stat-card">
-          <span>Revenue</span>
+          <span>收入</span>
           <strong>{formatUsd(revenue._sum.totalAmount || 0)}</strong>
         </div>
         <div className="stat-card">
-          <span>Articles</span>
+          <span>文章数量</span>
           <strong>{articles}</strong>
         </div>
       </section>

@@ -16,11 +16,11 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">Edit Article</h1>
+        <h1 className="display">编辑文章</h1>
       </header>
       <section className="admin-card article-public-card">
         <div>
-          <span>Public article link</span>
+          <span>公开文章链接</span>
           <a href={publicPath} target="_blank" rel="noreferrer">
             {publicUrl}
           </a>
@@ -31,11 +31,11 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
         <input type="hidden" name="id" value={article.id} />
         <div className="admin-grid">
           <label>
-            Slug
+            链接标识
             <input name="slug" defaultValue={article.slug} required />
           </label>
           <label>
-            Title
+            标题
             <input name="title" defaultValue={article.title} required />
           </label>
         </div>
@@ -45,11 +45,11 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
         </label>
         <label>
           <span>
-            <input name="published" type="checkbox" defaultChecked={article.published} /> Published
+            <input name="published" type="checkbox" defaultChecked={article.published} /> 发布
           </span>
         </label>
         <button className="admin-button" type="submit">
-          Save article
+          保存文章
         </button>
       </form>
     </>

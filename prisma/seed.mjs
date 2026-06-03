@@ -27,6 +27,7 @@ const defaultConfigs = {
   floatingSize: "medium",
   floatingPosition: "right-bottom",
   floatingLabel: "i",
+  floatingImageUrl: "",
 };
 
 async function main() {

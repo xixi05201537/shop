@@ -10,6 +10,7 @@ export type PublicConfig = {
   floatingSize: string;
   floatingPosition: string;
   floatingLabel: string;
+  floatingImageUrl: string;
 };
 
 export async function getConfigMap() {
@@ -41,11 +42,12 @@ export async function getPublicConfig(): Promise<PublicConfig> {
     floatingSize: config.floatingSize || "medium",
     floatingPosition: config.floatingPosition || "right-bottom",
     floatingLabel: config.floatingLabel || "i",
+    floatingImageUrl: config.floatingImageUrl || "",
   };
 }
 
 export function maskSecret(value?: string) {
   if (!value) return "";
   if (value.length <= 8) return "********";
-  return `${value.slice(0, 4)}••••${value.slice(-4)}`;
+  return `${value.slice(0, 4)}****${value.slice(-4)}`;
 }

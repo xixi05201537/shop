@@ -309,6 +309,14 @@
   color: #fff;
   box-shadow: 0 14px 32px rgba(169, 31, 82, 0.28);
   font-weight: 1000;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.floating-widget img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .float-small {

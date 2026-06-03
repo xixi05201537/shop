@@ -17,6 +17,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@floating-ui/dom": "^1.7.6",
     "@prisma/client": "^6.19.0",
     "@tiptap/extension-link": "^3.24.0",
     "@tiptap/react": "^3.24.0",

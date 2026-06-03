@@ -25,19 +25,19 @@ export function RichTemplateEditor({ name, defaultValue }: { name: string; defau
   return (
     <div className="rich-editor">
       <div className="rich-toolbar">
-        <button type="button" onClick={() => editor?.chain().focus().toggleBold().run()} aria-label="Bold">
+        <button type="button" onClick={() => editor?.chain().focus().toggleBold().run()} aria-label="加粗">
           <Bold size={16} />
         </button>
-        <button type="button" onClick={() => editor?.chain().focus().toggleItalic().run()} aria-label="Italic">
+        <button type="button" onClick={() => editor?.chain().focus().toggleItalic().run()} aria-label="斜体">
           <Italic size={16} />
         </button>
-        <button type="button" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} aria-label="Heading">
+        <button type="button" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} aria-label="标题">
           <Heading2 size={16} />
         </button>
-        <button type="button" onClick={() => editor?.chain().focus().toggleBulletList().run()} aria-label="List">
+        <button type="button" onClick={() => editor?.chain().focus().toggleBulletList().run()} aria-label="列表">
           <List size={16} />
         </button>
-        <button type="button" onClick={() => editor?.chain().focus().undo().run()} aria-label="Undo">
+        <button type="button" onClick={() => editor?.chain().focus().undo().run()} aria-label="撤销">
           <Undo2 size={16} />
         </button>
         <span>{"{{orderId}} {{email}} {{productName}} {{totalAmount}}"}</span>

@@ -21,6 +21,17 @@ function renderTemplate(template: string, order: Order) {
   );
 }
 
+function shipmentEmailHtml(order: Order) {
+  return `
+    <div style="font-family: Arial, sans-serif; line-height: 1.7; color: #3b2431;">
+      <p>Hi ${order.buyerNickname || "friend"},</p>
+      <p>Your order <strong>${order.orderNumber}</strong> for <strong>${order.productNameSnapshot}</strong> has been shipped.</p>
+      <p>Tracking number: <strong>${order.trackingNumber || ""}</strong></p>
+      <p>Thank you for supporting Misaki shop.</p>
+    </div>
+  `;
+}
+
 async function transporter() {
   const config = await getConfigMap();
   if (!config.smtpHost || !config.smtpFromEmail) {
@@ -64,6 +75,18 @@ export async function sendAdminEmail(order: Order) {
     to: config.adminNotifyEmail,
     subject: renderTemplate(config.adminEmailSubject || "New order", order),
     html: renderTemplate(config.adminEmailHtml || "<p>New order received.</p>", order),
+  });
+  return "sent";
+}
+
+export async function sendShipmentEmail(order: Order) {
+  const { config, mailer } = await transporter();
+  if (!order.buyerEmail) return "skipped";
+  await mailer.sendMail({
+    from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
+    to: order.buyerEmail,
+    subject: `Your Misaki shop order has shipped: ${order.orderNumber}`,
+    html: shipmentEmailHtml(order),
   });
   return "sent";
 }

@@ -12,9 +12,9 @@ export async function POST(request: Request) {
   if (unauthorized) return unauthorized;
   const formData = await request.formData();
   const file = formData.get("image");
-  if (!(file instanceof File)) return NextResponse.json({ error: "Image is required." }, { status: 400 });
-  if (!allowed.has(file.type)) return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
-  if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "Image must be under 5MB." }, { status: 400 });
+  if (!(file instanceof File)) return NextResponse.json({ error: "请先选择图片。" }, { status: 400 });
+  if (!allowed.has(file.type)) return NextResponse.json({ error: "不支持这种图片格式。" }, { status: 400 });
+  if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "图片大小不能超过 5MB。" }, { status: 400 });
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const ext = file.name.split(".").pop() || "png";
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const config = await getConfigMap();
   const configuredDir = config.uploadDir || "./public/uploads";
   if (!["./public/uploads", "public/uploads"].includes(configuredDir)) {
-    return NextResponse.redirect(appUrl("/admin/upload?error=Upload%20directory%20must%20be%20public%2Fuploads.", request), {
+    return NextResponse.redirect(appUrl(`/admin/upload?error=${encodeURIComponent("上传目录必须是 public/uploads。")}`, request), {
       status: 303,
     });
   }
