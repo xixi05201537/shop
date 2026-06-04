@@ -24,22 +24,22 @@ export default async function AdminHome() {
         </Link>
       </header>
       <section className="stat-grid">
-        <div className="stat-card">
+        <Link className="stat-card stat-link" href="/admin/orders">
           <span>订单总数</span>
           <strong>{orders}</strong>
-        </div>
-        <div className="stat-card">
+        </Link>
+        <Link className="stat-card stat-link" href="/admin/orders?status=paid">
           <span>已支付订单</span>
           <strong>{paidOrders}</strong>
-        </div>
+        </Link>
         <div className="stat-card">
           <span>收入</span>
           <strong>{formatUsd(revenue._sum.totalAmount || 0)}</strong>
         </div>
-        <div className="stat-card">
+        <Link className="stat-card stat-link" href="/admin/articles">
           <span>文章数量</span>
           <strong>{articles}</strong>
-        </div>
+        </Link>
       </section>
     </>
   );

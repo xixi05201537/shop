@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import { Bold, Heading2, Italic, List, Undo2 } from "lucide-react";
+import { templateVariables } from "@/lib/email-defaults";
 
 export function RichTemplateEditor({ name, defaultValue }: { name: string; defaultValue: string }) {
   const [html, setHtml] = useState(defaultValue || "<p></p>");
@@ -40,7 +41,7 @@ export function RichTemplateEditor({ name, defaultValue }: { name: string; defau
         <button type="button" onClick={() => editor?.chain().focus().undo().run()} aria-label="撤销">
           <Undo2 size={16} />
         </button>
-        <span>{"{{orderId}} {{email}} {{productName}} {{totalAmount}}"}</span>
+        <span>{templateVariables.join(" ")}</span>
       </div>
       <EditorContent editor={editor} />
       <input name={name} value={html} readOnly hidden />

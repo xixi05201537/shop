@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       data: {
         orderNumber: number,
         productNameSnapshot: product.name,
-        productImageSnapshot: product.uploadedImagePath || product.imageUrl,
+        productImageSnapshot: product.imageUrl || product.uploadedImagePath,
         buyerEmail: parsed.data.email || null,
         buyerNickname: parsed.data.nickname?.trim() || null,
         unitAmount: parsed.data.amount,

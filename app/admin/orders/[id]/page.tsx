@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { SubmitButton } from "@/components/SubmitButton";
 import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -72,9 +73,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   <form action="/api/admin/orders/resend" method="post">
                     <input type="hidden" name="id" value={order.id} />
                     <input type="hidden" name="target" value="buyer" />
-                    <button className="secondary-button" type="submit">
+                    <SubmitButton className="secondary-button" loadingText="发送中...">
                       重发买家邮件
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
                 {order.buyerEmailError ? <p className="error-text">{order.buyerEmailError}</p> : null}
@@ -88,9 +89,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   <form action="/api/admin/orders/resend" method="post">
                     <input type="hidden" name="id" value={order.id} />
                     <input type="hidden" name="target" value="admin" />
-                    <button className="secondary-button" type="submit">
+                    <SubmitButton className="secondary-button" loadingText="发送中...">
                       重发管理员邮件
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
                 {order.adminEmailError ? <p className="error-text">{order.adminEmailError}</p> : null}

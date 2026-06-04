@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function CopyLinkButton({ value }: { value: string }) {
+export function CopyLinkButton({ value, label = "复制链接" }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -25,7 +25,7 @@ export function CopyLinkButton({ value }: { value: string }) {
 
   return (
     <button className="link-copy-button" type="button" onClick={copy}>
-      {copied ? "已复制" : "复制链接"}
+      {copied ? "已复制" : label}
     </button>
   );
 }

@@ -3,6 +3,16 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const defaultBuyerEmailSubject = "Thank you for your purchase";
+const defaultBuyerEmailHtml =
+  "<h2>Thank you, {{nickname}}</h2><p>Your order <strong>{{orderId}}</strong> for <strong>{{productName}}</strong> is complete.</p><p>Total: {{currency}} {{totalAmount}}</p><p>If you have any questions, please contact us.</p>";
+const defaultAdminEmailSubject = "New order: {{orderId}}";
+const defaultAdminEmailHtml =
+  "<h2>New order received</h2><p>{{email}} bought <strong>{{productName}}</strong> x {{quantity}}.</p><p>Total: {{currency}} {{totalAmount}}</p><p>Buyer nickname: {{nickname}}</p>";
+const defaultShipmentEmailSubject = "Your Misaki shop order has shipped: {{orderId}}";
+const defaultShipmentEmailHtml =
+  "<h2>Your order has shipped</h2><p>Hi {{nickname}},</p><p>Your order <strong>{{orderId}}</strong> for <strong>{{productName}}</strong> has been shipped.</p><p>Tracking number: <strong>{{trackingNumber}}</strong></p><p>Thank you for supporting Misaki shop.</p>";
+
 const defaultConfigs = {
   smtpHost: "",
   smtpPort: "587",
@@ -15,12 +25,13 @@ const defaultConfigs = {
   uploadDir: "./public/uploads",
   buyerEmailEnabled: "true",
   adminEmailEnabled: "true",
-  buyerEmailSubject: "Thank you for your purchase",
-  buyerEmailHtml:
-    "<h2>Thank you, {{nickname}}</h2><p>Your order <strong>{{orderId}}</strong> for {{productName}} is complete.</p><p>Total: {{currency}} {{totalAmount}}</p>",
-  adminEmailSubject: "New order: {{orderId}}",
-  adminEmailHtml:
-    "<h2>New order received</h2><p>{{email}} bought {{productName}} x {{quantity}} for {{currency}} {{totalAmount}}.</p>",
+  buyerEmailSubject: defaultBuyerEmailSubject,
+  buyerEmailHtml: defaultBuyerEmailHtml,
+  adminEmailSubject: defaultAdminEmailSubject,
+  adminEmailHtml: defaultAdminEmailHtml,
+  shipmentEmailEnabled: "true",
+  shipmentEmailSubject: defaultShipmentEmailSubject,
+  shipmentEmailHtml: defaultShipmentEmailHtml,
   floatingEnabled: "true",
   floatingUrl: "/article/about",
   floatingOpenMode: "current",

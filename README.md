@@ -370,7 +370,7 @@ DATABASE_URL=mysql://misaki:misaki@mysql:3306/misaki
 -v /opt/misakishop/uploads:/app/public/uploads
 ```
 
-后台上传目录建议保持：
+上传目录现在只通过 `.env` 里的 `UPLOAD_DIR` 配置，后台不再单独修改上传目录。Docker 部署时推荐保持：
 
 ```text
 ./public/uploads

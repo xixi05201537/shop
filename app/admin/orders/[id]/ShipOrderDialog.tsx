@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export function ShipOrderDialog({ orderId, trackingNumber }: { orderId: string; trackingNumber?: string | null }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -27,9 +28,7 @@ export function ShipOrderDialog({ orderId, trackingNumber }: { orderId: string; 
             <button className="secondary-button" type="button" onClick={() => dialogRef.current?.close()}>
               取消
             </button>
-            <button className="admin-button" type="submit">
-              确认并发送邮件
-            </button>
+            <SubmitButton loadingText="发送中...">确认并发送邮件</SubmitButton>
           </div>
         </form>
       </dialog>

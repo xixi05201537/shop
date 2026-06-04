@@ -2,10 +2,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
-import { getConfigMap } from "@/lib/config";
 import { appUrl } from "@/lib/redirect";
+import { getUploadDir } from "@/lib/uploads";
 
-const allowed = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+const allowed = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"]);
 
 export async function POST(request: Request) {
   const unauthorized = await requireAdminApi();
@@ -17,16 +17,9 @@ export async function POST(request: Request) {
   if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "图片大小不能超过 5MB。" }, { status: 400 });
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const ext = file.name.split(".").pop() || "png";
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const config = await getConfigMap();
-  const configuredDir = config.uploadDir || "./public/uploads";
-  if (!["./public/uploads", "public/uploads"].includes(configuredDir)) {
-    return NextResponse.redirect(appUrl(`/admin/upload?error=${encodeURIComponent("上传目录必须是 public/uploads。")}`, request), {
-      status: 303,
-    });
-  }
-  const uploadDir = join(process.cwd(), "public", "uploads");
+  const uploadDir = getUploadDir();
   await mkdir(uploadDir, { recursive: true });
   await writeFile(join(uploadDir, filename), bytes);
 
