@@ -1,20 +1,34 @@
 import { prisma } from "@/lib/prisma";
 import { sendAdminEmail, sendBuyerEmail } from "@/lib/email";
+import { paypalDetailsFromCapture } from "@/lib/paypal-order-details";
 
 export async function markOrderPaid(orderId: string, paypalCaptureId?: string, raw?: unknown) {
   const existing = await prisma.order.findUnique({ where: { id: orderId } });
   if (!existing) throw new Error("Order not found.");
 
+  const rawRecord = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : null;
+  const paypalDetails = rawRecord ? paypalDetailsFromCapture(rawRecord) : {};
   let order = existing;
-  if (existing.status !== "paid") {
+  const updateData = {
+    ...(existing.status !== "paid"
+      ? {
+          status: "paid",
+          paypalCaptureId,
+          paypalRawSummary: raw ? JSON.stringify(raw).slice(0, 8000) : existing.paypalRawSummary,
+          paidAt: new Date(),
+        }
+      : {}),
+    ...(paypalDetails.payerEmail ? { paypalBuyerEmail: paypalDetails.payerEmail } : {}),
+    ...(paypalDetails.payerName ? { paypalBuyerNickname: paypalDetails.payerName } : {}),
+    ...(paypalDetails.payerId ? { paypalPayerId: paypalDetails.payerId } : {}),
+    ...(paypalDetails.shippingName ? { paypalShippingName: paypalDetails.shippingName } : {}),
+    ...(paypalDetails.shippingAddress ? { paypalShippingAddress: paypalDetails.shippingAddress } : {}),
+  };
+
+  if (Object.keys(updateData).length > 0) {
     order = await prisma.order.update({
       where: { id: orderId },
-      data: {
-        status: "paid",
-        paypalCaptureId,
-        paypalRawSummary: raw ? JSON.stringify(raw).slice(0, 8000) : existing.paypalRawSummary,
-        paidAt: new Date(),
-      },
+      data: updateData,
     });
   }
 

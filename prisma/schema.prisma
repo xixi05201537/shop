@@ -60,6 +60,11 @@ model Order {
   productImageSnapshot String?   @db.VarChar(2048)
   buyerEmail          String?
   buyerNickname       String?
+  paypalBuyerEmail    String?
+  paypalBuyerNickname String?
+  paypalPayerId       String?
+  paypalShippingName  String?
+  paypalShippingAddress String?  @db.LongText
   unitAmount          Float
   quantity            Int
   totalAmount         Float

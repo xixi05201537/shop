@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { RichTemplateEditor } from "@/components/RichTemplateEditor";
+import { SubmitButton } from "@/components/SubmitButton";
 import {
   defaultAdminEmailHtml,
   defaultAdminEmailSubject,
@@ -81,9 +82,9 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
               <input name="adminNotifyEmail" defaultValue={config.adminNotifyEmail || ""} />
             </label>
           </div>
-          <button className="admin-button" type="submit">
+          <SubmitButton loadingText="保存中...">
             保存 SMTP 配置
-          </button>
+          </SubmitButton>
         </form>
       ) : null}
 
@@ -104,9 +105,9 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
           </label>
           <TemplateVariableHelp />
           <div className="rich-preview" dangerouslySetInnerHTML={{ __html: buyerHtml }} />
-          <button className="admin-button" type="submit">
+          <SubmitButton loadingText="保存中...">
             保存买家邮件
-          </button>
+          </SubmitButton>
         </form>
       ) : null}
 
@@ -127,9 +128,9 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
           </label>
           <TemplateVariableHelp />
           <div className="rich-preview" dangerouslySetInnerHTML={{ __html: adminHtml }} />
-          <button className="admin-button" type="submit">
+          <SubmitButton loadingText="保存中...">
             保存卖家邮件
-          </button>
+          </SubmitButton>
         </form>
       ) : null}
 
@@ -150,9 +151,9 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
           </label>
           <TemplateVariableHelp highlightTracking />
           <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentHtml }} />
-          <button className="admin-button" type="submit">
+          <SubmitButton loadingText="保存中...">
             保存发货邮件
-          </button>
+          </SubmitButton>
         </form>
       ) : null}
     </section>

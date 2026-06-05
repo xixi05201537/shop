@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SubmitButton } from "@/components/SubmitButton";
 import { prisma } from "@/lib/prisma";
 import { requestBaseUrl } from "@/lib/request-url";
 import { NewArticleDialog } from "./NewArticleDialog";
@@ -52,9 +53,9 @@ export default async function ArticlesAdmin() {
                       </Link>
                       <form action="/api/admin/articles/delete" method="post">
                         <input type="hidden" name="id" value={article.id} />
-                        <button className="table-action-button danger" type="submit">
+                        <SubmitButton className="table-action-button danger" loadingText="删除中...">
                           删除
-                        </button>
+                        </SubmitButton>
                       </form>
                     </div>
                   </td>

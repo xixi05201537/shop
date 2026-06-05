@@ -24,5 +24,5 @@ export async function POST(request: Request) {
   await writeFile(join(uploadDir, filename), bytes);
 
   const publicPath = `/uploads/${filename}`;
-  return NextResponse.redirect(appUrl(`/admin/upload?path=${encodeURIComponent(publicPath)}`, request), { status: 303 });
+  return NextResponse.redirect(appUrl(`/admin/upload?uploaded=1&path=${encodeURIComponent(publicPath)}`, request), { status: 303 });
 }

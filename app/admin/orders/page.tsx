@@ -2,6 +2,7 @@ import Link from "next/link";
 import { orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
 import { orderWhereFromQuery, queryStringFromObject, type OrderFilterQuery } from "@/lib/order-filters";
+import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -70,8 +71,8 @@ export default async function OrdersAdmin({
                 <td>
                   <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
                 </td>
-                <td>{order.buyerNickname || "-"}</td>
-                <td>{order.buyerEmail || "-"}</td>
+                <td>{displayOrderNickname(order)}</td>
+                <td>{displayOrderEmail(order)}</td>
                 <td>{order.paypalOrderId || "-"}</td>
                 <td>{formatUsd(order.totalAmount)}</td>
                 <td>{orderStatusLabel(order.status)}</td>

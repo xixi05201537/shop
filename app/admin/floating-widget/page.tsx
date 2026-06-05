@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/SubmitButton";
 import { getConfigMap } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
@@ -53,9 +54,9 @@ export default async function FloatingAdmin() {
             </select>
           </label>
         </div>
-        <button className="admin-button" type="submit">
+        <SubmitButton loadingText="保存中...">
           保存浮窗
-        </button>
+        </SubmitButton>
       </form>
     </>
   );

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { SubmitButton } from "@/components/SubmitButton";
 import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
+import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
 import { ShipOrderDialog } from "./ShipOrderDialog";
 
@@ -49,11 +50,30 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             </tr>
             <tr>
               <th>买家邮箱</th>
-              <td>{order.buyerEmail || "-"}</td>
+              <td>{displayOrderEmail(order)}</td>
             </tr>
             <tr>
               <th>买家昵称</th>
-              <td>{order.buyerNickname || "-"}</td>
+              <td>{displayOrderNickname(order)}</td>
+            </tr>
+            <tr>
+              <th>PayPal 买家信息</th>
+              <td>
+                <div className="email-log-row">
+                  <span>邮箱：{order.paypalBuyerEmail || "-"}</span>
+                  <span>昵称：{order.paypalBuyerNickname || "-"}</span>
+                  <span>Payer ID：{order.paypalPayerId || "-"}</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <th>PayPal 收货信息</th>
+              <td>
+                <div className="email-log-row">
+                  <span>姓名：{order.paypalShippingName || "-"}</span>
+                  <span>地址：{order.paypalShippingAddress || "-"}</span>
+                </div>
+              </td>
             </tr>
             <tr>
               <th>商品</th>

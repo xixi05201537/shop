@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SubmitButton } from "@/components/SubmitButton";
 import { ProductImageFields } from "./ProductImageFields";
 import { ProductImagePreview } from "./ProductImagePreview";
 
@@ -73,9 +74,9 @@ export function ProductAdminForm({ product, uploadedImages }: { product: Product
           </span>
         </label>
         <div className="admin-actions">
-          <button className="admin-button" type="submit">
+          <SubmitButton loadingText="保存中...">
             保存商品
-          </button>
+          </SubmitButton>
         </div>
       </form>
       <ProductImagePreview imagePath={previewImage} />

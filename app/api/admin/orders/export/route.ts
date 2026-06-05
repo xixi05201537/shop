@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
 import { orderWhereFromQuery } from "@/lib/order-filters";
+import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
 
 function csvCell(value: unknown) {
@@ -26,6 +27,11 @@ export async function GET(request: Request) {
       "状态",
       "买家邮箱",
       "买家昵称",
+      "PayPal 买家邮箱",
+      "PayPal 买家昵称",
+      "PayPal Payer ID",
+      "PayPal 收货姓名",
+      "PayPal 收货地址",
       "商品",
       "单价",
       "数量",
@@ -44,8 +50,13 @@ export async function GET(request: Request) {
     ...orders.map((order) => [
       order.orderNumber,
       orderStatusLabel(order.status),
-      order.buyerEmail || "",
-      order.buyerNickname || "",
+      displayOrderEmail(order),
+      displayOrderNickname(order),
+      order.paypalBuyerEmail || "",
+      order.paypalBuyerNickname || "",
+      order.paypalPayerId || "",
+      order.paypalShippingName || "",
+      order.paypalShippingAddress || "",
       order.productNameSnapshot,
       order.unitAmount.toFixed(2),
       order.quantity,

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SubmitButton } from "@/components/SubmitButton";
 import { listUploadedImages } from "@/lib/uploads";
 
 export default async function UploadPage({ searchParams }: { searchParams: Promise<{ path?: string; error?: string }> }) {
@@ -33,9 +34,9 @@ export default async function UploadPage({ searchParams }: { searchParams: Promi
             </div>
             {query.error ? <div className="notice">{query.error}</div> : null}
             <div className="admin-actions">
-              <button className="admin-button" type="submit">
+              <SubmitButton loadingText="上传中...">
                 上传图片
-              </button>
+              </SubmitButton>
               <Link className="secondary-button" href="/admin/product">
                 取消
               </Link>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SubmitButton } from "@/components/SubmitButton";
 import { prisma } from "@/lib/prisma";
 import { requestBaseUrl } from "@/lib/request-url";
 
@@ -48,9 +49,9 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
             <input name="published" type="checkbox" defaultChecked={article.published} /> 发布
           </span>
         </label>
-        <button className="admin-button" type="submit">
+        <SubmitButton loadingText="保存中...">
           保存文章
-        </button>
+        </SubmitButton>
       </form>
     </>
   );

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Plus, X } from "lucide-react";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export function NewArticleDialog() {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -42,9 +43,9 @@ export function NewArticleDialog() {
             <button className="secondary-button" type="button" onClick={() => dialogRef.current?.close()}>
               取消
             </button>
-            <button className="admin-button" type="submit">
+            <SubmitButton loadingText="创建中...">
               创建文章
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </dialog>

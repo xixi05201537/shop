@@ -55,6 +55,8 @@ export function orderWhereFromQuery(query: OrderFilterQuery): Prisma.OrderWhereI
       ? [
           { buyerEmail: { contains: search } },
           { buyerNickname: { contains: search } },
+          { paypalBuyerEmail: { contains: search } },
+          { paypalBuyerNickname: { contains: search } },
           { orderNumber: { contains: search } },
           { paypalOrderId: { contains: search } },
         ]

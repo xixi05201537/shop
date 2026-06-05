@@ -44,6 +44,13 @@ export async function createPaypalOrder(totalAmount: number, orderNumber: string
     },
     body: JSON.stringify({
       intent: "CAPTURE",
+      payment_source: {
+        paypal: {
+          experience_context: {
+            shipping_preference: "GET_FROM_FILE",
+          },
+        },
+      },
       purchase_units: [
         {
           reference_id: orderNumber,

@@ -8,13 +8,14 @@ import {
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
 } from "@/lib/email-defaults";
+import { orderEmailRecipients } from "@/lib/paypal-order-details";
 import type { Order } from "@prisma/client";
 
 function renderTemplate(template: string, order: Order) {
   const values: Record<string, string> = {
     orderId: order.orderNumber,
-    email: order.buyerEmail || "",
-    nickname: order.buyerNickname || "friend",
+    email: order.buyerEmail || order.paypalBuyerEmail || "",
+    nickname: order.buyerNickname || order.paypalBuyerNickname || "friend",
     productName: order.productNameSnapshot,
     amount: order.unitAmount.toFixed(2),
     quantity: String(order.quantity),
@@ -54,11 +55,13 @@ async function transporter() {
 
 export async function sendBuyerEmail(order: Order) {
   const { config, mailer } = await transporter();
-  if (!order.buyerEmail) return "skipped";
+  const recipients = orderEmailRecipients(order);
+  if (!recipients.to) return "skipped";
   if (config.buyerEmailEnabled !== "true") return "disabled";
   await mailer.sendMail({
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
-    to: order.buyerEmail,
+    to: recipients.to,
+    cc: recipients.cc,
     subject: renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order),
     html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order),
   });
@@ -79,11 +82,13 @@ export async function sendAdminEmail(order: Order) {
 
 export async function sendShipmentEmail(order: Order) {
   const { config, mailer } = await transporter();
-  if (!order.buyerEmail) return "skipped";
+  const recipients = orderEmailRecipients(order);
+  if (!recipients.to) return "skipped";
   if (config.shipmentEmailEnabled === "false") return "disabled";
   await mailer.sendMail({
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
-    to: order.buyerEmail,
+    to: recipients.to,
+    cc: recipients.cc,
     subject: renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order),
     html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order),
   });

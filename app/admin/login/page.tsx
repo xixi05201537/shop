@@ -1,4 +1,5 @@
 import "../admin.css";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const query = await searchParams;
@@ -17,9 +18,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <input name="password" type="password" defaultValue="" required />
           </label>
           {query.error ? <div className="notice">邮箱或密码不正确。</div> : null}
-          <button className="admin-button" type="submit">
+          <SubmitButton loadingText="登录中...">
             登录
-          </button>
+          </SubmitButton>
         </form>
       </section>
     </main>

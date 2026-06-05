@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Sparkles } from "lucide-react";
+import { AdminToast } from "@/components/AdminToast";
 import { getAdminSession } from "@/lib/auth";
 import { AdminNav } from "./AdminNav";
 import "./admin.css";
@@ -16,7 +18,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Link>
         <AdminNav />
       </aside>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main">
+        <Suspense fallback={null}>
+          <AdminToast />
+        </Suspense>
+        {children}
+      </main>
     </div>
   );
 }
