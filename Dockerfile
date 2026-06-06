@@ -58,5 +58,10 @@ COPY --from=builder /app/node_modules/rc9 ./node_modules/rc9
 COPY --from=builder /app/node_modules/readdirp ./node_modules/readdirp
 COPY --from=builder /app/node_modules/tinyexec ./node_modules/tinyexec
 
+RUN mkdir -p ./node_modules/.bin \
+  && printf '#!/bin/sh\nexec node /app/node_modules/prisma/build/index.js "$@"\n' > ./node_modules/.bin/prisma \
+  && chmod +x ./node_modules/.bin/prisma \
+  && ln -sf /app/node_modules/.bin/prisma /usr/local/bin/prisma
+
 EXPOSE 4000
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push && node prisma/seed-if-empty.mjs && node server.js"]
