@@ -1,13 +1,35 @@
+import { getConfigValues } from "@/lib/config";
+
 function paypalBase(env: string) {
   return env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 }
 
 export async function getPaypalSettings() {
+  const config = await getConfigValues([
+    "paypalClientId",
+    "paypalClientSecret",
+    "paypalSandboxClientId",
+    "paypalSandboxClientSecret",
+    "paypalLiveClientId",
+    "paypalLiveClientSecret",
+    "paypalEnv",
+    "paypalWebhookId",
+    "paypalSandboxWebhookId",
+    "paypalLiveWebhookId",
+  ]);
+  const env = config.paypalEnv || "sandbox";
+  const clientId =
+    env === "live" ? config.paypalLiveClientId : config.paypalSandboxClientId || config.paypalClientId;
+  const clientSecret =
+    env === "live" ? config.paypalLiveClientSecret : config.paypalSandboxClientSecret || config.paypalClientSecret;
+  const webhookId =
+    env === "live" ? config.paypalLiveWebhookId : config.paypalSandboxWebhookId || config.paypalWebhookId;
+
   return {
-    clientId: process.env.PAYPAL_CLIENT_ID || "",
-    clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
-    env: process.env.PAYPAL_ENV || "sandbox",
-    webhookId: process.env.PAYPAL_WEBHOOK_ID || "",
+    clientId,
+    clientSecret,
+    env,
+    webhookId,
   };
 }
 

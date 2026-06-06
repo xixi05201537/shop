@@ -30,11 +30,32 @@ export async function setConfigValues(values: Record<string, string>, secretKeys
   );
 }
 
+export async function getConfigValue(key: string) {
+  const row = await prisma.siteConfig.findUnique({ where: { key } });
+  return row?.value || "";
+}
+
+export async function getConfigValues(keys: string[]) {
+  const rows = await prisma.siteConfig.findMany({ where: { key: { in: keys } } });
+  const map = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+
+  return keys.reduce<Record<string, string>>((acc, key) => {
+    acc[key] = map[key] || "";
+    return acc;
+  }, {});
+}
+
 export async function getPublicConfig(): Promise<PublicConfig> {
   const config = await getConfigMap();
+  const paypalEnv = config.paypalEnv || "sandbox";
+  const paypalClientId =
+    paypalEnv === "live"
+      ? config.paypalLiveClientId || ""
+      : config.paypalSandboxClientId || config.paypalClientId || "";
+
   return {
-    paypalClientId: process.env.PAYPAL_CLIENT_ID || "",
-    paypalEnv: process.env.PAYPAL_ENV || "sandbox",
+    paypalClientId,
+    paypalEnv,
     supportEmail: config.supportEmail || "support@example.com",
     floatingEnabled: (config.floatingEnabled || "false") === "true",
     floatingUrl: config.floatingUrl || "/article/about",

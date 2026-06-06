@@ -1,0 +1,15 @@
+
+> shop@1.0.0 dev
+> next dev -p 4000
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:4000
+- Network:       http://172.27.48.1:4000
+- Environments: .env
+✓ Ready in 394ms
+
+ GET /admin/settings 200 in 760ms (next.js: 134ms, proxy.ts: 216ms, application-code: 410ms)
+✓ Compiled in 17ms
+ GET /admin/settings 200 in 160ms (next.js: 37ms, proxy.ts: 20ms, application-code: 103ms)
+ GET /admin/settings 200 in 61ms (next.js: 4ms, proxy.ts: 5ms, application-code: 51ms)
+✓ Compiled in 17ms

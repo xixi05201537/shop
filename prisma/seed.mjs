@@ -39,6 +39,14 @@ const defaultConfigs = {
   floatingPosition: "right-bottom",
   floatingLabel: "i",
   floatingImageUrl: "",
+  paypalSandboxClientId: "",
+  paypalSandboxClientSecret: "",
+  paypalLiveClientId: "",
+  paypalLiveClientSecret: "",
+  paypalEnv: "sandbox",
+  paypalWebhookId: "",
+  paypalSandboxWebhookId: "",
+  paypalLiveWebhookId: "",
 };
 
 async function main() {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileImage, FileText, Home, LogOut, Mail, Package, ReceiptText, Sparkles } from "lucide-react";
+import { FileImage, FileText, Home, LogOut, Mail, Package, ReceiptText, Settings, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/orders", label: "订单", icon: ReceiptText },
   { href: "/admin/upload", label: "图片", icon: FileImage },
   { href: "/admin/email", label: "邮件", icon: Mail },
+  { href: "/admin/settings", label: "设置", icon: Settings },
   { href: "/admin/floating-widget", label: "浮窗", icon: Sparkles },
   { href: "/admin/articles", label: "文章", icon: FileText },
 ] as const;

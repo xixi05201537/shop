@@ -119,6 +119,32 @@
   grid-column: 1 / -1;
 }
 
+.settings-group {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.settings-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: var(--cherry);
+}
+
+.settings-group-title span {
+  font-size: 1.18rem;
+  font-weight: 1000;
+}
+
+.settings-group-title strong {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .product-admin-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);

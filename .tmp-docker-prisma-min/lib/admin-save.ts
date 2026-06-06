@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { getConfigValues, setConfigValues } from "@/lib/config";
+import { setConfigValues } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 import { sanitizeEmailHtml } from "@/lib/sanitize";
 
@@ -94,26 +94,23 @@ export async function saveFloatingForm(formData: FormData) {
 }
 
 export async function saveSettingsForm(formData: FormData) {
-  const existing = await getConfigValues([
-    "paypalClientSecret",
-    "paypalSandboxClientSecret",
-    "paypalLiveClientSecret",
-  ]);
-  const nextSandboxSecret = String(formData.get("paypalSandboxClientSecret") || "");
-  const nextLiveSecret = String(formData.get("paypalLiveClientSecret") || "");
+  const existing = await prisma.siteConfig.findMany({
+    where: { key: { in: ["paypalClientSecret"] } },
+  });
+  const currentPaypalSecret = existing.find((item) => item.key === "paypalClientSecret")?.value || "";
+  const nextPaypalSecret = String(formData.get("paypalClientSecret") || "");
 
   await setConfigValues(
     {
-      paypalSandboxClientId: String(formData.get("paypalSandboxClientId") || ""),
-      paypalSandboxClientSecret: nextSandboxSecret || existing.paypalSandboxClientSecret || existing.paypalClientSecret,
-      paypalLiveClientId: String(formData.get("paypalLiveClientId") || ""),
-      paypalLiveClientSecret: nextLiveSecret || existing.paypalLiveClientSecret,
+      paypalClientId: String(formData.get("paypalClientId") || ""),
+      paypalClientSecret: nextPaypalSecret || currentPaypalSecret,
       paypalEnv: String(formData.get("paypalEnv") || "sandbox"),
-      paypalSandboxWebhookId: String(formData.get("paypalSandboxWebhookId") || ""),
-      paypalLiveWebhookId: String(formData.get("paypalLiveWebhookId") || ""),
+      paypalWebhookId: String(formData.get("paypalWebhookId") || ""),
+      uploadDir: String(formData.get("uploadDir") || "./public/uploads"),
     },
-    ["paypalSandboxClientSecret", "paypalLiveClientSecret"],
+    ["paypalClientSecret"],
   );
+
   revalidatePath("/");
 }
 
