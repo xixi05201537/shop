@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CopyVariableButton } from "@/components/CopyVariableButton";
 import { RichTemplateEditor } from "@/components/RichTemplateEditor";
 import { SubmitButton } from "@/components/SubmitButton";
 import {
@@ -30,6 +31,9 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
   const adminHtml = config.adminEmailHtml || defaultAdminEmailHtml;
   const shipmentSubject = config.shipmentEmailSubject || defaultShipmentEmailSubject;
   const shipmentHtml = config.shipmentEmailHtml || defaultShipmentEmailHtml;
+  const [buyerPreview, setBuyerPreview] = useState(buyerHtml);
+  const [adminPreview, setAdminPreview] = useState(adminHtml);
+  const [shipmentPreview, setShipmentPreview] = useState(shipmentHtml);
 
   return (
     <section className="admin-card tab-card">
@@ -99,12 +103,17 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
             买家邮件标题
             <input name="buyerEmailSubject" defaultValue={buyerSubject} />
           </label>
-          <label>
-            买家富文本邮件模板
-            <RichTemplateEditor name="buyerEmailHtml" defaultValue={buyerHtml} />
-          </label>
+          <div className="email-template-layout">
+            <label>
+              买家富文本邮件模板
+              <RichTemplateEditor name="buyerEmailHtml" defaultValue={buyerHtml} onChange={setBuyerPreview} />
+            </label>
+            <section className="email-preview-panel" aria-label="买家邮件预览">
+              <span>预览</span>
+              <div className="rich-preview" dangerouslySetInnerHTML={{ __html: buyerPreview }} />
+            </section>
+          </div>
           <TemplateVariableHelp />
-          <div className="rich-preview" dangerouslySetInnerHTML={{ __html: buyerHtml }} />
           <SubmitButton loadingText="保存中...">
             保存买家邮件
           </SubmitButton>
@@ -122,12 +131,17 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
             卖家邮件标题
             <input name="adminEmailSubject" defaultValue={adminSubject} />
           </label>
-          <label>
-            卖家富文本邮件模板
-            <RichTemplateEditor name="adminEmailHtml" defaultValue={adminHtml} />
-          </label>
+          <div className="email-template-layout">
+            <label>
+              卖家富文本邮件模板
+              <RichTemplateEditor name="adminEmailHtml" defaultValue={adminHtml} onChange={setAdminPreview} />
+            </label>
+            <section className="email-preview-panel" aria-label="卖家邮件预览">
+              <span>预览</span>
+              <div className="rich-preview" dangerouslySetInnerHTML={{ __html: adminPreview }} />
+            </section>
+          </div>
           <TemplateVariableHelp />
-          <div className="rich-preview" dangerouslySetInnerHTML={{ __html: adminHtml }} />
           <SubmitButton loadingText="保存中...">
             保存卖家邮件
           </SubmitButton>
@@ -145,12 +159,17 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
             发货邮件标题
             <input name="shipmentEmailSubject" defaultValue={shipmentSubject} />
           </label>
-          <label>
-            发货富文本邮件模板
-            <RichTemplateEditor name="shipmentEmailHtml" defaultValue={shipmentHtml} />
-          </label>
+          <div className="email-template-layout">
+            <label>
+              发货富文本邮件模板
+              <RichTemplateEditor name="shipmentEmailHtml" defaultValue={shipmentHtml} onChange={setShipmentPreview} />
+            </label>
+            <section className="email-preview-panel" aria-label="发货邮件预览">
+              <span>预览</span>
+              <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentPreview }} />
+            </section>
+          </div>
           <TemplateVariableHelp highlightTracking />
-          <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentHtml }} />
           <SubmitButton loadingText="保存中...">
             保存发货邮件
           </SubmitButton>
@@ -166,9 +185,11 @@ function TemplateVariableHelp({ highlightTracking = false }: { highlightTracking
       <span>可用变量</span>
       <div>
         {templateVariables.map((variable) => (
-          <code className={highlightTracking && variable === "{{trackingNumber}}" ? "is-important" : undefined} key={variable}>
-            {variable}
-          </code>
+          <CopyVariableButton
+            important={highlightTracking && variable === "{{trackingNumber}}"}
+            key={variable}
+            value={variable}
+          />
         ))}
       </div>
     </div>

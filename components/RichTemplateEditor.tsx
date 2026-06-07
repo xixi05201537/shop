@@ -7,14 +7,24 @@ import Link from "@tiptap/extension-link";
 import { Bold, Heading2, Italic, List, Undo2 } from "lucide-react";
 import { templateVariables } from "@/lib/email-defaults";
 
-export function RichTemplateEditor({ name, defaultValue }: { name: string; defaultValue: string }) {
+export function RichTemplateEditor({
+  name,
+  defaultValue,
+  onChange,
+}: {
+  name: string;
+  defaultValue: string;
+  onChange?: (html: string) => void;
+}) {
   const [html, setHtml] = useState(defaultValue || "<p></p>");
   const editor = useEditor({
     extensions: [StarterKit, Link],
     content: defaultValue || "<p></p>",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      setHtml(editor.getHTML());
+      const nextHtml = editor.getHTML();
+      setHtml(nextHtml);
+      onChange?.(nextHtml);
     },
     editorProps: {
       attributes: {
@@ -43,7 +53,9 @@ export function RichTemplateEditor({ name, defaultValue }: { name: string; defau
         </button>
         <span>{templateVariables.join(" ")}</span>
       </div>
-      <EditorContent editor={editor} />
+      <div className="rich-editor-body">
+        <EditorContent editor={editor} />
+      </div>
       <input name={name} value={html} readOnly hidden />
     </div>
   );

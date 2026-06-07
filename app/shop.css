@@ -6,12 +6,17 @@
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(560px, 1.12fr) minmax(500px, 0.88fr);
-  gap: clamp(30px, 4vw, 64px);
-  align-items: center;
+  grid-template-areas:
+    "art checkout"
+    "details checkout";
+  column-gap: clamp(30px, 4vw, 64px);
+  row-gap: clamp(14px, 2vw, 24px);
+  align-items: start;
   min-height: min(840px, calc(100dvh - 72px));
 }
 
 .product-art {
+  grid-area: art;
   position: relative;
   min-height: clamp(580px, 62vh, 740px);
   isolation: isolate;
@@ -19,7 +24,7 @@
 
 .image-frame {
   position: absolute;
-  inset: 32px 18px 72px 0;
+  inset: 0 18px 72px 0;
   overflow: hidden;
   border: 8px solid rgba(255, 255, 255, 0.84);
   border-radius: 28px;
@@ -81,7 +86,7 @@
 .art-caption {
   position: absolute;
   left: 40px;
-  top: 18px;
+  top: -14px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -142,6 +147,7 @@
 }
 
 .checkout-panel {
+  grid-area: checkout;
   border: 1px solid rgba(255, 255, 255, 0.86);
   border-radius: 24px;
   width: min(100%, 560px);
@@ -433,14 +439,19 @@
   font-weight: 900;
 }
 
+.mobile-checkout-bar {
+  display: none;
+}
+
 .details-section {
+  grid-area: details;
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: clamp(26px, 4vw, 48px);
-  margin-top: clamp(44px, 6vw, 84px);
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1fr);
+  gap: clamp(22px, 3vw, 36px);
+  margin-top: clamp(-26px, -2vw, -12px);
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 24px;
-  padding: clamp(26px, 4vw, 44px);
+  padding: clamp(24px, 3vw, 36px);
   background: rgba(255, 255, 255, 0.54);
   box-shadow: 0 18px 54px rgba(152, 36, 79, 0.08);
   backdrop-filter: blur(18px);
@@ -454,7 +465,7 @@
 
 .section-title h2 {
   margin: 10px 0 0;
-  font-size: clamp(2rem, 4vw, 3.8rem);
+  font-size: clamp(2rem, 3vw, 3.35rem);
   line-height: 1;
 }
 
@@ -583,12 +594,20 @@
   }
 
   .hero-grid {
+    grid-template-areas:
+      "art"
+      "checkout"
+      "details";
     min-height: 0;
     gap: 26px;
   }
 
+  .details-section {
+    margin-top: 0;
+  }
+
   .product-art {
-    min-height: clamp(430px, 58vw, 640px);
+    min-height: clamp(300px, 44vw, 460px);
   }
 
   .image-frame {
@@ -598,11 +617,15 @@
 
 @media (max-width: 900px) {
   .shop-page {
-    padding-top: 18px;
+    padding-top: 12px;
   }
 
   .checkout-panel {
-    padding: 24px;
+    width: 100%;
+  }
+
+  .checkout-panel {
+    padding: 22px;
   }
 
   .amount-grid {
@@ -619,21 +642,25 @@
 }
 
 @media (max-width: 640px) {
+  .shop-page {
+    padding-bottom: 108px;
+  }
+
   .hero-grid {
-    gap: 18px;
+    gap: 14px;
   }
 
   .product-art {
-    min-height: 348px;
+    min-height: 238px;
   }
 
   .product-art::before {
-    inset: 0 22px 56px 14px;
+    inset: 0 22px 18px 14px;
     border-radius: 24px;
   }
 
   .image-frame {
-    inset: 18px 0 48px;
+    inset: 16px 0 0;
     border-width: 6px;
     border-radius: 22px;
   }
@@ -647,7 +674,7 @@
 
   .sticker-one {
     left: 18px;
-    bottom: 50px;
+    bottom: 10px;
     padding: 9px 12px;
     font-size: 0.78rem;
   }
@@ -660,29 +687,51 @@
   }
 
   .checkout-panel {
-    padding: 20px;
+    padding: 18px;
+    margin-bottom: 0;
   }
 
   .checkout-panel h1 {
-    font-size: clamp(2.45rem, 14vw, 4rem);
+    margin: 12px 0 8px;
+    font-size: clamp(2rem, 10vw, 3rem);
   }
 
   .short-copy {
+    margin: 0;
     font-size: 1rem;
+    line-height: 1.45;
+  }
+
+  .trust-row {
+    margin-top: 12px;
+  }
+
+  .option-block {
+    margin-top: 18px;
   }
 
   .amount-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .amount-chip {
-    min-height: 48px;
+    min-height: 44px;
+  }
+
+  .custom-amount-field {
+    margin-top: 10px;
+  }
+
+  .custom-amount-field input {
+    height: 46px;
   }
 
   .quantity-row {
     display: grid;
     gap: 8px;
     justify-content: stretch;
+    margin-top: 16px;
   }
 
   .stepper {
@@ -693,16 +742,94 @@
   .total-card {
     align-items: flex-start;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    margin: 18px 0 12px;
+    padding: 13px 14px;
   }
 
   .total-card strong {
     font-size: 1.75rem;
   }
 
+  .buyer-grid {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .buyer-grid input {
+    height: 44px;
+  }
+
+  .paypal-box {
+    min-height: 74px;
+  }
+
+  .support-link {
+    margin-top: 10px;
+  }
+
+  .mobile-checkout-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid rgba(152, 36, 79, 0.14);
+    border-radius: 20px;
+    padding: 10px 10px 10px 14px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 46px rgba(152, 36, 79, 0.18);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-checkout-bar div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .mobile-checkout-bar span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+
+  .mobile-checkout-bar strong {
+    color: var(--cherry);
+    font-size: 1.18rem;
+    font-weight: 1000;
+  }
+
+  .mobile-checkout-bar button {
+    min-height: 44px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 18px;
+    background: var(--cherry);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(152, 36, 79, 0.2);
+    font-weight: 1000;
+  }
+
   .details-section {
-    gap: 18px;
-    padding: 24px;
+    gap: 14px;
+    margin-top: 0;
+    padding: 20px;
+  }
+
+  .section-title h2 {
+    margin-top: 6px;
+  }
+
+  .prose > :first-child {
+    margin-top: 0;
+  }
+
+  .prose > :last-child {
+    margin-bottom: 0;
   }
 
   .article-page,

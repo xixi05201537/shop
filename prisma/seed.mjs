@@ -47,6 +47,9 @@ const defaultConfigs = {
   paypalWebhookId: "",
   paypalSandboxWebhookId: "",
   paypalLiveWebhookId: "",
+  checkoutCustomAmountEnabled: "true",
+  checkoutEmailEnabled: "true",
+  checkoutNicknameEnabled: "true",
 };
 
 async function main() {

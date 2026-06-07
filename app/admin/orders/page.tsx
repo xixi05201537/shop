@@ -94,7 +94,9 @@ export default async function OrdersAdmin({
                 <td>{displayOrderEmail(order)}</td>
                 <td>{order.paypalOrderId || "-"}</td>
                 <td>{formatUsd(order.totalAmount)}</td>
-                <td>{orderStatusLabel(order.status)}</td>
+                <td>
+                  <span className={`status-badge status-${order.status}`}>{orderStatusLabel(order.status)}</span>
+                </td>
                 <td>{order.createdAt.toLocaleString()}</td>
               </tr>
             ))}

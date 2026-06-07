@@ -11,6 +11,9 @@ export type PublicConfig = {
   floatingPosition: string;
   floatingLabel: string;
   floatingImageUrl: string;
+  checkoutCustomAmountEnabled: boolean;
+  checkoutEmailEnabled: boolean;
+  checkoutNicknameEnabled: boolean;
 };
 
 export async function getConfigMap() {
@@ -64,6 +67,9 @@ export async function getPublicConfig(): Promise<PublicConfig> {
     floatingPosition: config.floatingPosition || "right-bottom",
     floatingLabel: config.floatingLabel || "i",
     floatingImageUrl: config.floatingImageUrl || "",
+    checkoutCustomAmountEnabled: (config.checkoutCustomAmountEnabled || "true") === "true",
+    checkoutEmailEnabled: (config.checkoutEmailEnabled || "true") === "true",
+    checkoutNicknameEnabled: (config.checkoutNicknameEnabled || "true") === "true",
   };
 }
 

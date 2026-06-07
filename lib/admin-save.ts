@@ -111,6 +111,9 @@ export async function saveSettingsForm(formData: FormData) {
       paypalEnv: String(formData.get("paypalEnv") || "sandbox"),
       paypalSandboxWebhookId: String(formData.get("paypalSandboxWebhookId") || ""),
       paypalLiveWebhookId: String(formData.get("paypalLiveWebhookId") || ""),
+      checkoutCustomAmountEnabled: formData.get("checkoutCustomAmountEnabled") === "on" ? "true" : "false",
+      checkoutEmailEnabled: formData.get("checkoutEmailEnabled") === "on" ? "true" : "false",
+      checkoutNicknameEnabled: formData.get("checkoutNicknameEnabled") === "on" ? "true" : "false",
     },
     ["paypalSandboxClientSecret", "paypalLiveClientSecret"],
   );

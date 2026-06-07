@@ -12,7 +12,7 @@ export function NewArticleDialog() {
       <button className="admin-button" type="button" onClick={() => dialogRef.current?.showModal()}>
         <Plus size={18} /> 新增文章
       </button>
-      <dialog className="admin-dialog wide-dialog" ref={dialogRef}>
+      <dialog className="admin-dialog wide-dialog article-dialog" ref={dialogRef}>
         <div className="dialog-title">
           <strong>新增文章</strong>
           <button className="icon-text-button" type="button" onClick={() => dialogRef.current?.close()} aria-label="关闭">
@@ -32,7 +32,7 @@ export function NewArticleDialog() {
           </div>
           <label>
             Markdown
-            <textarea name="content" required />
+            <textarea className="article-markdown-field" name="content" required />
           </label>
           <label className="checkbox-row">
             <span>

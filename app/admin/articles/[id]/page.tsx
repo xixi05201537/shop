@@ -42,7 +42,7 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
         </div>
         <label>
           Markdown
-          <textarea name="content" defaultValue={article.content} required />
+          <textarea className="article-markdown-field" name="content" defaultValue={article.content} required />
         </label>
         <label>
           <span>

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createPaypalOrder } from "@/lib/paypal";
-import { orderNumber } from "@/lib/format";
+import { orderNumber, parseAmounts } from "@/lib/format";
+import { getConfigMap } from "@/lib/config";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -20,11 +21,20 @@ export async function POST(request: Request) {
 
     const product = await prisma.product.findFirst({ where: { isActive: true } });
     if (!product) return NextResponse.json({ error: "Product not found." }, { status: 404 });
+    const config = await getConfigMap();
+    const customAmountEnabled = (config.checkoutCustomAmountEnabled || "true") === "true";
 
+    if (!customAmountEnabled) {
+      const amounts = parseAmounts(product.enabledAmounts);
+      const amountAllowed = amounts.some((item) => Math.abs(item - parsed.data.amount) < 0.001);
+      if (!amountAllowed) return NextResponse.json({ error: "Amount is not available." }, { status: 400 });
+    }
     if (parsed.data.quantity > product.maxQuantity) {
       return NextResponse.json({ error: `Quantity cannot exceed ${product.maxQuantity}.` }, { status: 400 });
     }
 
+    const emailEnabled = (config.checkoutEmailEnabled || "true") === "true";
+    const nicknameEnabled = (config.checkoutNicknameEnabled || "true") === "true";
     const unitAmount = Number(parsed.data.amount.toFixed(2));
     const totalAmount = Number((unitAmount * parsed.data.quantity).toFixed(2));
     const number = orderNumber();
@@ -33,8 +43,8 @@ export async function POST(request: Request) {
         orderNumber: number,
         productNameSnapshot: product.name,
         productImageSnapshot: product.imageUrl || product.uploadedImagePath,
-        buyerEmail: parsed.data.email || null,
-        buyerNickname: parsed.data.nickname?.trim() || null,
+        buyerEmail: emailEnabled ? parsed.data.email || null : null,
+        buyerNickname: nicknameEnabled ? parsed.data.nickname?.trim() || null : null,
         unitAmount,
         quantity: parsed.data.quantity,
         totalAmount,

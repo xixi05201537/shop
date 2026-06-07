@@ -48,6 +48,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     return Number.isFinite(parsed) && parsed > 0 ? Number(parsed.toFixed(2)) : 0;
   }, [amountInput]);
   const checkoutRef = useRef({ amount, quantity, email, nickname });
+  const paypalBoxRef = useRef<HTMLDivElement | null>(null);
   const paypalRenderedRef = useRef(false);
   const paypalButtonsRef = useRef<PaypalButtonsInstance | null>(null);
   const total = useMemo(() => Number((amount * quantity).toFixed(2)), [amount, quantity]);
@@ -94,7 +95,11 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           return actions?.resolve ? actions.resolve() : Promise.resolve();
         },
         createOrder: async () => {
-          const current = checkoutRef.current;
+          const current = {
+            ...checkoutRef.current,
+            email: config.checkoutEmailEnabled ? checkoutRef.current.email : "",
+            nickname: config.checkoutNicknameEnabled ? checkoutRef.current.nickname : "",
+          };
           setLoading(true);
           try {
             const response = await fetch("/api/checkout/create-order", {
@@ -196,6 +201,16 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           </div>
         </div>
 
+        <section className="details-section">
+          <div className="section-title">
+            <span>Live Stream Details</span>
+            <h2 className="display">About Misaki&apos;s live stream deposit</h2>
+          </div>
+          <article className="prose">
+            <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{product.longDescriptionMarkdown}</ReactMarkdown>
+          </article>
+        </section>
+
         <div className="checkout-panel">
           <div className="eyebrow">
             <Heart size={16} fill="currentColor" /> Tiny booking treat
@@ -230,21 +245,23 @@ export function Storefront({ product, config }: { product: ProductView; config: 
                 </button>
               ))}
             </div>
-            <label className="custom-amount-field">
-              <span>Custom amount</span>
-              <input
-                value={amountInput}
-                onChange={(event) => setAmountInput(event.target.value)}
-                onBlur={() => {
-                  if (amount > 0) setAmountInput(formatAmountInput(amount));
-                }}
-                placeholder="Enter amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                inputMode="decimal"
-              />
-            </label>
+            {config.checkoutCustomAmountEnabled ? (
+              <label className="custom-amount-field">
+                <span>Custom amount</span>
+                <input
+                  value={amountInput}
+                  onChange={(event) => setAmountInput(event.target.value)}
+                  onBlur={() => {
+                    if (amount > 0) setAmountInput(formatAmountInput(amount));
+                  }}
+                  placeholder="Enter amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputMode="decimal"
+                />
+              </label>
+            ) : null}
           </div>
 
           <div className="quantity-row">
@@ -271,23 +288,29 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             </div>
           </div>
 
-          <div className="buyer-grid">
-            <label>
-              <span>Email</span>
-              <input
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-              />
-            </label>
-            <label>
-              <span>Nickname</span>
-              <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
-            </label>
-          </div>
+          {config.checkoutEmailEnabled || config.checkoutNicknameEnabled ? (
+            <div className="buyer-grid">
+              {config.checkoutEmailEnabled ? (
+                <label>
+                  <span>Email</span>
+                  <input
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                  />
+                </label>
+              ) : null}
+              {config.checkoutNicknameEnabled ? (
+                <label>
+                  <span>Nickname</span>
+                  <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
+                </label>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="total-card">
             <div>
@@ -300,7 +323,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             </strong>
           </div>
 
-          <div className="paypal-box">
+          <div className="paypal-box" ref={paypalBoxRef}>
             {config.paypalClientId ? (
               <div id="paypal-buttons" />
             ) : (
@@ -317,15 +340,18 @@ export function Storefront({ product, config }: { product: ProductView; config: 
         </div>
       </section>
 
-      <section className="container details-section">
-        <div className="section-title">
-          <span>Live Stream Details</span>
-          <h2 className="display">About Misaki&apos;s live stream deposit</h2>
+      <div className="mobile-checkout-bar" aria-label="Checkout summary">
+        <div>
+          <span>Total</span>
+          <strong>{formatUsd(total)}</strong>
         </div>
-        <article className="prose">
-          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{product.longDescriptionMarkdown}</ReactMarkdown>
-        </article>
-      </section>
+        <button
+          type="button"
+          onClick={() => paypalBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+        >
+          Checkout
+        </button>
+      </div>
 
       {config.floatingEnabled ? (
         <Link
