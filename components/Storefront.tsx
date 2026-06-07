@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Mail, Minus, Plus, Sparkles } from "lucide-react";
+import { CheckCircle, Gift, Heart, Mail, Minus, Plus, Receipt, ShieldCheck, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { formatUsd } from "@/lib/format";
@@ -171,10 +171,18 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     <main className="shop-page">
       <section className="container hero-grid">
         <div className="product-art">
+          <div className="art-orbit art-orbit-mint" />
+          <div className="art-orbit art-orbit-lemon" />
           <div className="image-frame">
             <Image src={imageSrc} alt={product.name} fill sizes="(max-width: 900px) 100vw, 48vw" priority />
           </div>
-          <div className="sticker sticker-one">Pay with a smile</div>
+          <div className="art-caption">
+            <Gift size={18} />
+            <span>Live booking card</span>
+          </div>
+          <div className="sticker sticker-one">
+            <CheckCircle size={17} /> Reserve your spot
+          </div>
           <div className="sticker sticker-two">
             <Sparkles size={18} /> USD
           </div>
@@ -182,13 +190,25 @@ export function Storefront({ product, config }: { product: ProductView; config: 
 
         <div className="checkout-panel">
           <div className="eyebrow">
-            <Heart size={16} fill="currentColor" /> Single sweet product
+            <Heart size={16} fill="currentColor" /> Tiny booking treat
           </div>
           <h1 className="display">{product.name}</h1>
           <p className="short-copy">{product.shortDescription}</p>
 
+          <div className="trust-row" aria-label="Checkout benefits">
+            <span>
+              <ShieldCheck size={16} /> Secure PayPal
+            </span>
+            <span>
+              <Sparkles size={16} /> Sweet and simple
+            </span>
+          </div>
+
           <div className="option-block">
-            <span className="label">Choose amount</span>
+            <div className="label-row">
+              <span className="label">Choose amount</span>
+              <span className="field-hint">USD</span>
+            </div>
             <div className="amount-grid">
               {product.enabledAmounts.map((item) => (
                 <button
@@ -197,6 +217,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
                   type="button"
                   onClick={() => setAmount(item)}
                 >
+                  {item === amount ? <CheckCircle size={15} /> : null}
                   {formatUsd(item)}
                 </button>
               ))}
@@ -229,7 +250,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
 
           <div className="buyer-grid">
             <label>
-              Email
+              <span>Email</span>
               <input
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -240,14 +261,20 @@ export function Storefront({ product, config }: { product: ProductView; config: 
               />
             </label>
             <label>
-              Nickname
+              <span>Nickname</span>
               <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
             </label>
           </div>
 
-          <div className="total-row">
-            <span>Total</span>
-            <strong>{formatUsd(total)}</strong>
+          <div className="total-card">
+            <div>
+              <span>Total</span>
+              <small>Ready for checkout</small>
+            </div>
+            <strong>
+              <Receipt size={24} />
+              {formatUsd(total)}
+            </strong>
           </div>
 
           <div className="paypal-box">

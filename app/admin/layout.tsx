@@ -14,7 +14,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <Link className="admin-brand" href="/admin">
-          <Sparkles size={22} /> Misaki 后台
+          <span className="admin-brand-mark">
+            <Sparkles size={19} />
+          </span>
+          <span>
+            <strong>Misaki</strong>
+            <small>商店后台</small>
+          </span>
         </Link>
         <AdminNav />
       </aside>

@@ -10,6 +10,7 @@ export type OrderFilterQuery = {
   maxAmount?: string;
   dateFrom?: string;
   dateTo?: string;
+  page?: string;
 };
 
 function numberValue(value?: string) {
@@ -70,4 +71,9 @@ export function queryStringFromObject(query: OrderFilterQuery) {
     if (value) params.set(key, value);
   }
   return params.toString();
+}
+
+export function queryStringWithoutPage(query: OrderFilterQuery) {
+  const { page: _page, ...rest } = query;
+  return queryStringFromObject(rest);
 }

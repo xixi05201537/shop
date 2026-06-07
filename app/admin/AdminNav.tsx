@@ -27,13 +27,15 @@ export function AdminNav() {
 
         return (
           <Link aria-current={active ? "page" : undefined} className={active ? "is-active" : undefined} href={item.href} key={item.href}>
-            <Icon size={18} /> {item.label}
+            <Icon size={18} />
+            <span>{item.label}</span>
           </Link>
         );
       })}
       <form action="/api/admin/logout" method="post">
         <button type="submit">
-          <LogOut size={18} /> 退出登录
+          <LogOut size={18} />
+          <span>退出登录</span>
         </button>
       </form>
     </nav>

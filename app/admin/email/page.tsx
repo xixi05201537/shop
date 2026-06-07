@@ -9,7 +9,10 @@ export default async function EmailAdmin() {
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">邮件</h1>
+        <div>
+          <h1 className="display">邮件</h1>
+          <p>配置 SMTP、买家通知、卖家通知和发货邮件模板。</p>
+        </div>
       </header>
       <EmailTabs config={config} maskedPassword={maskSecret(config.smtpPassword)} />
     </>

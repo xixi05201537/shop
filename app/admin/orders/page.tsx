@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
-import { orderWhereFromQuery, queryStringFromObject, type OrderFilterQuery } from "@/lib/order-filters";
+import { orderWhereFromQuery, queryStringWithoutPage, type OrderFilterQuery } from "@/lib/order-filters";
 import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+const PAGE_SIZE = 10;
 
 export default async function OrdersAdmin({
   searchParams,
@@ -13,17 +14,35 @@ export default async function OrdersAdmin({
   searchParams: Promise<OrderFilterQuery>;
 }) {
   const query = await searchParams;
-  const exportQuery = queryStringFromObject(query);
+  const where = orderWhereFromQuery(query);
+  const exportQuery = queryStringWithoutPage(query);
+  const pageQuery = queryStringWithoutPage(query);
+  const requestedPage = Math.max(1, Number(query.page) || 1);
+  const totalOrders = await prisma.order.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
+  const safePage = Math.min(requestedPage, totalPages);
+  const pageStart = totalOrders ? (safePage - 1) * PAGE_SIZE + 1 : 0;
+  const pageEnd = Math.min(safePage * PAGE_SIZE, totalOrders);
   const orders = await prisma.order.findMany({
-    where: orderWhereFromQuery(query),
+    where,
     orderBy: { createdAt: "desc" },
-    take: 100,
+    skip: (safePage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
+
+  function pageHref(nextPage: number) {
+    const params = new URLSearchParams(pageQuery);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    return `/admin/orders${params.toString() ? `?${params.toString()}` : ""}`;
+  }
 
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">订单</h1>
+        <div>
+          <h1 className="display">订单</h1>
+          <p>筛选、查看和导出订单记录，每页最多显示 10 条。</p>
+        </div>
       </header>
       <section className="admin-card">
         <div className="admin-toolbar">
@@ -81,6 +100,30 @@ export default async function OrdersAdmin({
             ))}
           </tbody>
         </table>
+        <div className="admin-pagination">
+          <span>
+            {totalOrders ? `${pageStart}-${pageEnd} / ${totalOrders} 条` : "暂无订单"}
+          </span>
+          <div>
+            {safePage > 1 ? (
+              <Link className="secondary-button" href={pageHref(safePage - 1)}>
+                上一页
+              </Link>
+            ) : (
+              <span className="secondary-button is-disabled">上一页</span>
+            )}
+            <strong>
+              第 {safePage} / {totalPages} 页
+            </strong>
+            {safePage < totalPages ? (
+              <Link className="secondary-button" href={pageHref(safePage + 1)}>
+                下一页
+              </Link>
+            ) : (
+              <span className="secondary-button is-disabled">下一页</span>
+            )}
+          </div>
+        </div>
       </section>
     </>
   );

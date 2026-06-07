@@ -20,7 +20,10 @@ export default async function ProductAdmin({ searchParams }: { searchParams: Pro
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">商品</h1>
+        <div>
+          <h1 className="display">商品</h1>
+          <p>维护首页展示商品、金额选项、图片和详情文案。</p>
+        </div>
       </header>
       <ProductAdminForm
         product={{

@@ -9,7 +9,10 @@ export default async function FloatingAdmin() {
   return (
     <>
       <header className="admin-header">
-        <h1 className="display">浮窗</h1>
+        <div>
+          <h1 className="display">浮窗</h1>
+          <p>控制首页右下角快捷入口的链接、图片和展示位置。</p>
+        </div>
       </header>
       <form className="admin-card admin-form" action="/api/admin/floating-widget" method="post">
         <label>

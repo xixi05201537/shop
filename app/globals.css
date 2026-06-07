@@ -1,17 +1,18 @@
 :root {
-  --rose-50: #fff5f8;
-  --rose-100: #ffe3ec;
-  --rose-200: #ffc4d8;
-  --rose-400: #ff70a6;
-  --rose-600: #d93672;
-  --cherry: #a91f52;
-  --cream: #fffaf0;
+  --rose-50: #fff7fa;
+  --rose-100: #ffe7f0;
+  --rose-200: #ffcadd;
+  --rose-400: #f875a7;
+  --rose-600: #cf2f6c;
+  --cherry: #98244f;
+  --cream: #fffdf5;
   --mint: #9ee6cf;
-  --lemon: #ffe890;
-  --ink: #3b2330;
-  --muted: #7b6570;
-  --line: rgba(169, 31, 82, 0.16);
-  --shadow: 0 22px 70px rgba(217, 54, 114, 0.18);
+  --lemon: #ffe793;
+  --blue: #b9dcff;
+  --ink: #352331;
+  --muted: #776471;
+  --line: rgba(152, 36, 79, 0.14);
+  --shadow: 0 24px 70px rgba(152, 36, 79, 0.14);
 }
 
 * {
@@ -26,11 +27,12 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--ink);
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: "Avenir Next", "Nunito", "Trebuchet MS", "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 14% 12%, rgba(255, 232, 144, 0.55), transparent 28%),
-    radial-gradient(circle at 86% 8%, rgba(158, 230, 207, 0.36), transparent 26%),
-    linear-gradient(135deg, #fff7fb 0%, #ffe5ef 44%, #fffaf0 100%);
+    radial-gradient(circle at 16% 10%, rgba(255, 231, 147, 0.52), transparent 24%),
+    radial-gradient(circle at 88% 12%, rgba(158, 230, 207, 0.4), transparent 24%),
+    radial-gradient(circle at 74% 82%, rgba(185, 220, 255, 0.32), transparent 28%),
+    linear-gradient(135deg, #fffafd 0%, #fff0f6 42%, #fffdf5 100%);
 }
 
 a {
@@ -55,7 +57,8 @@ button {
 }
 
 .display {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Avenir Next", "Nunito", "Trebuchet MS", "Segoe UI", sans-serif;
+  font-weight: 900;
 }
 
 .prose {
@@ -66,7 +69,8 @@ button {
 .prose h1,
 .prose h2,
 .prose h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Avenir Next", "Nunito", "Trebuchet MS", "Segoe UI", sans-serif;
+  font-weight: 900;
   margin-top: 1.4em;
 }
 
