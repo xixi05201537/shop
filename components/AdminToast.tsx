@@ -9,9 +9,10 @@ const messages: Record<string, string> = {
   deleted: "删除成功",
   uploaded: "上传成功",
   shipped: "发货邮件已发送",
+  note: "备注已保存",
 };
 
-const toastParams = ["saved", "deleted", "uploaded", "shipped", "resent"];
+const toastParams = ["saved", "deleted", "uploaded", "shipped", "resent", "note"];
 
 function resentMessage(value: string | null) {
   if (value === "buyer") return "买家邮件已发送";

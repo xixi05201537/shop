@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { CopyVariableButton } from "@/components/CopyVariableButton";
 import { RichTemplateEditor } from "@/components/RichTemplateEditor";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -22,9 +23,19 @@ const tabs = [
   { id: "seller", label: "卖家邮件配置" },
   { id: "shipment", label: "发货邮件配置" },
 ] as const;
+type EmailTabId = (typeof tabs)[number]["id"];
 
-export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; maskedPassword: string }) {
-  const [active, setActive] = useState<(typeof tabs)[number]["id"]>("smtp");
+export function EmailTabs({
+  config,
+  maskedPassword,
+  initialTab,
+}: {
+  config: EmailConfig;
+  maskedPassword: string;
+  initialTab?: string;
+}) {
+  const initialActive = tabs.some((tab) => tab.id === initialTab) ? (initialTab as EmailTabId) : "smtp";
+  const [active, setActive] = useState<EmailTabId>(initialActive);
   const buyerSubject = config.buyerEmailSubject || defaultBuyerEmailSubject;
   const buyerHtml = config.buyerEmailHtml || defaultBuyerEmailHtml;
   const adminSubject = config.adminEmailSubject || defaultAdminEmailSubject;
@@ -93,87 +104,167 @@ export function EmailTabs({ config, maskedPassword }: { config: EmailConfig; mas
       ) : null}
 
       {active === "buyer" ? (
-        <form className="admin-form" action="/api/admin/email" method="post">
-          <label className="checkbox-row">
-            <span>
-              <input name="buyerEmailEnabled" type="checkbox" defaultChecked={config.buyerEmailEnabled === "true"} /> 启用买家邮件
-            </span>
-          </label>
-          <label>
-            买家邮件标题
-            <input name="buyerEmailSubject" defaultValue={buyerSubject} />
-          </label>
-          <div className="email-template-layout">
-            <label>
-              买家富文本邮件模板
-              <RichTemplateEditor name="buyerEmailHtml" defaultValue={buyerHtml} onChange={setBuyerPreview} />
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <label className="checkbox-row">
+              <span>
+                <input name="buyerEmailEnabled" type="checkbox" defaultChecked={config.buyerEmailEnabled === "true"} /> 启用买家邮件
+              </span>
             </label>
-            <section className="email-preview-panel" aria-label="买家邮件预览">
-              <span>预览</span>
-              <div className="rich-preview" dangerouslySetInnerHTML={{ __html: buyerPreview }} />
-            </section>
-          </div>
-          <TemplateVariableHelp />
-          <SubmitButton loadingText="保存中...">
-            保存买家邮件
-          </SubmitButton>
-        </form>
+            <label>
+              买家邮件标题
+              <input name="buyerEmailSubject" defaultValue={buyerSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                买家富文本邮件模板
+                <RichTemplateEditor name="buyerEmailHtml" defaultValue={buyerHtml} onChange={setBuyerPreview} />
+              </label>
+              <section className="email-preview-panel" aria-label="买家邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: buyerPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp />
+            <SubmitButton loadingText="保存中...">
+              保存买家邮件
+            </SubmitButton>
+          </form>
+          <TestEmailForm target="buyer" />
+        </>
       ) : null}
 
       {active === "seller" ? (
-        <form className="admin-form" action="/api/admin/email" method="post">
-          <label className="checkbox-row">
-            <span>
-              <input name="adminEmailEnabled" type="checkbox" defaultChecked={config.adminEmailEnabled === "true"} /> 启用卖家邮件
-            </span>
-          </label>
-          <label>
-            卖家邮件标题
-            <input name="adminEmailSubject" defaultValue={adminSubject} />
-          </label>
-          <div className="email-template-layout">
-            <label>
-              卖家富文本邮件模板
-              <RichTemplateEditor name="adminEmailHtml" defaultValue={adminHtml} onChange={setAdminPreview} />
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <label className="checkbox-row">
+              <span>
+                <input name="adminEmailEnabled" type="checkbox" defaultChecked={config.adminEmailEnabled === "true"} /> 启用卖家邮件
+              </span>
             </label>
-            <section className="email-preview-panel" aria-label="卖家邮件预览">
-              <span>预览</span>
-              <div className="rich-preview" dangerouslySetInnerHTML={{ __html: adminPreview }} />
-            </section>
-          </div>
-          <TemplateVariableHelp />
-          <SubmitButton loadingText="保存中...">
-            保存卖家邮件
-          </SubmitButton>
-        </form>
+            <label>
+              卖家邮件标题
+              <input name="adminEmailSubject" defaultValue={adminSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                卖家富文本邮件模板
+                <RichTemplateEditor name="adminEmailHtml" defaultValue={adminHtml} onChange={setAdminPreview} />
+              </label>
+              <section className="email-preview-panel" aria-label="卖家邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: adminPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp />
+            <SubmitButton loadingText="保存中...">
+              保存卖家邮件
+            </SubmitButton>
+          </form>
+          <TestEmailForm target="seller" />
+        </>
       ) : null}
 
       {active === "shipment" ? (
-        <form className="admin-form" action="/api/admin/email" method="post">
-          <label className="checkbox-row">
-            <span>
-              <input name="shipmentEmailEnabled" type="checkbox" defaultChecked={config.shipmentEmailEnabled !== "false"} /> 启用发货邮件
-            </span>
-          </label>
-          <label>
-            发货邮件标题
-            <input name="shipmentEmailSubject" defaultValue={shipmentSubject} />
-          </label>
-          <div className="email-template-layout">
-            <label>
-              发货富文本邮件模板
-              <RichTemplateEditor name="shipmentEmailHtml" defaultValue={shipmentHtml} onChange={setShipmentPreview} />
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <label className="checkbox-row">
+              <span>
+                <input name="shipmentEmailEnabled" type="checkbox" defaultChecked={config.shipmentEmailEnabled !== "false"} /> 启用发货邮件
+              </span>
             </label>
-            <section className="email-preview-panel" aria-label="发货邮件预览">
-              <span>预览</span>
-              <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentPreview }} />
-            </section>
-          </div>
-          <TemplateVariableHelp highlightTracking />
-          <SubmitButton loadingText="保存中...">
-            保存发货邮件
-          </SubmitButton>
-        </form>
+            <label>
+              发货邮件标题
+              <input name="shipmentEmailSubject" defaultValue={shipmentSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                发货富文本邮件模板
+                <RichTemplateEditor name="shipmentEmailHtml" defaultValue={shipmentHtml} onChange={setShipmentPreview} />
+              </label>
+              <section className="email-preview-panel" aria-label="发货邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp highlightTracking />
+            <SubmitButton loadingText="保存中...">
+              保存发货邮件
+            </SubmitButton>
+          </form>
+          <TestEmailForm target="shipment" />
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function TestEmailForm({
+  target,
+}: {
+  target: "buyer" | "seller" | "shipment";
+}) {
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  const showToast = useCallback((message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setToast(null), 3200);
+  }, []);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/admin/email/test", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData,
+      });
+      const result = await response.json().catch(() => ({ success: false, error: "请求失败" }));
+      if (response.ok && result.success) {
+        showToast("测试邮件已发送", "success");
+        form.reset();
+      } else {
+        showToast(result.error || "发送失败", "error");
+      }
+    } catch {
+      showToast("网络错误，请重试", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section className="test-email-panel">
+      <div>
+        <strong>发送测试邮件</strong>
+        <span>使用已保存的 SMTP 和当前模板发送。</span>
+      </div>
+      <form onSubmit={handleSubmit}>
+        <input type="hidden" name="target" value={target} />
+        <input name="testEmail" placeholder="输入测试邮箱" type="email" required />
+        <button className="secondary-button" type="submit" disabled={loading}>
+          {loading ? (
+            <>
+              <span className="button-spinner" aria-hidden="true" />
+              发送中...
+            </>
+          ) : (
+            "发送测试"
+          )}
+        </button>
+      </form>
+      {toast ? (
+        <p className={`test-email-feedback is-${toast.type}`} role="status" aria-live="polite">
+          {toast.type === "success" ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+          <span>{toast.message}</span>
+        </p>
       ) : null}
     </section>
   );

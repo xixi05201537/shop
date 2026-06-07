@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
 import { orderWhereFromQuery, queryStringWithoutPage, type OrderFilterQuery } from "@/lib/order-filters";
@@ -78,7 +79,7 @@ export default async function OrdersAdmin({
               <th>订单号</th>
               <th>昵称</th>
               <th>邮箱</th>
-              <th>PayPal</th>
+              <th>备注</th>
               <th>总金额</th>
               <th>状态</th>
               <th>创建时间</th>
@@ -88,11 +89,23 @@ export default async function OrdersAdmin({
             {orders.map((order) => (
               <tr key={order.id}>
                 <td>
-                  <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
+                  <span className="copy-inline">
+                    <Link href={`/admin/orders/${order.id}`}>{order.orderNumber}</Link>
+                    <CopyLinkButton compact label="复制" value={order.orderNumber} />
+                  </span>
                 </td>
                 <td>{displayOrderNickname(order)}</td>
-                <td>{displayOrderEmail(order)}</td>
-                <td>{order.paypalOrderId || "-"}</td>
+                <td>
+                  <span className="copy-inline">
+                    {displayOrderEmail(order)}
+                    {displayOrderEmail(order) !== "-" ? <CopyLinkButton compact label="复制" value={displayOrderEmail(order)} /> : null}
+                  </span>
+                </td>
+                <td>
+                  <span className="order-note-cell" title={order.internalNote || ""}>
+                    {order.internalNote || "-"}
+                  </span>
+                </td>
                 <td>{formatUsd(order.totalAmount)}</td>
                 <td>
                   <span className={`status-badge status-${order.status}`}>{orderStatusLabel(order.status)}</span>

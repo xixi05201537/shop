@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { SubmitButton } from "@/components/SubmitButton";
+import { AmountTagEditor } from "./AmountTagEditor";
 import { ProductImageFields } from "./ProductImageFields";
 import { ProductImagePreview } from "./ProductImagePreview";
 
@@ -43,13 +44,9 @@ export function ProductAdminForm({ product, uploadedImages }: { product: Product
             onImageUrlChange={setImageUrl}
             uploadedImages={uploadedImages}
           />
-          <label>
-            可选金额
-            <input name="enabledAmounts" defaultValue={product.amounts} />
-          </label>
-          <label>
-            默认金额
-            <input name="defaultAmount" type="number" step="0.01" defaultValue={product.defaultAmount} />
+          <label className="amount-editor-field">
+            可选金额与默认金额
+            <AmountTagEditor amounts={product.amounts} defaultAmount={product.defaultAmount} />
           </label>
           <label>
             默认数量

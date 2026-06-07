@@ -79,6 +79,7 @@ model Order {
   shippedAt           DateTime?
   shipmentEmailStatus String    @default("pending")
   shipmentEmailError  String?   @db.LongText
+  internalNote        String?   @db.LongText
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   paidAt              DateTime?

@@ -3,7 +3,12 @@ import { EmailTabs } from "./EmailTabs";
 
 export const dynamic = "force-dynamic";
 
-export default async function EmailAdmin() {
+export default async function EmailAdmin({
+  searchParams,
+}: {
+  searchParams: Promise<{ test?: string }>;
+}) {
+  const query = await searchParams;
   const config = await getConfigMap();
 
   return (
@@ -14,7 +19,11 @@ export default async function EmailAdmin() {
           <p>配置 SMTP、买家通知、卖家通知和发货邮件模板。</p>
         </div>
       </header>
-      <EmailTabs config={config} maskedPassword={maskSecret(config.smtpPassword)} />
+      <EmailTabs
+        config={config}
+        initialTab={query.test}
+        maskedPassword={maskSecret(config.smtpPassword)}
+      />
     </>
   );
 }

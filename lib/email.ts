@@ -94,3 +94,74 @@ export async function sendShipmentEmail(order: Order) {
   });
   return "sent";
 }
+
+function testOrder(): Order {
+  const now = new Date();
+  return {
+    id: "test-order",
+    orderNumber: "PP-TEST-000001",
+    paypalOrderId: "PAYPAL-TEST-ORDER",
+    paypalCaptureId: "PAYPAL-TEST-CAPTURE",
+    productNameSnapshot: "Misaki Live Stream Deposit",
+    productImageSnapshot: null,
+    buyerEmail: "buyer@example.com",
+    buyerNickname: "Misaki",
+    paypalBuyerEmail: "paypal-buyer@example.com",
+    paypalBuyerNickname: "PayPal Buyer",
+    paypalPayerId: "PAYER-TEST",
+    paypalShippingName: "Misaki",
+    paypalShippingAddress: "Tokyo, Japan",
+    unitAmount: 1,
+    quantity: 2,
+    totalAmount: 2,
+    currency: "USD",
+    status: "paid",
+    paypalRawSummary: null,
+    buyerEmailStatus: "pending",
+    buyerEmailError: null,
+    adminEmailStatus: "pending",
+    adminEmailError: null,
+    trackingNumber: "TRACK-TEST-123",
+    shippedAt: now,
+    shipmentEmailStatus: "pending",
+    shipmentEmailError: null,
+    internalNote: null,
+    createdAt: now,
+    updatedAt: now,
+    paidAt: now,
+  };
+}
+
+export async function sendTestEmail(target: string, to: string) {
+  const { config, mailer } = await transporter();
+  const order = testOrder();
+  const from = `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`;
+
+  if (target === "seller") {
+    await mailer.sendMail({
+      from,
+      to,
+      subject: `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order)}`,
+      html: renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order),
+    });
+    return "sent";
+  }
+
+  if (target === "shipment") {
+    await mailer.sendMail({
+      from,
+      to,
+      subject: `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order)}`,
+      html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order),
+    });
+    return "sent";
+  }
+
+  await mailer.sendMail({
+    from,
+    to,
+    subject: `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order)}`,
+    html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order),
+  });
+  return "sent";
+}

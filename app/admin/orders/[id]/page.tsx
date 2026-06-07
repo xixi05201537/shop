@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SubmitButton } from "@/components/SubmitButton";
 import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
 import { formatUsd } from "@/lib/format";
@@ -23,7 +24,10 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <dl className="stat-grid">
           <div className="stat-card">
             <span>订单号</span>
-            <strong>{order.orderNumber}</strong>
+            <strong className="stat-copy-value">
+              {order.orderNumber}
+              <CopyLinkButton compact label="复制" value={order.orderNumber} />
+            </strong>
           </div>
           <div className="stat-card">
             <span>状态</span>
@@ -38,19 +42,48 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <strong>{order.quantity}</strong>
           </div>
         </dl>
+        <form className="internal-note-form" action="/api/admin/orders/note" method="post">
+          <input type="hidden" name="id" value={order.id} />
+          <label>
+            内部备注
+            <textarea
+              name="internalNote"
+              defaultValue={order.internalNote || ""}
+              placeholder="例如：客户已联系、已人工确认、特殊要求。仅后台可见。"
+            />
+          </label>
+          <SubmitButton className="secondary-button" loadingText="保存中...">
+            保存备注
+          </SubmitButton>
+        </form>
         <table className="admin-table">
           <tbody>
             <tr>
               <th>PayPal 订单 ID</th>
-              <td>{order.paypalOrderId || "-"}</td>
+              <td>
+                <span className="copy-inline">
+                  {order.paypalOrderId || "-"}
+                  {order.paypalOrderId ? <CopyLinkButton compact label="复制" value={order.paypalOrderId} /> : null}
+                </span>
+              </td>
             </tr>
             <tr>
               <th>PayPal 捕获 ID</th>
-              <td>{order.paypalCaptureId || "-"}</td>
+              <td>
+                <span className="copy-inline">
+                  {order.paypalCaptureId || "-"}
+                  {order.paypalCaptureId ? <CopyLinkButton compact label="复制" value={order.paypalCaptureId} /> : null}
+                </span>
+              </td>
             </tr>
             <tr>
               <th>买家邮箱</th>
-              <td>{displayOrderEmail(order)}</td>
+              <td>
+                <span className="copy-inline">
+                  {displayOrderEmail(order)}
+                  {displayOrderEmail(order) !== "-" ? <CopyLinkButton compact label="复制" value={displayOrderEmail(order)} /> : null}
+                </span>
+              </td>
             </tr>
             <tr>
               <th>买家昵称</th>
@@ -121,7 +154,10 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               <th>发货信息</th>
               <td>
                 <div className="email-log-row">
-                  <span>运单号：{order.trackingNumber || "-"}</span>
+                  <span className="copy-inline">
+                    运单号：{order.trackingNumber || "-"}
+                    {order.trackingNumber ? <CopyLinkButton compact label="复制" value={order.trackingNumber} /> : null}
+                  </span>
                   <span>发货时间：{order.shippedAt?.toLocaleString() || "-"}</span>
                 </div>
               </td>

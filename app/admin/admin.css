@@ -945,6 +945,80 @@ button.uploaded-image-card {
   background: #f0fff4;
 }
 
+.test-email-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(152, 36, 79, 0.12);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 250, 253, 0.78);
+}
+
+.test-email-panel > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.test-email-panel strong {
+  color: var(--ink);
+  font-weight: 1000;
+}
+
+.test-email-panel span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.test-email-panel form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.test-email-panel form input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 13px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.test-email-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0;
+  border: 1px solid rgba(47, 133, 90, 0.22);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #f0fff4;
+  color: #2f855a;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.test-email-feedback.is-error {
+  border-color: rgba(152, 36, 79, 0.22);
+  background: rgba(255, 231, 240, 0.7);
+  color: var(--cherry);
+}
+
+.test-email-feedback span {
+  color: inherit;
+  font-size: inherit;
+}
+
+.compact-notice {
+  margin: 0;
+}
+
 .wide-dialog {
   width: min(880px, calc(100vw - 32px));
 }
@@ -1046,6 +1120,145 @@ button.uploaded-image-card {
   color: var(--ink);
   font-size: 0.88rem;
   font-weight: 900;
+}
+
+.compact-copy-button {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.copy-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.order-note-cell {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--muted);
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-copy-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.internal-note-form {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  border: 1px solid rgba(152, 36, 79, 0.12);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 250, 253, 0.78);
+}
+
+.internal-note-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.internal-note-form textarea {
+  width: 100%;
+  min-height: 110px;
+  border: 1px solid rgba(152, 36, 79, 0.14);
+  border-radius: 14px;
+  padding: 12px 13px;
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.internal-note-form .secondary-button {
+  width: fit-content;
+}
+
+.amount-editor-field {
+  grid-column: 1 / -1;
+}
+
+.amount-tag-editor {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(152, 36, 79, 0.12);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(255, 250, 253, 0.78);
+}
+
+.amount-tag-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.amount-admin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(152, 36, 79, 0.16);
+  border-radius: 999px;
+  padding: 8px 10px 8px 13px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.amount-admin-tag small {
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(152, 36, 79, 0.08);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.amount-admin-tag.is-default {
+  border-color: rgba(152, 36, 79, 0.34);
+  background: var(--rose-100);
+  color: var(--cherry);
+}
+
+.amount-admin-tag.is-default small {
+  background: #fff;
+  color: var(--cherry);
+}
+
+.amount-tag-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.amount-tag-remove:hover {
+  background: rgba(152, 36, 79, 0.1);
+  color: var(--cherry);
+}
+
+.amount-add-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
 }
 
 .rich-editor-body {
