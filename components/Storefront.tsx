@@ -37,16 +37,20 @@ declare global {
 }
 
 export function Storefront({ product, config }: { product: ProductView; config: PublicConfig }) {
-  const [amount, setAmount] = useState(product.defaultAmount);
+  const [amountInput, setAmountInput] = useState(formatAmountInput(product.defaultAmount));
   const [quantity, setQuantity] = useState(product.defaultQuantity);
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const amount = useMemo(() => {
+    const parsed = Number(amountInput);
+    return Number.isFinite(parsed) && parsed > 0 ? Number(parsed.toFixed(2)) : 0;
+  }, [amountInput]);
   const checkoutRef = useRef({ amount, quantity, email, nickname });
   const paypalRenderedRef = useRef(false);
   const paypalButtonsRef = useRef<PaypalButtonsInstance | null>(null);
-  const total = useMemo(() => amount * quantity, [amount, quantity]);
+  const total = useMemo(() => Number((amount * quantity).toFixed(2)), [amount, quantity]);
 
   const imageSrc =
     product.imageSource === "upload" && product.uploadedImagePath
@@ -83,6 +87,10 @@ export function Storefront({ product, config }: { product: ProductView; config: 
       paypalButtonsRef.current = window.paypal.Buttons({
         onClick: async (_data: unknown, actions?: { reject?: () => Promise<void> | void; resolve?: () => Promise<void> | void }) => {
           setMessage("");
+          if (checkoutRef.current.amount <= 0) {
+            setMessage("Please enter an amount greater than 0.");
+            return actions?.reject ? actions.reject() : Promise.reject(new Error("Please enter an amount greater than 0."));
+          }
           return actions?.resolve ? actions.resolve() : Promise.resolve();
         },
         createOrder: async () => {
@@ -212,16 +220,31 @@ export function Storefront({ product, config }: { product: ProductView; config: 
             <div className="amount-grid">
               {product.enabledAmounts.map((item) => (
                 <button
-                  className={item === amount ? "amount-chip active" : "amount-chip"}
+                  className={Math.abs(item - amount) < 0.001 ? "amount-chip active" : "amount-chip"}
                   key={item}
                   type="button"
-                  onClick={() => setAmount(item)}
+                  onClick={() => setAmountInput(formatAmountInput(item))}
                 >
-                  {item === amount ? <CheckCircle size={15} /> : null}
+                  {Math.abs(item - amount) < 0.001 ? <CheckCircle size={15} /> : null}
                   {formatUsd(item)}
                 </button>
               ))}
             </div>
+            <label className="custom-amount-field">
+              <span>Custom amount</span>
+              <input
+                value={amountInput}
+                onChange={(event) => setAmountInput(event.target.value)}
+                onBlur={() => {
+                  if (amount > 0) setAmountInput(formatAmountInput(amount));
+                }}
+                placeholder="Enter amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                inputMode="decimal"
+              />
+            </label>
           </div>
 
           <div className="quantity-row">
@@ -321,4 +344,8 @@ export function Storefront({ product, config }: { product: ProductView; config: 
       ) : null}
     </main>
   );
+}
+
+function formatAmountInput(value: number) {
+  return Number(value.toFixed(2)).toString();
 }
