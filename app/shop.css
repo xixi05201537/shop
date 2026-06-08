@@ -643,7 +643,7 @@
 
 @media (max-width: 640px) {
   .shop-page {
-    padding-bottom: 108px;
+    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
   }
 
   .hero-grid {
@@ -769,10 +769,16 @@
   }
 
   .mobile-checkout-bar {
+    --mobile-checkout-offset: 12px;
+    --mobile-checkout-visual-bottom: 0px;
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: 12px;
+    bottom: calc(
+      var(--mobile-checkout-offset) +
+      env(safe-area-inset-bottom, 0px) +
+      var(--mobile-checkout-visual-bottom)
+    );
     z-index: 30;
     display: flex;
     align-items: center;

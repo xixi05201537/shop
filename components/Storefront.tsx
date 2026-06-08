@@ -49,6 +49,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   }, [amountInput]);
   const checkoutRef = useRef({ amount, quantity, email, nickname });
   const paypalBoxRef = useRef<HTMLDivElement | null>(null);
+  const mobileCheckoutBarRef = useRef<HTMLDivElement | null>(null);
   const paypalRenderedRef = useRef(false);
   const paypalButtonsRef = useRef<PaypalButtonsInstance | null>(null);
   const total = useMemo(() => Number((amount * quantity).toFixed(2)), [amount, quantity]);
@@ -66,6 +67,28 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   useEffect(() => {
     checkoutRef.current = { amount, quantity, email, nickname };
   }, [amount, quantity, email, nickname]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const bar = mobileCheckoutBarRef.current;
+    if (!viewport || !bar) return;
+
+    const syncVisualViewport = () => {
+      const hiddenBottom = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      bar.style.setProperty("--mobile-checkout-visual-bottom", `${hiddenBottom}px`);
+    };
+
+    syncVisualViewport();
+    viewport.addEventListener("resize", syncVisualViewport);
+    viewport.addEventListener("scroll", syncVisualViewport);
+    window.addEventListener("orientationchange", syncVisualViewport);
+
+    return () => {
+      viewport.removeEventListener("resize", syncVisualViewport);
+      viewport.removeEventListener("scroll", syncVisualViewport);
+      window.removeEventListener("orientationchange", syncVisualViewport);
+    };
+  }, []);
 
   useEffect(() => {
     if (!config.paypalClientId) return;
@@ -86,6 +109,12 @@ export function Storefront({ product, config }: { product: ProductView; config: 
       window.clearInterval(interval);
       paypalRenderedRef.current = true;
       paypalButtonsRef.current = window.paypal.Buttons({
+        style: {
+          layout: "vertical",
+          shape: "pill",
+          height: 48,
+          tagline: false,
+        },
         onClick: async (_data: unknown, actions?: { reject?: () => Promise<void> | void; resolve?: () => Promise<void> | void }) => {
           setMessage("");
           if (checkoutRef.current.amount <= 0) {
@@ -340,7 +369,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
         </div>
       </section>
 
-      <div className="mobile-checkout-bar" aria-label="Checkout summary">
+      <div className="mobile-checkout-bar" ref={mobileCheckoutBarRef} aria-label="Checkout summary">
         <div>
           <span>Total</span>
           <strong>{formatUsd(total)}</strong>
