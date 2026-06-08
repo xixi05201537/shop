@@ -73,7 +73,7 @@ export default async function OrdersAdmin({
             </Link>
           </form>
         </div>
-        <table className="admin-table">
+        <table className="admin-table orders-table">
           <thead>
             <tr>
               <th>订单号</th>

@@ -17,13 +17,22 @@ export async function getPaypalSettings() {
     "paypalSandboxWebhookId",
     "paypalLiveWebhookId",
   ]);
-  const env = config.paypalEnv || "sandbox";
+  const env = firstValue(config.paypalEnv, process.env.PAYPAL_ENV, "sandbox");
+  const legacyClientId = firstValue(config.paypalClientId, process.env.PAYPAL_CLIENT_ID);
+  const legacyClientSecret = firstValue(config.paypalClientSecret, process.env.PAYPAL_CLIENT_SECRET);
+  const legacyWebhookId = firstValue(config.paypalWebhookId, process.env.PAYPAL_WEBHOOK_ID);
   const clientId =
-    env === "live" ? config.paypalLiveClientId : config.paypalSandboxClientId || config.paypalClientId;
+    env === "live"
+      ? firstValue(config.paypalLiveClientId, process.env.PAYPAL_LIVE_CLIENT_ID, legacyClientId)
+      : firstValue(config.paypalSandboxClientId, process.env.PAYPAL_SANDBOX_CLIENT_ID, legacyClientId);
   const clientSecret =
-    env === "live" ? config.paypalLiveClientSecret : config.paypalSandboxClientSecret || config.paypalClientSecret;
+    env === "live"
+      ? firstValue(config.paypalLiveClientSecret, process.env.PAYPAL_LIVE_CLIENT_SECRET, legacyClientSecret)
+      : firstValue(config.paypalSandboxClientSecret, process.env.PAYPAL_SANDBOX_CLIENT_SECRET, legacyClientSecret);
   const webhookId =
-    env === "live" ? config.paypalLiveWebhookId : config.paypalSandboxWebhookId || config.paypalWebhookId;
+    env === "live"
+      ? firstValue(config.paypalLiveWebhookId, process.env.PAYPAL_LIVE_WEBHOOK_ID, legacyWebhookId)
+      : firstValue(config.paypalSandboxWebhookId, process.env.PAYPAL_SANDBOX_WEBHOOK_ID, legacyWebhookId);
 
   return {
     clientId,
@@ -133,4 +142,12 @@ export async function verifyPaypalWebhook(headers: Headers, body: string) {
   if (!response.ok) return false;
   const data = (await response.json()) as { verification_status?: string };
   return data.verification_status === "SUCCESS";
+}
+
+function firstValue(...values: Array<string | undefined | null>) {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
 }

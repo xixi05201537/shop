@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsAdmin() {
   const config = await getConfigMap();
-  const sandboxClientId = config.paypalSandboxClientId || config.paypalClientId || "";
-  const sandboxSecret = config.paypalSandboxClientSecret || config.paypalClientSecret || "";
-  const sandboxWebhookId = config.paypalSandboxWebhookId || config.paypalWebhookId || "";
+  const sandboxClientId = config.paypalSandboxClientId || config.paypalClientId || process.env.PAYPAL_CLIENT_ID || "";
+  const sandboxSecret = config.paypalSandboxClientSecret || config.paypalClientSecret || process.env.PAYPAL_CLIENT_SECRET || "";
+  const sandboxWebhookId = config.paypalSandboxWebhookId || config.paypalWebhookId || process.env.PAYPAL_WEBHOOK_ID || "";
 
   return (
     <>
