@@ -703,7 +703,7 @@
   }
 
   .trust-row {
-    margin-top: 12px;
+    display: none;
   }
 
   .option-block {

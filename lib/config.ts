@@ -50,11 +50,12 @@ export async function getConfigValues(keys: string[]) {
 
 export async function getPublicConfig(): Promise<PublicConfig> {
   const config = await getConfigMap();
-  const paypalEnv = config.paypalEnv || "sandbox";
+  const paypalEnv = firstValue(config.paypalEnv, process.env.PAYPAL_ENV, "sandbox");
+  const legacyClientId = firstValue(config.paypalClientId, process.env.PAYPAL_CLIENT_ID);
   const paypalClientId =
     paypalEnv === "live"
-      ? config.paypalLiveClientId || ""
-      : config.paypalSandboxClientId || config.paypalClientId || "";
+      ? firstValue(config.paypalLiveClientId, process.env.PAYPAL_LIVE_CLIENT_ID, legacyClientId)
+      : firstValue(config.paypalSandboxClientId, process.env.PAYPAL_SANDBOX_CLIENT_ID, legacyClientId);
 
   return {
     paypalClientId,
@@ -77,4 +78,12 @@ export function maskSecret(value?: string) {
   if (!value) return "";
   if (value.length <= 8) return "********";
   return `${value.slice(0, 4)}****${value.slice(-4)}`;
+}
+
+function firstValue(...values: Array<string | undefined | null>) {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
 }

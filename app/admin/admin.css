@@ -1139,7 +1139,7 @@ button.uploaded-image-card {
 
 .order-note-cell {
   display: block;
-  max-width: 240px;
+  max-width: 420px;
   overflow: hidden;
   color: var(--muted);
   font-weight: 850;
@@ -1690,6 +1690,16 @@ button.uploaded-image-card {
   min-width: 860px;
   border-collapse: separate;
   border-spacing: 0;
+}
+
+.orders-table {
+  min-width: 1180px;
+}
+
+.orders-table th:nth-child(4),
+.orders-table td:nth-child(4) {
+  width: 28%;
+  min-width: 360px;
 }
 
 .admin-card:has(.admin-table) {
