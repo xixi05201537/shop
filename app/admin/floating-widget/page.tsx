@@ -57,9 +57,11 @@ export default async function FloatingAdmin() {
             </select>
           </label>
         </div>
-        <SubmitButton loadingText="保存中...">
-          保存浮窗
-        </SubmitButton>
+        <div className="admin-save-bar">
+          <SubmitButton loadingText="保存中...">
+            保存浮窗
+          </SubmitButton>
+        </div>
       </form>
     </>
   );

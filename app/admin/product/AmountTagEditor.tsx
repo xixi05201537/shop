@@ -33,60 +33,62 @@ export function AmountTagEditor({ amounts, defaultAmount }: AmountTagEditorProps
     <div className="amount-tag-editor">
       <input name="enabledAmounts" type="hidden" value={values.join(",")} />
       <input name="defaultAmount" type="hidden" value={normalizedDefault} />
-      <div className="amount-tag-list">
-        {values.map((amount) => {
-          const isDefault = Math.abs(amount - normalizedDefault) < 0.001;
-          return (
-            <button
-              className={isDefault ? "amount-admin-tag is-default" : "amount-admin-tag"}
-              key={amount}
-              type="button"
-              onClick={() => setDefaultValue(amount)}
-            >
-              <span>${formatAmount(amount)}</span>
-              <small>{isDefault ? "默认" : "设默认"}</small>
-              <span
-                className="amount-tag-remove"
-                role="button"
-                tabIndex={0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  commitValues(values.filter((item) => Math.abs(item - amount) >= 0.001));
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
+      <div className="amount-tag-row">
+        <div className="amount-tag-list">
+          {values.map((amount) => {
+            const isDefault = Math.abs(amount - normalizedDefault) < 0.001;
+            return (
+              <button
+                className={isDefault ? "amount-admin-tag is-default" : "amount-admin-tag"}
+                key={amount}
+                type="button"
+                onClick={() => setDefaultValue(amount)}
+              >
+                <span>${formatAmount(amount)}</span>
+                <small>{isDefault ? "默认" : "设默认"}</small>
+                <span
+                  className="amount-tag-remove"
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
                     event.stopPropagation();
                     commitValues(values.filter((item) => Math.abs(item - amount) >= 0.001));
-                  }
-                }}
-                aria-label={`删除金额 ${formatAmount(amount)}`}
-              >
-                <X size={13} />
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="amount-add-row">
-        <input
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              addAmount();
-            }
-          }}
-          inputMode="decimal"
-          placeholder="新增金额，例如 20"
-          type="number"
-          min="0.01"
-          step="0.01"
-        />
-        <button className="secondary-button" type="button" onClick={addAmount}>
-          <Plus size={16} /> 添加金额
-        </button>
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      commitValues(values.filter((item) => Math.abs(item - amount) >= 0.001));
+                    }
+                  }}
+                  aria-label={`删除金额 ${formatAmount(amount)}`}
+                >
+                  <X size={13} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="amount-add-row">
+          <input
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addAmount();
+              }
+            }}
+            inputMode="decimal"
+            placeholder="新增金额，例如 20"
+            type="number"
+            min="0.01"
+            step="0.01"
+          />
+          <button className="secondary-button" type="button" onClick={addAmount}>
+            <Plus size={16} /> 添加金额
+          </button>
+        </div>
       </div>
       <p className="admin-help">点击金额标签可设为默认；点标签右侧的小叉可删除。</p>
     </div>

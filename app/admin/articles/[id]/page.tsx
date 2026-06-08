@@ -44,14 +44,16 @@ export default async function EditArticle({ params }: { params: Promise<{ id: st
           Markdown
           <textarea className="article-markdown-field" name="content" defaultValue={article.content} required />
         </label>
-        <label>
-          <span>
-            <input name="published" type="checkbox" defaultChecked={article.published} /> 发布
-          </span>
-        </label>
-        <SubmitButton loadingText="保存中...">
-          保存文章
-        </SubmitButton>
+        <div className="admin-save-bar">
+          <label className="checkbox-row">
+            <span>
+              <input name="published" type="checkbox" defaultChecked={article.published} /> 发布
+            </span>
+          </label>
+          <SubmitButton loadingText="保存中...">
+            保存文章
+          </SubmitButton>
+        </div>
       </form>
     </>
   );

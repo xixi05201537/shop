@@ -97,9 +97,11 @@ export function EmailTabs({
               <input name="adminNotifyEmail" defaultValue={config.adminNotifyEmail || ""} />
             </label>
           </div>
-          <SubmitButton loadingText="保存中...">
-            保存 SMTP 配置
-          </SubmitButton>
+          <div className="admin-save-bar">
+            <SubmitButton loadingText="保存中...">
+              保存 SMTP 配置
+            </SubmitButton>
+          </div>
         </form>
       ) : null}
 
@@ -126,9 +128,11 @@ export function EmailTabs({
               </section>
             </div>
             <TemplateVariableHelp />
-            <SubmitButton loadingText="保存中...">
-              保存买家邮件
-            </SubmitButton>
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">
+                保存买家邮件
+              </SubmitButton>
+            </div>
           </form>
           <TestEmailForm target="buyer" />
         </>
@@ -157,9 +161,11 @@ export function EmailTabs({
               </section>
             </div>
             <TemplateVariableHelp />
-            <SubmitButton loadingText="保存中...">
-              保存卖家邮件
-            </SubmitButton>
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">
+                保存卖家邮件
+              </SubmitButton>
+            </div>
           </form>
           <TestEmailForm target="seller" />
         </>
@@ -188,9 +194,11 @@ export function EmailTabs({
               </section>
             </div>
             <TemplateVariableHelp highlightTracking />
-            <SubmitButton loadingText="保存中...">
-              保存发货邮件
-            </SubmitButton>
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">
+                保存发货邮件
+              </SubmitButton>
+            </div>
           </form>
           <TestEmailForm target="shipment" />
         </>

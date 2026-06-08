@@ -65,12 +65,12 @@ export function ProductAdminForm({ product, uploadedImages }: { product: Product
           详情 Markdown
           <textarea name="longDescriptionMarkdown" defaultValue={product.longDescriptionMarkdown} />
         </label>
-        <label className="checkbox-row">
-          <span>
-            <input name="isActive" type="checkbox" defaultChecked={product.isActive} /> 启用商品
-          </span>
-        </label>
-        <div className="admin-actions">
+        <div className="admin-save-bar">
+          <label className="checkbox-row">
+            <span>
+              <input name="isActive" type="checkbox" defaultChecked={product.isActive} /> 启用商品
+            </span>
+          </label>
           <SubmitButton loadingText="保存中...">
             保存商品
           </SubmitButton>
