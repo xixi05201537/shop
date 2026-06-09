@@ -1038,12 +1038,6 @@ button.uploaded-image-card {
   transform: translateY(-1px);
 }
 
-.template-variable-button.is-important {
-  border-color: rgba(169, 31, 82, 0.32);
-  color: var(--cherry);
-  background: var(--rose-100);
-}
-
 .template-variable-button.is-copied {
   border-color: rgba(47, 133, 90, 0.28);
   color: #2f855a;
@@ -1196,6 +1190,30 @@ button.uploaded-image-card {
   border-radius: 8px;
   background: #fff;
   color: var(--cherry);
+}
+
+.rich-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.rich-toolbar button.is-active {
+  background: var(--cherry);
+  color: #fff;
+}
+
+.rich-toolbar .rich-toolbar-preset {
+  display: inline-flex;
+  width: auto;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.rich-toolbar .rich-toolbar-preset span {
+  color: inherit;
+  font-size: inherit;
 }
 
 .rich-toolbar span {
@@ -1383,6 +1401,20 @@ button.uploaded-image-card {
 .rich-editor-body > div,
 .rich-editor-body .ProseMirror {
   height: 100%;
+}
+
+.rich-editor-source {
+  width: 100%;
+  min-height: clamp(320px, 36vh, 460px);
+  height: 100%;
+  border: 0;
+  padding: 14px;
+  color: var(--ink);
+  font-family: "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
 }
 
 .rich-editor-surface {
@@ -1650,6 +1682,7 @@ button.uploaded-image-card {
 .admin-form select:focus,
 .admin-filter-grid input:focus,
 .admin-filter-grid select:focus,
+.rich-editor-source:focus,
 .rich-editor-surface:focus {
   outline: 3px solid rgba(248, 117, 167, 0.24);
   outline-offset: 1px;

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 
-export function CopyVariableButton({ value, important = false }: { value: string; important?: boolean }) {
+export function CopyVariableButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -18,7 +18,7 @@ export function CopyVariableButton({ value, important = false }: { value: string
 
   return (
     <button
-      className={`template-variable-button${important ? " is-important" : ""}${copied ? " is-copied" : ""}`}
+      className={`template-variable-button${copied ? " is-copied" : ""}`}
       type="button"
       onClick={handleCopy}
       title={`复制 ${value}`}

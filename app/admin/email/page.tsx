@@ -6,10 +6,11 @@ export const dynamic = "force-dynamic";
 export default async function EmailAdmin({
   searchParams,
 }: {
-  searchParams: Promise<{ test?: string }>;
+  searchParams: Promise<{ tab?: string; test?: string }>;
 }) {
   const query = await searchParams;
   const config = await getConfigMap();
+  const initialTab = query.tab || query.test;
 
   return (
     <>
@@ -21,7 +22,7 @@ export default async function EmailAdmin({
       </header>
       <EmailTabs
         config={config}
-        initialTab={query.test}
+        initialTab={initialTab}
         maskedPassword={maskSecret(config.smtpPassword)}
       />
     </>

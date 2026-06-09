@@ -108,6 +108,7 @@ export function EmailTabs({
       {active === "buyer" ? (
         <>
           <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="buyer" />
             <label className="checkbox-row">
               <span>
                 <input name="buyerEmailEnabled" type="checkbox" defaultChecked={config.buyerEmailEnabled === "true"} /> 启用买家邮件
@@ -120,7 +121,12 @@ export function EmailTabs({
             <div className="email-template-layout">
               <label>
                 买家富文本邮件模板
-                <RichTemplateEditor name="buyerEmailHtml" defaultValue={buyerHtml} onChange={setBuyerPreview} />
+                <RichTemplateEditor
+                  name="buyerEmailHtml"
+                  defaultValue={buyerHtml}
+                  onChange={setBuyerPreview}
+                  presets={[{ label: "使用精致模板", value: defaultBuyerEmailHtml }]}
+                />
               </label>
               <section className="email-preview-panel" aria-label="买家邮件预览">
                 <span>预览</span>
@@ -141,6 +147,7 @@ export function EmailTabs({
       {active === "seller" ? (
         <>
           <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="seller" />
             <label className="checkbox-row">
               <span>
                 <input name="adminEmailEnabled" type="checkbox" defaultChecked={config.adminEmailEnabled === "true"} /> 启用卖家邮件
@@ -153,7 +160,12 @@ export function EmailTabs({
             <div className="email-template-layout">
               <label>
                 卖家富文本邮件模板
-                <RichTemplateEditor name="adminEmailHtml" defaultValue={adminHtml} onChange={setAdminPreview} />
+                <RichTemplateEditor
+                  name="adminEmailHtml"
+                  defaultValue={adminHtml}
+                  onChange={setAdminPreview}
+                  presets={[{ label: "使用精致模板", value: defaultAdminEmailHtml }]}
+                />
               </label>
               <section className="email-preview-panel" aria-label="卖家邮件预览">
                 <span>预览</span>
@@ -174,6 +186,7 @@ export function EmailTabs({
       {active === "shipment" ? (
         <>
           <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="shipment" />
             <label className="checkbox-row">
               <span>
                 <input name="shipmentEmailEnabled" type="checkbox" defaultChecked={config.shipmentEmailEnabled !== "false"} /> 启用发货邮件
@@ -186,14 +199,19 @@ export function EmailTabs({
             <div className="email-template-layout">
               <label>
                 发货富文本邮件模板
-                <RichTemplateEditor name="shipmentEmailHtml" defaultValue={shipmentHtml} onChange={setShipmentPreview} />
+                <RichTemplateEditor
+                  name="shipmentEmailHtml"
+                  defaultValue={shipmentHtml}
+                  onChange={setShipmentPreview}
+                  presets={[{ label: "使用精致模板", value: defaultShipmentEmailHtml }]}
+                />
               </label>
               <section className="email-preview-panel" aria-label="发货邮件预览">
                 <span>预览</span>
                 <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentPreview }} />
               </section>
             </div>
-            <TemplateVariableHelp highlightTracking />
+            <TemplateVariableHelp />
             <div className="admin-save-bar">
               <SubmitButton loadingText="保存中...">
                 保存发货邮件
@@ -236,7 +254,7 @@ function TestEmailForm({
       });
       const result = await response.json().catch(() => ({ success: false, error: "请求失败" }));
       if (response.ok && result.success) {
-        showToast("测试邮件已发送", "success");
+        showToast(result.messageId ? `SMTP 已接受：${result.messageId}` : "SMTP 已接受测试邮件", "success");
         form.reset();
       } else {
         showToast(result.error || "发送失败", "error");
@@ -278,17 +296,13 @@ function TestEmailForm({
   );
 }
 
-function TemplateVariableHelp({ highlightTracking = false }: { highlightTracking?: boolean }) {
+function TemplateVariableHelp() {
   return (
     <div className="template-variable-help">
       <span>可用变量</span>
       <div>
         {templateVariables.map((variable) => (
-          <CopyVariableButton
-            important={highlightTracking && variable === "{{trackingNumber}}"}
-            key={variable}
-            value={variable}
-          />
+          <CopyVariableButton key={variable} value={variable} />
         ))}
       </div>
     </div>

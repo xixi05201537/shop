@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import { getConfigMap } from "@/lib/config";
 import {
   defaultAdminEmailHtml,
@@ -31,6 +32,68 @@ function renderTemplate(template: string, order: Order) {
   );
 }
 
+function renderTextFromHtml(html: string) {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<\/(h1|h2|h3|p|div|tr|li)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function recipientText(value: string | nodemailer.SendMailOptions["to"]) {
+  if (!value) return [];
+  return String(value)
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function addressText(value: string | { address?: string }) {
+  return (typeof value === "string" ? value : value.address || "").trim().toLowerCase();
+}
+
+function assertAccepted(info: SMTPTransport.SentMessageInfo, to: string | nodemailer.SendMailOptions["to"]) {
+  const expected = recipientText(to);
+  const accepted = info.accepted.map(addressText).filter(Boolean);
+  const rejected = info.rejected.map(addressText).filter(Boolean);
+  const missing = expected.filter((address) => !accepted.includes(address));
+
+  if (missing.length) {
+    throw new Error(
+      `SMTP did not accept recipient: ${missing.join(", ")}${
+        rejected.length ? `. Rejected: ${rejected.join(", ")}` : ""
+      }`,
+    );
+  }
+
+  console.info("Email accepted by SMTP", {
+    to: expected,
+    messageId: info.messageId,
+    response: info.response,
+  });
+}
+
+async function sendHtmlMail(
+  mailer: nodemailer.Transporter<SMTPTransport.SentMessageInfo>,
+  options: nodemailer.SendMailOptions & { html: string; to: string | nodemailer.SendMailOptions["to"] },
+) {
+  const info = await mailer.sendMail({
+    ...options,
+    text: options.text || renderTextFromHtml(options.html),
+  });
+  assertAccepted(info, options.to);
+  return info;
+}
+
 async function transporter() {
   const config = await getConfigMap();
   if (!config.smtpHost || !config.smtpFromEmail) {
@@ -49,7 +112,7 @@ async function transporter() {
             pass: config.smtpPassword,
           }
         : undefined,
-    }),
+    }) as nodemailer.Transporter<SMTPTransport.SentMessageInfo>,
   };
 }
 
@@ -58,7 +121,7 @@ export async function sendBuyerEmail(order: Order) {
   const recipients = orderEmailRecipients(order);
   if (!recipients.to) return "skipped";
   if (config.buyerEmailEnabled !== "true") return "disabled";
-  await mailer.sendMail({
+  await sendHtmlMail(mailer, {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: recipients.to,
     cc: recipients.cc,
@@ -71,7 +134,7 @@ export async function sendBuyerEmail(order: Order) {
 export async function sendAdminEmail(order: Order) {
   const { config, mailer } = await transporter();
   if (config.adminEmailEnabled !== "true") return "disabled";
-  await mailer.sendMail({
+  await sendHtmlMail(mailer, {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: config.adminNotifyEmail,
     subject: renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order),
@@ -85,7 +148,7 @@ export async function sendShipmentEmail(order: Order) {
   const recipients = orderEmailRecipients(order);
   if (!recipients.to) return "skipped";
   if (config.shipmentEmailEnabled === "false") return "disabled";
-  await mailer.sendMail({
+  await sendHtmlMail(mailer, {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: recipients.to,
     cc: recipients.cc,
@@ -138,30 +201,36 @@ export async function sendTestEmail(target: string, to: string) {
   const from = `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`;
 
   if (target === "seller") {
-    await mailer.sendMail({
+    const subject = `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order)}`;
+    const html = renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order);
+    const info = await sendHtmlMail(mailer, {
       from,
       to,
-      subject: `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order)}`,
-      html: renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order),
+      subject,
+      html,
     });
-    return "sent";
+    return info;
   }
 
   if (target === "shipment") {
-    await mailer.sendMail({
+    const subject = `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order)}`;
+    const html = renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order);
+    const info = await sendHtmlMail(mailer, {
       from,
       to,
-      subject: `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order)}`,
-      html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order),
+      subject,
+      html,
     });
-    return "sent";
+    return info;
   }
 
-  await mailer.sendMail({
+  const subject = `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order)}`;
+  const html = renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order);
+  const info = await sendHtmlMail(mailer, {
     from,
     to,
-    subject: `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order)}`,
-    html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order),
+    subject,
+    html,
   });
-  return "sent";
+  return info;
 }

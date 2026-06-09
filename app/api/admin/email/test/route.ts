@@ -21,9 +21,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    await sendTestEmail(redirectTarget, email);
+    const info = await sendTestEmail(redirectTarget, email);
     if (wantsJson) {
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+        messageId: info.messageId,
+        response: info.response,
+        accepted: info.accepted,
+        rejected: info.rejected,
+      });
     }
     return NextResponse.redirect(appUrl(`/admin/email?test=${redirectTarget}&testSent=1`, request), { status: 303 });
   } catch (error) {
