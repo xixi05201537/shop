@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { CheckCircle, Gift, Heart, Mail, Minus, Plus, Receipt, ShieldCheck, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -381,22 +380,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           Checkout
         </button>
       </div>
-
-      {config.floatingEnabled ? (
-        <Link
-          className={`floating-widget float-${config.floatingSize === "small" ? "small" : "medium"} float-${config.floatingPosition}`}
-          href={config.floatingUrl}
-          target={config.floatingOpenMode === "new" ? "_blank" : undefined}
-          aria-label="Floating link"
-        >
-          {config.floatingImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={config.floatingImageUrl} alt="" />
-          ) : (
-            config.floatingLabel
-          )}
-        </Link>
-      ) : null}
     </main>
   );
 }

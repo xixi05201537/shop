@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { orderStatusLabel } from "@/lib/admin-labels";
-import { formatUsd } from "@/lib/format";
+import { getConfigMap } from "@/lib/config";
+import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, formatUsd, normalizeDisplayTimeZone } from "@/lib/format";
 import { orderWhereFromQuery, queryStringWithoutPage, type OrderFilterQuery } from "@/lib/order-filters";
 import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
@@ -19,7 +20,8 @@ export default async function OrdersAdmin({
   const exportQuery = queryStringWithoutPage(query);
   const pageQuery = queryStringWithoutPage(query);
   const requestedPage = Math.max(1, Number(query.page) || 1);
-  const totalOrders = await prisma.order.count({ where });
+  const [totalOrders, config] = await Promise.all([prisma.order.count({ where }), getConfigMap()]);
+  const displayTimeZone = normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE);
   const totalPages = Math.max(1, Math.ceil(totalOrders / PAGE_SIZE));
   const safePage = Math.min(requestedPage, totalPages);
   const pageStart = totalOrders ? (safePage - 1) * PAGE_SIZE + 1 : 0;
@@ -110,7 +112,7 @@ export default async function OrdersAdmin({
                 <td>
                   <span className={`status-badge status-${order.status}`}>{orderStatusLabel(order.status)}</span>
                 </td>
-                <td>{order.createdAt.toLocaleString()}</td>
+                <td>{formatDateTimeWithOffset(order.createdAt, displayTimeZone)}</td>
               </tr>
             ))}
           </tbody>

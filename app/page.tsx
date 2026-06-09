@@ -1,3 +1,4 @@
+import { FloatingWidget } from "@/components/FloatingWidget";
 import { Storefront } from "@/components/Storefront";
 import { getPublicConfig } from "@/lib/config";
 import { parseAmounts } from "@/lib/format";
@@ -12,20 +13,26 @@ export default async function HomePage() {
 
   if (!product) {
     return (
-      <main className="container empty-page">
-        <h1 className="display">No product yet</h1>
-        <p>Log in to the admin panel and create your single product.</p>
-      </main>
+      <>
+        <main className="container empty-page">
+          <h1 className="display">No product yet</h1>
+          <p>Log in to the admin panel and create your single product.</p>
+        </main>
+        <FloatingWidget config={config} />
+      </>
     );
   }
 
   return (
-    <Storefront
-      config={config}
-      product={{
-        ...product,
-        enabledAmounts: parseAmounts(product.enabledAmounts),
-      }}
-    />
+    <>
+      <Storefront
+        config={config}
+        product={{
+          ...product,
+          enabledAmounts: parseAmounts(product.enabledAmounts),
+        }}
+      />
+      <FloatingWidget config={config} />
+    </>
   );
 }

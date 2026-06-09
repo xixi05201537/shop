@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { getConfigValues, setConfigValues } from "@/lib/config";
+import { normalizeDisplayTimeZone } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { sanitizeEmailHtml } from "@/lib/sanitize";
 
@@ -114,6 +115,7 @@ export async function saveSettingsForm(formData: FormData) {
       checkoutCustomAmountEnabled: formData.get("checkoutCustomAmountEnabled") === "on" ? "true" : "false",
       checkoutEmailEnabled: formData.get("checkoutEmailEnabled") === "on" ? "true" : "false",
       checkoutNicknameEnabled: formData.get("checkoutNicknameEnabled") === "on" ? "true" : "false",
+      displayTimeZone: normalizeDisplayTimeZone(String(formData.get("displayTimeZone") || "")),
     },
     ["paypalSandboxClientSecret", "paypalLiveClientSecret"],
   );

@@ -471,7 +471,7 @@
 
 .floating-widget {
   position: fixed;
-  z-index: 20;
+  z-index: 60;
   display: grid;
   place-items: center;
   border: 2px solid rgba(255, 255, 255, 0.9);
@@ -514,11 +514,13 @@
 .float-right-middle {
   right: 22px;
   top: 50%;
+  transform: translateY(-50%);
 }
 
 .float-left-middle {
   left: 22px;
   top: 50%;
+  transform: translateY(-50%);
 }
 
 .empty-page {
@@ -818,6 +820,28 @@
     color: #fff;
     box-shadow: 0 12px 24px rgba(152, 36, 79, 0.2);
     font-weight: 1000;
+  }
+
+  .floating-widget {
+    z-index: 80;
+  }
+
+  .float-right-bottom {
+    right: 16px;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .float-left-bottom {
+    left: 16px;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .float-right-middle {
+    right: 14px;
+  }
+
+  .float-left-middle {
+    left: 14px;
   }
 
   .details-section {

@@ -1,5 +1,7 @@
 import { SubmitButton } from "@/components/SubmitButton";
 import { getConfigMap, maskSecret } from "@/lib/config";
+import { DEFAULT_DISPLAY_TIME_ZONE, normalizeDisplayTimeZone } from "@/lib/format";
+import { TimeZoneSetting } from "./TimeZoneSetting";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +10,7 @@ export default async function SettingsAdmin() {
   const sandboxClientId = config.paypalSandboxClientId || config.paypalClientId || process.env.PAYPAL_CLIENT_ID || "";
   const sandboxSecret = config.paypalSandboxClientSecret || config.paypalClientSecret || process.env.PAYPAL_CLIENT_SECRET || "";
   const sandboxWebhookId = config.paypalSandboxWebhookId || config.paypalWebhookId || process.env.PAYPAL_WEBHOOK_ID || "";
+  const displayTimeZone = normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE);
 
   return (
     <>
@@ -114,14 +117,22 @@ export default async function SettingsAdmin() {
         </section>
 
         <section className="settings-group">
+          <div className="settings-group-title">
+            <span>显示</span>
+            <strong>时间</strong>
+          </div>
+          <TimeZoneSetting defaultValue={displayTimeZone} />
+        </section>
+
+        <section className="settings-group">
           <div className="admin-grid">
-          <label>
-            当前 PayPal 环境
-            <select name="paypalEnv" defaultValue={config.paypalEnv || "sandbox"}>
-              <option value="sandbox">测试 Sandbox</option>
-              <option value="live">正式 Live</option>
-            </select>
-          </label>
+            <label>
+              当前 PayPal 环境
+              <select name="paypalEnv" defaultValue={config.paypalEnv || "sandbox"}>
+                <option value="sandbox">测试 Sandbox</option>
+                <option value="live">正式 Live</option>
+              </select>
+            </label>
           </div>
         </section>
         <div className="settings-sticky-actions">

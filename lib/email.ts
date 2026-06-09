@@ -9,10 +9,12 @@ import {
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
 } from "@/lib/email-defaults";
+import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
 import { orderEmailRecipients } from "@/lib/paypal-order-details";
 import type { Order } from "@prisma/client";
 
-function renderTemplate(template: string, order: Order) {
+function renderTemplate(template: string, order: Order, timeZone?: string | null) {
+  const displayTimeZone = normalizeDisplayTimeZone(timeZone || DEFAULT_DISPLAY_TIME_ZONE);
   const values: Record<string, string> = {
     orderId: order.orderNumber,
     email: order.buyerEmail || order.paypalBuyerEmail || "",
@@ -22,7 +24,7 @@ function renderTemplate(template: string, order: Order) {
     quantity: String(order.quantity),
     totalAmount: order.totalAmount.toFixed(2),
     currency: order.currency,
-    paidAt: order.paidAt?.toISOString() || "",
+    paidAt: formatDateTimeWithOffset(order.paidAt, displayTimeZone),
     trackingNumber: order.trackingNumber || "",
   };
 
@@ -125,8 +127,8 @@ export async function sendBuyerEmail(order: Order) {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: recipients.to,
     cc: recipients.cc,
-    subject: renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order),
-    html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order),
+    subject: renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order, config.displayTimeZone),
+    html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order, config.displayTimeZone),
   });
   return "sent";
 }
@@ -137,8 +139,8 @@ export async function sendAdminEmail(order: Order) {
   await sendHtmlMail(mailer, {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: config.adminNotifyEmail,
-    subject: renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order),
-    html: renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order),
+    subject: renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order, config.displayTimeZone),
+    html: renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order, config.displayTimeZone),
   });
   return "sent";
 }
@@ -152,8 +154,8 @@ export async function sendShipmentEmail(order: Order) {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: recipients.to,
     cc: recipients.cc,
-    subject: renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order),
-    html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order),
+    subject: renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.displayTimeZone),
+    html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.displayTimeZone),
   });
   return "sent";
 }
@@ -201,8 +203,8 @@ export async function sendTestEmail(target: string, to: string) {
   const from = `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`;
 
   if (target === "seller") {
-    const subject = `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order)}`;
-    const html = renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order);
+    const subject = `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order, config.displayTimeZone)}`;
+    const html = renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order, config.displayTimeZone);
     const info = await sendHtmlMail(mailer, {
       from,
       to,
@@ -213,8 +215,8 @@ export async function sendTestEmail(target: string, to: string) {
   }
 
   if (target === "shipment") {
-    const subject = `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order)}`;
-    const html = renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order);
+    const subject = `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.displayTimeZone)}`;
+    const html = renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.displayTimeZone);
     const info = await sendHtmlMail(mailer, {
       from,
       to,
@@ -224,8 +226,8 @@ export async function sendTestEmail(target: string, to: string) {
     return info;
   }
 
-  const subject = `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order)}`;
-  const html = renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order);
+  const subject = `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order, config.displayTimeZone)}`;
+  const html = renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order, config.displayTimeZone);
   const info = await sendHtmlMail(mailer, {
     from,
     to,

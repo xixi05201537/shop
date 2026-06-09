@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SubmitButton } from "@/components/SubmitButton";
 import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
-import { formatUsd } from "@/lib/format";
+import { getConfigMap } from "@/lib/config";
+import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, formatUsd, normalizeDisplayTimeZone } from "@/lib/format";
 import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
 import { ShipOrderDialog } from "./ShipOrderDialog";
@@ -11,8 +12,9 @@ export const dynamic = "force-dynamic";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const order = await prisma.order.findUnique({ where: { id } });
+  const [order, config] = await Promise.all([prisma.order.findUnique({ where: { id } }), getConfigMap()]);
   if (!order) notFound();
+  const displayTimeZone = normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE);
 
   return (
     <>
@@ -158,7 +160,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                     运单号：{order.trackingNumber || "-"}
                     {order.trackingNumber ? <CopyLinkButton compact label="复制" value={order.trackingNumber} /> : null}
                   </span>
-                  <span>发货时间：{order.shippedAt?.toLocaleString() || "-"}</span>
+                  <span>发货时间：{formatDateTimeWithOffset(order.shippedAt, displayTimeZone) || "-"}</span>
                 </div>
               </td>
             </tr>
@@ -173,7 +175,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             </tr>
             <tr>
               <th>支付时间</th>
-              <td>{order.paidAt?.toLocaleString() || "-"}</td>
+              <td>{formatDateTimeWithOffset(order.paidAt, displayTimeZone) || "-"}</td>
             </tr>
           </tbody>
         </table>

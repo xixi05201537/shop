@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_DISPLAY_TIME_ZONE, normalizeDisplayTimeZone } from "@/lib/format";
 
 export type PublicConfig = {
   paypalClientId: string;
@@ -14,6 +15,7 @@ export type PublicConfig = {
   checkoutCustomAmountEnabled: boolean;
   checkoutEmailEnabled: boolean;
   checkoutNicknameEnabled: boolean;
+  displayTimeZone: string;
 };
 
 export async function getConfigMap() {
@@ -71,6 +73,7 @@ export async function getPublicConfig(): Promise<PublicConfig> {
     checkoutCustomAmountEnabled: (config.checkoutCustomAmountEnabled || "true") === "true",
     checkoutEmailEnabled: (config.checkoutEmailEnabled || "true") === "true",
     checkoutNicknameEnabled: (config.checkoutNicknameEnabled || "true") === "true",
+    displayTimeZone: normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE),
   };
 }
 

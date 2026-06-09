@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Mail } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getPublicConfig } from "@/lib/config";
-import { formatUsd } from "@/lib/format";
+import { formatDateTimeWithOffset, formatUsd } from "@/lib/format";
 import { displayOrderEmail } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
 import "../../shop.css";
@@ -37,6 +37,10 @@ export default async function SuccessPage({ params }: { params: Promise<{ orderI
           <div>
             <dt>Status</dt>
             <dd>{order.status}</dd>
+          </div>
+          <div>
+            <dt>Paid at</dt>
+            <dd>{formatDateTimeWithOffset(order.paidAt, config.displayTimeZone) || "-"}</dd>
           </div>
         </dl>
         <div className="success-actions">

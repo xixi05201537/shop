@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 import { emailStatusLabel, orderStatusLabel } from "@/lib/admin-labels";
+import { getConfigMap } from "@/lib/config";
+import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
 import { orderWhereFromQuery } from "@/lib/order-filters";
 import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
@@ -15,11 +17,15 @@ export async function GET(request: Request) {
   if (unauthorized) return unauthorized;
 
   const params = new URL(request.url).searchParams;
-  const orders = await prisma.order.findMany({
-    where: orderWhereFromQuery(Object.fromEntries(params.entries())),
-    orderBy: { createdAt: "desc" },
-    take: 1000,
-  });
+  const [orders, config] = await Promise.all([
+    prisma.order.findMany({
+      where: orderWhereFromQuery(Object.fromEntries(params.entries())),
+      orderBy: { createdAt: "desc" },
+      take: 1000,
+    }),
+    getConfigMap(),
+  ]);
+  const displayTimeZone = normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE);
 
   const rows = [
     [
@@ -67,10 +73,10 @@ export async function GET(request: Request) {
       emailStatusLabel(order.buyerEmailStatus),
       emailStatusLabel(order.adminEmailStatus),
       order.trackingNumber || "",
-      order.shippedAt?.toISOString() || "",
+      formatDateTimeWithOffset(order.shippedAt, displayTimeZone),
       emailStatusLabel(order.shipmentEmailStatus),
-      order.createdAt.toISOString(),
-      order.paidAt?.toISOString() || "",
+      formatDateTimeWithOffset(order.createdAt, displayTimeZone),
+      formatDateTimeWithOffset(order.paidAt, displayTimeZone),
     ]),
   ];
 
