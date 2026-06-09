@@ -1,6 +1,7 @@
 import { SubmitButton } from "@/components/SubmitButton";
 import { getConfigMap, maskSecret } from "@/lib/config";
 import { DEFAULT_DISPLAY_TIME_ZONE, normalizeDisplayTimeZone } from "@/lib/format";
+import { HealthCheckPanel } from "../HealthCheckPanel";
 import { TimeZoneSetting } from "./TimeZoneSetting";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export default async function SettingsAdmin() {
           <p>在这里维护 PayPal 支付接入信息。</p>
         </div>
       </header>
+      <HealthCheckPanel />
       <form className="admin-card admin-form" action="/api/admin/settings" method="post">
         <section className="settings-group">
           <div className="settings-group-title">

@@ -94,3 +94,17 @@ model WebhookEvent {
   processed     Boolean  @default(false)
   createdAt     DateTime @default(now())
 }
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  action     String
+  targetType String
+  targetId   String?
+  summary    String   @db.VarChar(512)
+  metadata   String?  @db.LongText
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+}

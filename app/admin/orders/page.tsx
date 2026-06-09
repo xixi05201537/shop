@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileSpreadsheet, RotateCcw, Search } from "lucide-react";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SubmitButton } from "@/components/SubmitButton";
 import { orderStatusLabel } from "@/lib/admin-labels";
 import { getConfigMap } from "@/lib/config";
 import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, formatUsd, normalizeDisplayTimeZone } from "@/lib/format";
@@ -40,6 +41,15 @@ export default async function OrdersAdmin({
     return `/admin/orders${params.toString() ? `?${params.toString()}` : ""}`;
   }
 
+  const activeFilterLabel =
+    query.fulfillment === "pending"
+      ? "待发货订单"
+      : query.emailIssue === "1"
+        ? "邮件发送异常"
+        : query.status
+          ? orderStatusLabel(query.status)
+          : "";
+
   return (
     <>
       <header className="admin-header">
@@ -59,6 +69,8 @@ export default async function OrdersAdmin({
               <option value="failed">失败</option>
               <option value="cancelled">已取消</option>
             </select>
+            <input type="hidden" name="fulfillment" value={query.fulfillment || ""} />
+            <input type="hidden" name="emailIssue" value={query.emailIssue || ""} />
             <input name="dateFrom" type="date" defaultValue={query.dateFrom || ""} />
             <input name="dateTo" type="date" defaultValue={query.dateTo || ""} />
             <div className="order-filter-actions">
@@ -79,6 +91,13 @@ export default async function OrdersAdmin({
               </Link>
             </div>
           </form>
+          {activeFilterLabel ? (
+            <div className="active-order-filter">
+              <span>当前筛选：{activeFilterLabel}</span>
+              <strong>{totalOrders} 条</strong>
+              <Link href="/admin/orders">清除筛选</Link>
+            </div>
+          ) : null}
         </div>
         <table className="admin-table orders-table">
           <thead>
@@ -109,9 +128,22 @@ export default async function OrdersAdmin({
                   </span>
                 </td>
                 <td>
-                  <span className="order-note-cell" title={order.internalNote || ""}>
-                    {order.internalNote || "-"}
-                  </span>
+                  <details className={order.internalNote ? "quick-note has-note" : "quick-note"}>
+                    <summary>
+                      <span className="order-note-cell" title={order.internalNote || ""}>
+                        {order.internalNote || "添加备注"}
+                      </span>
+                      {order.internalNote ? <span className="note-dot">有备注</span> : null}
+                    </summary>
+                    <form action="/api/admin/orders/note" method="post">
+                      <input type="hidden" name="id" value={order.id} />
+                      <input type="hidden" name="returnTo" value={`/admin/orders${pageQuery ? `?${pageQuery}` : ""}`} />
+                      <textarea name="internalNote" defaultValue={order.internalNote || ""} placeholder="仅后台可见" />
+                      <SubmitButton className="secondary-button quick-note-save" loadingText="保存中...">
+                        保存
+                      </SubmitButton>
+                    </form>
+                  </details>
                 </td>
                 <td>{formatUsd(order.totalAmount)}</td>
                 <td>

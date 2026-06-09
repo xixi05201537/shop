@@ -65,6 +65,15 @@ async function accessToken() {
   return { token: data.access_token, settings };
 }
 
+export async function checkPaypalHealth() {
+  const { settings } = await accessToken();
+  return {
+    ok: true,
+    env: settings.env,
+    webhookConfigured: Boolean(settings.webhookId),
+  };
+}
+
 export async function createPaypalOrder(totalAmount: number, orderNumber: string) {
   const { token, settings } = await accessToken();
   const response = await fetch(`${paypalBase(settings.env)}/v2/checkout/orders`, {

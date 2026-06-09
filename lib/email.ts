@@ -236,3 +236,13 @@ export async function sendTestEmail(target: string, to: string) {
   });
   return info;
 }
+
+export async function checkSmtpHealth() {
+  const { config, mailer } = await transporter();
+  await mailer.verify();
+  return {
+    ok: true,
+    host: config.smtpHost,
+    from: config.smtpFromEmail,
+  };
+}

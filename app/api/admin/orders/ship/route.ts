@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { sendShipmentEmail } from "@/lib/email";
 import { emailErrorMessage } from "@/lib/order-service";
 import { prisma } from "@/lib/prisma";
@@ -40,6 +41,13 @@ export async function POST(request: Request) {
       data: { shipmentEmailStatus: "failed", shipmentEmailError: emailErrorMessage(error) },
     });
   }
+  await writeAuditLog({
+    action: "ship",
+    targetType: "order",
+    targetId: id,
+    summary: `订单发货：${order.orderNumber}`,
+    metadata: { trackingNumber },
+  });
 
   return NextResponse.redirect(appUrl(`/admin/orders/${id}?shipped=1`, request), { status: 303 });
 }

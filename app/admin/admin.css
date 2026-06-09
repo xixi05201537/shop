@@ -681,6 +681,24 @@
   align-items: start;
 }
 
+.dashboard-alert {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(185, 28, 28, 0.22);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: #fff1f2;
+  color: #9f1239;
+  font-weight: 900;
+}
+
+.dashboard-alert span {
+  color: #be123c;
+  font-size: 0.9rem;
+}
+
+.dashboard-main-stack,
 .dashboard-side-stack {
   display: grid;
   gap: 18px;
@@ -759,6 +777,16 @@
   background: rgba(255, 255, 255, 0.78);
   color: var(--muted);
   font-weight: 900;
+}
+
+.dashboard-check-list a.is-danger {
+  border-color: rgba(152, 36, 79, 0.1);
+  background: rgba(255, 255, 255, 0.78);
+  color: #9f1239;
+}
+
+.dashboard-check-list a.is-danger strong {
+  color: #be123c;
 }
 
 .dashboard-check-list strong {
@@ -885,6 +913,15 @@ button.uploaded-image-card {
   color: var(--cherry);
   font-size: 0.84rem;
   font-weight: 1000;
+}
+
+.uploaded-card-actions form {
+  display: contents;
+}
+
+.danger-link-button {
+  border-color: rgba(185, 28, 28, 0.2);
+  color: #be123c;
 }
 
 .product-image-preview {
@@ -1268,6 +1305,61 @@ button.uploaded-image-card {
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.quick-note {
+  position: relative;
+}
+
+.quick-note summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.quick-note summary::-webkit-details-marker {
+  display: none;
+}
+
+.quick-note.has-note .order-note-cell {
+  color: var(--ink);
+}
+
+.note-dot {
+  flex: 0 0 auto;
+  border: 1px solid rgba(152, 36, 79, 0.16);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #ffe7f0;
+  color: var(--cherry);
+  font-size: 0.74rem;
+  font-weight: 1000;
+}
+
+.quick-note form {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.quick-note textarea {
+  width: min(360px, 100%);
+  min-height: 74px;
+  border: 1px solid rgba(152, 36, 79, 0.14);
+  border-radius: 13px;
+  padding: 10px 11px;
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.quick-note-save {
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 13px;
 }
 
 .stat-copy-value {
@@ -1898,6 +1990,80 @@ button.uploaded-image-card {
   align-items: center;
 }
 
+.audit-log-list {
+  display: grid;
+  gap: 10px;
+}
+
+.audit-log-row {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(152, 36, 79, 0.1);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.audit-log-row strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.audit-log-row span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.audit-log-list-full .audit-log-row {
+  padding: 14px;
+}
+
+.health-panel {
+  margin-bottom: 18px;
+}
+
+.health-check-button {
+  width: auto;
+}
+
+.health-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.health-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid rgba(152, 36, 79, 0.12);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.health-item.is-ok {
+  border-color: rgba(27, 112, 82, 0.2);
+  color: #176b4f;
+}
+
+.health-item.is-error {
+  border-color: rgba(185, 28, 28, 0.22);
+  color: #be123c;
+}
+
+.health-item div {
+  display: grid;
+  gap: 4px;
+}
+
+.health-item span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 850;
+}
+
 .admin-filter-grid .secondary-button {
   min-height: 46px;
 }
@@ -1946,6 +2112,31 @@ button.uploaded-image-card {
   border-color: rgba(27, 112, 82, 0.18);
   background: #e5f7ef;
   color: #176b4f;
+}
+
+.active-order-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  border: 1px solid rgba(152, 36, 79, 0.16);
+  border-radius: 999px;
+  padding: 8px 10px 8px 14px;
+  background: #fff7fa;
+  color: var(--cherry);
+  font-size: 0.9rem;
+  font-weight: 1000;
+}
+
+.active-order-filter strong {
+  color: var(--ink);
+}
+
+.active-order-filter a {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #ffe7f0;
+  color: var(--cherry);
 }
 
 .admin-table {
@@ -2664,6 +2855,7 @@ button.uploaded-image-card {
 
   .stat-grid,
   .dashboard-quick-actions,
+  .health-result-grid,
   .uploaded-image-grid {
     grid-template-columns: 1fr;
   }

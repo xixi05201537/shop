@@ -67,6 +67,12 @@ export default async function UploadPage({ searchParams }: { searchParams: Promi
                     查看
                   </a>
                   <Link href={`/admin/product?uploaded=${encodeURIComponent(image.path)}`}>用作商品图</Link>
+                  <form action="/api/admin/uploads/delete" method="post">
+                    <input type="hidden" name="path" value={image.path} />
+                    <button className="link-copy-button danger-link-button" type="submit">
+                      删除
+                    </button>
+                  </form>
                 </div>
               </div>
             ))}

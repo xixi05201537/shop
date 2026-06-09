@@ -1,4 +1,4 @@
-import { readdir, stat } from "node:fs/promises";
+import { readdir, stat, unlink } from "node:fs/promises";
 import { basename, join, resolve, sep } from "node:path";
 
 const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
@@ -52,4 +52,17 @@ export async function listUploadedImages(limit?: number): Promise<UploadedImage[
   } catch {
     return [];
   }
+}
+
+export async function deleteUploadedImage(publicPath: string) {
+  const filename = basename(publicPath || "");
+  if (!filename || filename !== publicPath.replace(/^\/?uploads\//, "")) {
+    throw new Error("Invalid upload path.");
+  }
+  const ext = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  if (!imageExtensions.has(ext)) {
+    throw new Error("Unsupported image type.");
+  }
+
+  await unlink(join(normalizedUploadDir(), filename));
 }

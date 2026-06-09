@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { appUrl } from "@/lib/redirect";
 import { getUploadDir } from "@/lib/uploads";
 
@@ -24,5 +25,12 @@ export async function POST(request: Request) {
   await writeFile(join(uploadDir, filename), bytes);
 
   const publicPath = `/uploads/${filename}`;
+  await writeAuditLog({
+    action: "upload",
+    targetType: "upload",
+    targetId: publicPath,
+    summary: `上传图片：${file.name}`,
+    metadata: { publicPath, size: file.size, type: file.type },
+  });
   return NextResponse.redirect(appUrl(`/admin/upload?uploaded=1&path=${encodeURIComponent(publicPath)}`, request), { status: 303 });
 }

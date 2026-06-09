@@ -317,26 +317,29 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           </div>
 
           {config.checkoutEmailEnabled || config.checkoutNicknameEnabled ? (
-            <div className="buyer-grid">
-              {config.checkoutEmailEnabled ? (
-                <label>
-                  <span>Email</span>
-                  <input
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                  />
-                </label>
-              ) : null}
-              {config.checkoutNicknameEnabled ? (
-                <label>
-                  <span>Nickname</span>
-                  <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
-                </label>
-              ) : null}
+            <div>
+              <div className="buyer-grid">
+                {config.checkoutEmailEnabled ? (
+                  <label>
+                    <span>Email</span>
+                    <input
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="you@example.com"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                    />
+                  </label>
+                ) : null}
+                {config.checkoutNicknameEnabled ? (
+                  <label>
+                    <span>Nickname</span>
+                    <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
+                  </label>
+                ) : null}
+              </div>
+              <p className="buyer-privacy-note">Used only for order updates and admin follow-up. It will not be shown publicly.</p>
             </div>
           ) : null}
 

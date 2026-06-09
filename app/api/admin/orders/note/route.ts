@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
 import { appUrl } from "@/lib/redirect";
 
@@ -12,10 +13,17 @@ export async function POST(request: Request) {
   const internalNote = String(formData.get("internalNote") || "").trim();
   if (!id) return NextResponse.redirect(appUrl("/admin/orders", request), { status: 303 });
 
-  await prisma.order.update({
+  const order = await prisma.order.update({
     where: { id },
     data: { internalNote: internalNote || null },
   });
+  await writeAuditLog({
+    action: "save_note",
+    targetType: "order",
+    targetId: id,
+    summary: `保存订单备注：${order.orderNumber}`,
+  });
 
-  return NextResponse.redirect(appUrl(`/admin/orders/${id}?note=1`, request), { status: 303 });
+  const returnTo = String(formData.get("returnTo") || `/admin/orders/${id}`);
+  return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}note=1`, request), { status: 303 });
 }

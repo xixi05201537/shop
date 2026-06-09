@@ -10,6 +10,8 @@ export type OrderFilterQuery = {
   maxAmount?: string;
   dateFrom?: string;
   dateTo?: string;
+  fulfillment?: string;
+  emailIssue?: string;
   page?: string;
 };
 
@@ -33,6 +35,19 @@ export function orderWhereFromQuery(query: OrderFilterQuery): Prisma.OrderWhereI
   const dateFrom = dateValue(query.dateFrom);
   const dateTo = dateValue(query.dateTo, true);
   const search = query.search || query.email || "";
+  const filters: Prisma.OrderWhereInput[] = [];
+  if (query.fulfillment === "pending") {
+    filters.push({ status: "paid", trackingNumber: null });
+  }
+  if (query.emailIssue === "1") {
+    filters.push({
+      OR: [
+        { buyerEmailStatus: "failed" },
+        { adminEmailStatus: "failed" },
+        { shipmentEmailStatus: "failed" },
+      ],
+    });
+  }
 
   return {
     status: query.status || undefined,
@@ -62,6 +77,7 @@ export function orderWhereFromQuery(query: OrderFilterQuery): Prisma.OrderWhereI
           { paypalOrderId: { contains: search } },
         ]
       : undefined,
+    AND: filters.length ? filters : undefined,
   };
 }
 
