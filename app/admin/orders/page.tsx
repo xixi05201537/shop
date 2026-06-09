@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileSpreadsheet, RotateCcw, Search } from "lucide-react";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { orderStatusLabel } from "@/lib/admin-labels";
 import { getConfigMap } from "@/lib/config";
@@ -49,7 +50,7 @@ export default async function OrdersAdmin({
       </header>
       <section className="admin-card">
         <div className="admin-toolbar">
-          <form className="admin-filter-grid" action="/admin/orders">
+          <form className="admin-filter-grid order-filter-grid" action="/admin/orders">
             <input name="search" placeholder="搜索邮箱、昵称、订单号、PayPal ID" defaultValue={query.search || query.email || ""} />
             <select name="status" defaultValue={query.status || ""}>
               <option value="">全部状态</option>
@@ -58,21 +59,25 @@ export default async function OrdersAdmin({
               <option value="failed">失败</option>
               <option value="cancelled">已取消</option>
             </select>
-            <input name="nickname" placeholder="买家昵称" defaultValue={query.nickname || ""} />
-            <input name="paypalOrderId" placeholder="PayPal 订单 ID" defaultValue={query.paypalOrderId || ""} />
-            <input name="minAmount" placeholder="最小金额" defaultValue={query.minAmount || ""} inputMode="decimal" />
-            <input name="maxAmount" placeholder="最大金额" defaultValue={query.maxAmount || ""} inputMode="decimal" />
             <input name="dateFrom" type="date" defaultValue={query.dateFrom || ""} />
             <input name="dateTo" type="date" defaultValue={query.dateTo || ""} />
-            <button className="secondary-button" type="submit">
-              筛选
-            </button>
-            <Link className="secondary-button" href="/admin/orders">
-              重置
-            </Link>
-            <Link className="secondary-button" href={`/api/admin/orders/export${exportQuery ? `?${exportQuery}` : ""}`}>
-              导出 CSV
-            </Link>
+            <div className="order-filter-actions">
+              <button className="admin-button order-action-button" type="submit">
+                <Search aria-hidden="true" size={16} />
+                <span>筛选</span>
+              </button>
+              <Link className="secondary-button order-action-button order-action-reset" href="/admin/orders">
+                <RotateCcw aria-hidden="true" size={16} />
+                <span>重置</span>
+              </Link>
+              <Link
+                className="secondary-button order-action-button order-action-export"
+                href={`/api/admin/orders/export${exportQuery ? `?${exportQuery}` : ""}`}
+              >
+                <FileSpreadsheet aria-hidden="true" size={16} />
+                <span>导出</span>
+              </Link>
+            </div>
           </form>
         </div>
         <table className="admin-table orders-table">
