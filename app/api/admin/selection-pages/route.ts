@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   if (unauthorized) return unauthorized;
 
   const formData = await request.formData();
+  const isCreate = !formData.get("id");
   const page = await saveSelectionPageForm(formData);
   await writeAuditLog({
     action: formData.get("id") ? "save" : "create",
@@ -17,5 +18,8 @@ export async function POST(request: Request) {
     summary: `保存选品单：${page.title}`,
   });
 
-  return NextResponse.redirect(appUrl(`/admin/selection-pages/${page.id}?saved=1`, request), { status: 303 });
+  const nextPath = isCreate
+    ? `/admin/selection-pages/${page.id}/items?created=1`
+    : `/admin/selection-pages/${page.id}?saved=1`;
+  return NextResponse.redirect(appUrl(nextPath, request), { status: 303 });
 }

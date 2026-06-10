@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { SubmitButton } from "@/components/SubmitButton";
+import { formatCurrency } from "@/lib/format";
+import { SelectionImagePickerDialog } from "./SelectionImagePickerDialog";
 
 type UploadedImageOption = {
   name: string;
@@ -33,11 +36,21 @@ export function SelectionItemForm({
 }) {
   const [imageUrl, setImageUrl] = useState(item.imageUrl || "");
   const [title, setTitle] = useState(item.title || "");
+  const [description, setDescription] = useState(item.description || "");
+  const [price, setPrice] = useState(item.price === null || item.price === undefined ? "" : String(item.price));
+  const [currency, setCurrency] = useState(item.currency || "USD");
   const [presets, setPresets] = useState<string[]>([]);
   const [presetInput, setPresetInput] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const previewPrice = useMemo(() => {
+    if (!price.trim()) return "";
+    const value = Number(price);
+    return Number.isFinite(value) && value >= 0 ? formatCurrency(value, currency || "USD") : "";
+  }, [currency, price]);
 
   useEffect(() => {
     try {
@@ -121,112 +134,135 @@ export function SelectionItemForm({
   }
 
   return (
-    <form className="selection-item-form" action="/api/admin/selection-items" method="post">
-      {item.id ? <input type="hidden" name="id" value={item.id} /> : null}
-      <input type="hidden" name="pageId" value={item.pageId} />
-      <div className="selection-item-main-grid">
-        <label>
-          图片路径
-          <div className="image-url-control">
-            <input name="imageUrl" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="/uploads/example.jpg 或 https://..." required />
-            <details className="image-picker-menu">
-              <summary>选择图片</summary>
-              <div className="image-picker-panel">
-                {uploadedImages.length ? (
-                  uploadedImages.map((image) => (
-                    <button
-                      key={image.path}
-                      type="button"
-                      onClick={(event) => {
-                        setImageUrl(image.path);
-                        event.currentTarget.closest("details")?.removeAttribute("open");
-                      }}
-                    >
-                      <img src={image.path} alt={image.name} />
-                      <span>{image.name}</span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="image-picker-empty">还没有上传图片。</div>
-                )}
+    <>
+      <form className="selection-item-form" action="/api/admin/selection-items" method="post">
+        {item.id ? <input type="hidden" name="id" value={item.id} /> : null}
+        <input type="hidden" name="pageId" value={item.pageId} />
+        <div className="selection-item-form-layout">
+          <div className="selection-item-fields">
+            <div className="selection-item-main-grid">
+              <label>
+                图片路径
+                <div className="image-url-control">
+                  <input name="imageUrl" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="/uploads/example.jpg 或 https://..." required />
+                </div>
+                <div className="selection-upload-actions">
+                  <SelectionImagePickerDialog uploadedImages={uploadedImages} onSelect={setImageUrl} />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                    hidden
+                    onChange={(event) => void handleLocalImage(event.target.files?.[0])}
+                  />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    选择本地照片
+                  </button>
+                  <button type="button" onClick={uploadFromClipboard} disabled={uploading}>
+                    {uploading ? "上传中..." : "粘贴上传图片"}
+                  </button>
+                  {uploadMessage ? <span>{uploadMessage}</span> : null}
+                </div>
+              </label>
+              <label>
+                名称
+                <input name="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="图片下方显示的名称" required />
+                <div className="selection-preset-add">
+                  <span>预设</span>
+                  <input value={presetInput} onChange={(event) => setPresetInput(event.target.value)} placeholder="新增名称预设" />
+                  <button type="button" onClick={() => addPreset(presetInput || title)}>
+                    添加预设
+                  </button>
+                </div>
+                <div className="selection-preset-row">
+                  {presets.map((preset) => (
+                    <span className="selection-preset-chip" key={preset}>
+                      <button type="button" onClick={() => setTitle(preset)}>
+                        {preset}
+                      </button>
+                      <button type="button" aria-label={`删除预设 ${preset}`} onClick={() => savePresets(presets.filter((item) => item !== preset))}>
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </label>
+            </div>
+            <label>
+              介绍
+              <textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="可选，显示在图片正下方。" />
+            </label>
+            <div className="admin-grid selection-item-number-grid">
+              <label>
+                价格
+                <input name="price" type="number" min="0" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="可选" />
+              </label>
+              <label>
+                币种
+                <input name="currency" value={currency} onChange={(event) => setCurrency(event.target.value)} />
+              </label>
+              <label>
+                排序
+                <input name="sortOrder" type="number" defaultValue={item.sortOrder ?? 0} />
+              </label>
+              <label>
+                最小数量
+                <input name="minQuantity" type="number" min="1" defaultValue={item.minQuantity ?? 1} />
+              </label>
+              <label>
+                最大数量
+                <input name="maxQuantity" type="number" min="1" defaultValue={item.maxQuantity ?? 99} />
+              </label>
+            </div>
+          </div>
+
+          <aside className="selection-item-live-preview" aria-label="选品项实时预览">
+            <span>实时预览</span>
+            <article>
+              <button
+                className="selection-item-live-preview-image"
+                type="button"
+                disabled={!imageUrl}
+                onClick={() => {
+                  if (imageUrl) setPreviewOpen(true);
+                }}
+                aria-label="预览图片"
+              >
+                {imageUrl ? <img src={imageUrl} alt={title || "选品图片预览"} /> : <strong>图片预览</strong>}
+              </button>
+              <div>
+                <strong>{title || "选品名称"}</strong>
+                {description ? <p>{description}</p> : <p>介绍会显示在这里。</p>}
+                {previewPrice ? <span>{previewPrice}</span> : null}
               </div>
-            </details>
-          </div>
-          <div className="selection-upload-actions">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
-              hidden
-              onChange={(event) => void handleLocalImage(event.target.files?.[0])}
-            />
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              选择本地照片
+            </article>
+          </aside>
+        </div>
+        <div className="admin-save-bar">
+          <label className="checkbox-row">
+            <span>
+              <input name="isActive" type="checkbox" defaultChecked={item.isActive ?? true} /> 显示
+            </span>
+          </label>
+          <SubmitButton loadingText="保存中...">{mode === "create" ? "添加选品项" : "保存选品项"}</SubmitButton>
+        </div>
+      </form>
+
+      {previewOpen && imageUrl ? (
+        <div className="admin-image-preview-overlay" role="dialog" aria-modal="true" onClick={() => setPreviewOpen(false)}>
+          <div className="admin-image-preview-dialog" onClick={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="关闭预览" onClick={() => setPreviewOpen(false)}>
+              <X size={20} />
             </button>
-            <button type="button" onClick={uploadFromClipboard} disabled={uploading}>
-              {uploading ? "上传中..." : "粘贴上传图片"}
-            </button>
-            {uploadMessage ? <span>{uploadMessage}</span> : null}
+            <img src={imageUrl} alt={title || "选品图片预览"} />
+            <div>
+              <strong>{title || "选品图片预览"}</strong>
+              {description ? <p>{description}</p> : null}
+              {previewPrice ? <span>{previewPrice}</span> : null}
+            </div>
           </div>
-        </label>
-        <label>
-          名称
-          <input name="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="图片下方显示的名称" required />
-          <div className="selection-preset-add">
-            <span>预设</span>
-            <input value={presetInput} onChange={(event) => setPresetInput(event.target.value)} placeholder="新增名称预设" />
-            <button type="button" onClick={() => addPreset(presetInput || title)}>
-              添加预设
-            </button>
-          </div>
-          <div className="selection-preset-row">
-            {presets.map((preset) => (
-              <span className="selection-preset-chip" key={preset}>
-                <button type="button" onClick={() => setTitle(preset)}>
-                  {preset}
-                </button>
-                <button type="button" aria-label={`删除预设 ${preset}`} onClick={() => savePresets(presets.filter((item) => item !== preset))}>
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </label>
-      </div>
-      <label>
-        介绍
-        <textarea name="description" defaultValue={item.description || ""} placeholder="可选，显示在图片正下方。" />
-      </label>
-      <div className="admin-grid selection-item-number-grid">
-        <label>
-          价格
-          <input name="price" type="number" min="0" step="0.01" defaultValue={item.price ?? ""} placeholder="可选" />
-        </label>
-        <label>
-          币种
-          <input name="currency" defaultValue={item.currency || "USD"} />
-        </label>
-        <label>
-          排序
-          <input name="sortOrder" type="number" defaultValue={item.sortOrder ?? 0} />
-        </label>
-        <label>
-          最小数量
-          <input name="minQuantity" type="number" min="1" defaultValue={item.minQuantity ?? 1} />
-        </label>
-        <label>
-          最大数量
-          <input name="maxQuantity" type="number" min="1" defaultValue={item.maxQuantity ?? 99} />
-        </label>
-      </div>
-      <div className="admin-save-bar">
-        <label className="checkbox-row">
-          <span>
-            <input name="isActive" type="checkbox" defaultChecked={item.isActive ?? true} /> 显示
-          </span>
-        </label>
-        <SubmitButton loadingText="保存中...">{mode === "create" ? "添加选品项" : "保存选品项"}</SubmitButton>
-      </div>
-    </form>
+        </div>
+      ) : null}
+    </>
   );
 }

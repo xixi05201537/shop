@@ -1,0 +1,159 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ClipboardList, Download, Settings, Upload } from "lucide-react";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SubmitButton } from "@/components/SubmitButton";
+import { prisma } from "@/lib/prisma";
+import { requestBaseUrl } from "@/lib/request-url";
+import { formatCurrency } from "@/lib/format";
+import { listUploadedImages } from "@/lib/uploads";
+import { SelectionItemDialog } from "../../SelectionItemDialog";
+import { SelectionItemPreviewButton } from "../../SelectionItemPreviewButton";
+
+export const dynamic = "force-dynamic";
+
+export default async function SelectionPageItems({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { id } = await params;
+  const query = searchParams ? await searchParams : {};
+  const [page, uploadedImages, baseUrl] = await Promise.all([
+    prisma.selectionPage.findUnique({
+      where: { id },
+      include: {
+        items: { orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] },
+        _count: { select: { submissions: true } },
+      },
+    }),
+    listUploadedImages(),
+    requestBaseUrl(),
+  ]);
+  if (!page) notFound();
+
+  const publicPath = `/select/${page.slug}`;
+  const publicUrl = new URL(publicPath, baseUrl).toString();
+  const imageOptions = uploadedImages.map((image) => ({ name: image.name, path: image.path }));
+  const imported = typeof query.imported === "string" ? query.imported : "";
+  const skipped = typeof query.skipped === "string" ? query.skipped : "";
+  const importError = typeof query.error === "string" ? query.error : "";
+
+  return (
+    <>
+      <header className="admin-header selection-items-header">
+        <div>
+          <span className="admin-kicker">Selection items</span>
+          <h1 className="display">选品项</h1>
+          <p>{page.title}</p>
+        </div>
+        <div className="admin-actions">
+          <Link className="secondary-button" href={`/admin/selection-pages/${page.id}`}>
+            <Settings size={16} />
+            页面设置
+          </Link>
+          <Link className="secondary-button" href={`/admin/selection-pages/${page.id}/submissions`}>
+            <ClipboardList size={16} />
+            提交 {page._count.submissions}
+          </Link>
+          <Link className="secondary-button" href="/admin/selection-pages">
+            <ArrowLeft size={16} />
+            返回列表
+          </Link>
+        </div>
+      </header>
+
+      {imported ? (
+        <div className="admin-notice">
+          {importError === "template"
+            ? "导入失败：请使用从本页导出的选品项 Excel 模板，不要直接上传其它 Excel。"
+            : importError
+              ? "导入失败：请检查 Excel 文件后重试。"
+              : `已导入 ${imported} 个选品项${skipped && skipped !== "0" ? `，跳过 ${skipped} 行没有图片的数据` : ""}。`}
+        </div>
+      ) : null}
+
+      <section className="admin-card selection-items-toolbar">
+        <div className="selection-items-link">
+          <span>公开链接</span>
+          <a href={publicPath} target="_blank" rel="noreferrer">
+            {publicUrl}
+          </a>
+        </div>
+        <div className="selection-items-toolbar-actions">
+          <CopyLinkButton value={publicUrl} />
+          <a className="secondary-button" href={`/api/admin/selection-items/export?pageId=${page.id}`}>
+            <Download size={16} />
+            导出 Excel
+          </a>
+          <form className="selection-items-import-form" action="/api/admin/selection-items/import" method="post" encType="multipart/form-data">
+            <input type="hidden" name="pageId" value={page.id} />
+            <label className="secondary-button">
+              <Upload size={16} />
+              导入 Excel
+              <input name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+            </label>
+            <SubmitButton className="admin-button" loadingText="导入中...">上传导入</SubmitButton>
+          </form>
+          <SelectionItemDialog item={{ pageId: page.id }} uploadedImages={imageOptions} triggerLabel="添加选品项" />
+          <Link className="secondary-button" href="/admin/upload">
+            <Upload size={16} />
+            上传图片
+          </Link>
+        </div>
+      </section>
+
+      <section className="selection-item-editor-list">
+        <div className="section-title-row selection-items-list-head">
+          <div>
+            <h2>当前选品项</h2>
+            <p>客户页面按排序从小到大展示；导入 Excel 时，图片列可直接粘贴图片。</p>
+          </div>
+          <strong>{page.items.length} items</strong>
+        </div>
+        {page.items.length ? (
+          <div className="selection-item-admin-grid">
+            {page.items.map((item) => (
+              <article className="admin-card selection-item-admin-card" key={item.id}>
+                <div className="selection-item-admin-preview">
+                  <SelectionItemPreviewButton
+                    imageUrl={item.imageUrl}
+                    title={item.title}
+                    description={item.description}
+                    detail={item.price === null ? "未设置价格" : formatCurrency(item.price, item.currency)}
+                  />
+                  <div>
+                    <strong>{item.title}</strong>
+                    <span>{item.price === null ? "未设置价格" : formatCurrency(item.price, item.currency)}</span>
+                    {item.description ? <p>{item.description}</p> : null}
+                    <small>
+                      排序 {item.sortOrder} · {item.isActive ? "显示中" : "已隐藏"} · 数量 {item.minQuantity}-{item.maxQuantity}
+                    </small>
+                  </div>
+                </div>
+                <div className="selection-item-card-actions">
+                  <SelectionItemDialog
+                    item={item}
+                    uploadedImages={imageOptions}
+                    triggerClassName="table-action-button"
+                    triggerLabel="编辑"
+                  />
+                  <form className="selection-delete-form" action="/api/admin/selection-items/delete" method="post">
+                    <input type="hidden" name="id" value={item.id} />
+                    <SubmitButton className="table-action-button danger" loadingText="删除中...">
+                      删除
+                    </SubmitButton>
+                  </form>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">还没有选品项。可以添加单个选品项，也可以导入 Excel 批量创建。</div>
+        )}
+      </section>
+    </>
+  );
+}

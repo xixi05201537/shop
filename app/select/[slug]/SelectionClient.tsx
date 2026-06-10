@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Check, Eye, Minus, Plus, Send, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Eye, Minus, Plus, Send, ShoppingBag, Trash2, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 
 type SelectionItemView = {
@@ -47,6 +47,8 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   const [submitted, setSubmitted] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const mobileBarRef = useRef<HTMLDivElement | null>(null);
 
   const selectedItems = useMemo(
     () =>
@@ -61,6 +63,28 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
     ? selectedItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0)
     : 0;
   const submitLabel = /[\u4e00-\u9fa5]/.test(page.submitLabel) ? "Submit" : page.submitLabel || "Submit";
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const bar = mobileBarRef.current;
+    if (!viewport || !bar) return;
+
+    const syncVisualViewport = () => {
+      const hiddenBottom = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      bar.style.setProperty("--selection-mobile-visual-bottom", `${hiddenBottom}px`);
+    };
+
+    syncVisualViewport();
+    viewport.addEventListener("resize", syncVisualViewport);
+    viewport.addEventListener("scroll", syncVisualViewport);
+    window.addEventListener("orientationchange", syncVisualViewport);
+
+    return () => {
+      viewport.removeEventListener("resize", syncVisualViewport);
+      viewport.removeEventListener("scroll", syncVisualViewport);
+      window.removeEventListener("orientationchange", syncVisualViewport);
+    };
+  }, []);
 
   function toggleItem(item: SelectionItemView) {
     setMessage("");
@@ -126,6 +150,20 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
     if (!selectedItems.length) {
       setMessage("Please select at least one item.");
     }
+  }
+
+  function removeItem(item: SelectionItemView) {
+    setSelected((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+  }
+
+  function scrollToReview() {
+    setCartOpen(false);
+    reviewSelection();
+    document.querySelector("#selection-submit-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (submitted) {
@@ -210,19 +248,34 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
                   <strong>{item.title}</strong>
                   {item.description ? <p>{item.description}</p> : null}
                   {page.showPrices && item.price !== null ? <span>{formatCurrency(item.price, item.currency)}</span> : null}
-                  {isSelected && page.allowQuantity ? (
-                    <div className="selection-card-stepper" onClick={(event) => event.stopPropagation()}>
-                      <button type="button" onClick={() => setQuantity(item, quantity - 1)} aria-label="Decrease quantity">
+                  {page.allowQuantity ? (
+                    <div
+                      className={`selection-card-stepper ${isSelected ? "" : "is-placeholder"}`}
+                      aria-hidden={!isSelected}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        disabled={!isSelected}
+                        onClick={() => setQuantity(item, quantity - 1)}
+                        aria-label="Decrease quantity"
+                      >
                         <Minus size={16} />
                       </button>
                       <input
-                        value={quantity}
+                        value={quantity || item.minQuantity}
+                        disabled={!isSelected}
                         min={item.minQuantity}
                         max={item.maxQuantity}
                         type="number"
                         onChange={(event) => setQuantity(item, Number(event.target.value))}
                       />
-                      <button type="button" onClick={() => setQuantity(item, quantity + 1)} aria-label="Increase quantity">
+                      <button
+                        type="button"
+                        disabled={!isSelected}
+                        onClick={() => setQuantity(item, quantity + 1)}
+                        aria-label="Increase quantity"
+                      >
                         <Plus size={16} />
                       </button>
                     </div>
@@ -268,16 +321,77 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
           </button>
         </aside>
 
-        <div className="selection-mobile-bar">
+        <div className="selection-mobile-bar" ref={mobileBarRef} aria-label="Selection summary">
+          <button className="selection-mobile-cart-button" type="button" onClick={() => setCartOpen(true)} aria-label="View selected items">
+            <ShoppingBag size={19} />
+            {selectedItems.length ? <small>{selectedItems.length}</small> : null}
+          </button>
           <div>
             <span>{selectedItems.length} pick{selectedItems.length === 1 ? "" : "s"} / {totalQuantity} item{totalQuantity === 1 ? "" : "s"}</span>
             {canShowTotal ? <strong>{formatCurrency(totalAmount)}</strong> : <strong>Ready to review</strong>}
           </div>
-          <a href="#selection-submit-panel" onClick={reviewSelection}>
+          <button type="button" onClick={scrollToReview}>
             Review
-          </a>
+          </button>
         </div>
       </form>
+
+      {cartOpen ? (
+        <div className="selection-cart-sheet-overlay" role="dialog" aria-modal="true" onClick={() => setCartOpen(false)}>
+          <section className="selection-cart-sheet" onClick={(event) => event.stopPropagation()}>
+            <div className="selection-cart-sheet-head">
+              <div>
+                <span>Your picks</span>
+                <strong>{selectedItems.length} pick{selectedItems.length === 1 ? "" : "s"} / {totalQuantity} item{totalQuantity === 1 ? "" : "s"}</strong>
+                {canShowTotal ? <small>{formatCurrency(totalAmount)}</small> : null}
+              </div>
+              <button type="button" aria-label="Close selected items" onClick={() => setCartOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {selectedItems.length ? (
+              <div className="selection-cart-list">
+                {selectedItems.map((item) => (
+                  <article className="selection-cart-item" key={item.id}>
+                    <img src={item.imageUrl} alt={item.title} />
+                    <div>
+                      <strong>{item.title}</strong>
+                      {page.showPrices && item.price !== null ? <span>{formatCurrency(item.price, item.currency)}</span> : null}
+                      {page.allowQuantity ? (
+                        <div className="selection-cart-stepper">
+                          <button type="button" onClick={() => setQuantity(item, item.quantity - 1)} aria-label={`Decrease ${item.title}`}>
+                            <Minus size={15} />
+                          </button>
+                          <input
+                            value={item.quantity}
+                            min={item.minQuantity}
+                            max={item.maxQuantity}
+                            type="number"
+                            onChange={(event) => setQuantity(item, Number(event.target.value))}
+                          />
+                          <button type="button" onClick={() => setQuantity(item, item.quantity + 1)} aria-label={`Increase ${item.title}`}>
+                            <Plus size={15} />
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                    <button type="button" aria-label={`Remove ${item.title}`} onClick={() => removeItem(item)}>
+                      <Trash2 size={17} />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="selection-cart-empty">No picks yet.</div>
+            )}
+
+            <button className="selection-cart-review-button" type="button" onClick={scrollToReview}>
+              Review
+            </button>
+          </section>
+        </div>
+      ) : null}
 
       {preview ? (
         <div className="selection-preview-overlay" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>

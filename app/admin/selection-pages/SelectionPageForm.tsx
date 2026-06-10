@@ -27,7 +27,15 @@ export function SelectionPageForm({ page }: { page?: SelectionPageFormData }) {
         </label>
         <label>
           链接标识
-          <input name="slug" defaultValue={page?.slug || ""} placeholder="summer-picks" />
+          <input
+            name="slug"
+            defaultValue={page?.slug || ""}
+            placeholder="summer-picks"
+            pattern="[A-Za-z0-9-]*"
+            title="只支持英文字母、数字和短横线；不填会自动生成。"
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
         </label>
       </div>
       <label>

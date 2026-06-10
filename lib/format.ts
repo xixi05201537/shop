@@ -9,9 +9,20 @@ export function formatCurrency(value: number | null | undefined, currency = "USD
   if (value === null || typeof value === "undefined") return "";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency,
+    currency: normalizeCurrency(currency),
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+export function normalizeCurrency(value?: string | null) {
+  const candidate = String(value || "USD").trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(candidate)) return "USD";
+  try {
+    new Intl.NumberFormat("en-US", { style: "currency", currency: candidate });
+    return candidate;
+  } catch {
+    return "USD";
+  }
 }
 
 export const DEFAULT_DISPLAY_TIME_ZONE = "UTC";

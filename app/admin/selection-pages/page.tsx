@@ -61,7 +61,10 @@ export default async function SelectionPagesAdmin() {
                     <td>
                       <div className="table-actions">
                         <Link className="table-action-button" href={`/admin/selection-pages/${page.id}`}>
-                          编辑
+                          设置
+                        </Link>
+                        <Link className="table-action-button" href={`/admin/selection-pages/${page.id}/items`}>
+                          选品项
                         </Link>
                         <Link className="table-action-button" href={`/admin/selection-pages/${page.id}/submissions`}>
                           查看提交

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       targetId: id,
       summary: "删除选品项",
     });
-    return NextResponse.redirect(appUrl(`/admin/selection-pages/${item.pageId}?deleted=1`, request), { status: 303 });
+    return NextResponse.redirect(appUrl(`/admin/selection-pages/${item.pageId}/items?deleted=1`, request), { status: 303 });
   }
 
   return NextResponse.redirect(appUrl("/admin/selection-pages?deleted=1", request), { status: 303 });

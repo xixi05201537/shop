@@ -17,5 +17,5 @@ export async function POST(request: Request) {
     summary: `保存选品项：${item.title}`,
   });
 
-  return NextResponse.redirect(appUrl(`/admin/selection-pages/${item.pageId}?saved=1`, request), { status: 303 });
+  return NextResponse.redirect(appUrl(`/admin/selection-pages/${item.pageId}/items?saved=1`, request), { status: 303 });
 }

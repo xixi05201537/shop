@@ -1,5 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { normalizeCurrency } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+
+const SLUG_MAX_LENGTH = 80;
 
 function textValue(formData: FormData, key: string, fallback = "") {
   return String(formData.get(key) || fallback).trim();
@@ -26,10 +30,31 @@ export function normalizeSlug(value: string) {
   const slug = value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
-  return slug || `selection-${Date.now()}`;
+    .slice(0, SLUG_MAX_LENGTH)
+    .replace(/^-+|-+$/g, "");
+  return slug || randomSelectionSlug();
+}
+
+function randomSelectionSlug() {
+  return `p-${randomBytes(3).toString("hex")}`;
+}
+
+async function uniqueSelectionSlug(slug: string, currentId?: string) {
+  let candidate = slug;
+  for (let suffix = 2; ; suffix += 1) {
+    const existing = await prisma.selectionPage.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    });
+    if (!existing || existing.id === currentId) return candidate;
+
+    const suffixText = `-${suffix}`;
+    const base = slug.slice(0, SLUG_MAX_LENGTH - suffixText.length).replace(/-+$/g, "") || randomSelectionSlug();
+    candidate = `${base}${suffixText}`;
+  }
 }
 
 export function selectionSubmissionNumber(id: string) {
@@ -39,7 +64,10 @@ export function selectionSubmissionNumber(id: string) {
 export async function saveSelectionPageForm(formData: FormData) {
   const id = textValue(formData, "id");
   const title = textValue(formData, "title", "未命名选品单");
-  const slug = normalizeSlug(textValue(formData, "slug", title));
+  const previousPage = id
+    ? await prisma.selectionPage.findUnique({ where: { id }, select: { slug: true } })
+    : null;
+  const slug = await uniqueSelectionSlug(normalizeSlug(textValue(formData, "slug")), id || undefined);
   const data = {
     title,
     slug,
@@ -57,8 +85,13 @@ export async function saveSelectionPageForm(formData: FormData) {
     ? await prisma.selectionPage.update({ where: { id }, data })
     : await prisma.selectionPage.create({ data });
 
+  if (previousPage && previousPage.slug !== page.slug) {
+    revalidatePath(`/select/${previousPage.slug}`);
+  }
   revalidatePath(`/select/${page.slug}`);
   revalidatePath("/admin/selection-pages");
+  revalidatePath(`/admin/selection-pages/${page.id}`);
+  revalidatePath(`/admin/selection-pages/${page.id}/items`);
   return page;
 }
 
@@ -71,7 +104,7 @@ export async function saveSelectionItemForm(formData: FormData) {
     imageUrl: textValue(formData, "imageUrl"),
     description: optionalTextValue(formData, "description"),
     price: optionalPrice(formData),
-    currency: textValue(formData, "currency", "USD") || "USD",
+    currency: normalizeCurrency(textValue(formData, "currency", "USD")),
     sortOrder: Math.floor(numberValue(formData, "sortOrder", 0)),
     minQuantity: Math.max(1, Math.floor(numberValue(formData, "minQuantity", 1))),
     maxQuantity: Math.max(1, Math.floor(numberValue(formData, "maxQuantity", 99))),
@@ -85,6 +118,7 @@ export async function saveSelectionItemForm(formData: FormData) {
 
   if (page) revalidatePath(`/select/${page.slug}`);
   revalidatePath(`/admin/selection-pages/${pageId}`);
+  revalidatePath(`/admin/selection-pages/${pageId}/items`);
   return item;
 }
 
@@ -98,6 +132,7 @@ export async function deleteSelectionItem(id: string) {
   await prisma.selectionItem.delete({ where: { id } });
   revalidatePath(`/select/${item.page.slug}`);
   revalidatePath(`/admin/selection-pages/${item.pageId}`);
+  revalidatePath(`/admin/selection-pages/${item.pageId}/items`);
   return item;
 }
 
