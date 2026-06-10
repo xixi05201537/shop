@@ -13,6 +13,7 @@ export type OrderFilterQuery = {
   fulfillment?: string;
   emailIssue?: string;
   page?: string;
+  pageSize?: string;
 };
 
 function numberValue(value?: string) {
@@ -29,7 +30,7 @@ function dateValue(value?: string, endOfDay = false) {
   return date;
 }
 
-export function orderWhereFromQuery(query: OrderFilterQuery): Prisma.OrderWhereInput {
+export function orderWhereFromQuery(query: OrderFilterQuery, payerNotePayerIds: string[] = []): Prisma.OrderWhereInput {
   const minAmount = numberValue(query.minAmount);
   const maxAmount = numberValue(query.maxAmount);
   const dateFrom = dateValue(query.dateFrom);
@@ -37,7 +38,15 @@ export function orderWhereFromQuery(query: OrderFilterQuery): Prisma.OrderWhereI
   const search = query.search || query.email || "";
   const filters: Prisma.OrderWhereInput[] = [];
   if (query.fulfillment === "pending") {
-    filters.push({ status: "paid", trackingNumber: null });
+    filters.push({ status: "paid", trackingNumber: null, shippedAt: null });
+  }
+  if (query.fulfillment === "shipped") {
+    filters.push({
+      OR: [
+        { trackingNumber: { not: null } },
+        { shippedAt: { not: null } },
+      ],
+    });
   }
   if (query.emailIssue === "1") {
     filters.push({
@@ -75,6 +84,10 @@ export function orderWhereFromQuery(query: OrderFilterQuery): Prisma.OrderWhereI
           { paypalBuyerNickname: { contains: search } },
           { orderNumber: { contains: search } },
           { paypalOrderId: { contains: search } },
+          { paypalCaptureId: { contains: search } },
+          { paypalPayerId: { contains: search } },
+          { internalNote: { contains: search } },
+          ...(payerNotePayerIds.length ? [{ paypalPayerId: { in: payerNotePayerIds } }] : []),
         ]
       : undefined,
     AND: filters.length ? filters : undefined,

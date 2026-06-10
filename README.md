@@ -317,6 +317,21 @@ docker buildx build --platform linux/amd64 -t aoizzz/misakishop:latest --push .
 docker pull aoizzz/misakishop:latest
 ```
 
+## GitHub 自动发布 Docker 镜像
+
+仓库包含 GitHub Actions 工作流 `.github/workflows/docker-publish.yml`。推送到 `master` 分支时会自动构建 `linux/amd64` 镜像并推送到 Docker Hub：
+
+- `aoizzz/misakishop:latest`
+- `aoizzz/misakishop:<commit-sha>`
+
+首次使用前，在 GitHub 仓库里配置：
+
+1. 打开 `Settings` -> `Secrets and variables` -> `Actions`。
+2. 新增 `DOCKERHUB_USERNAME`，值为 Docker Hub 用户名。
+3. 新增 `DOCKERHUB_TOKEN`，值为 Docker Hub Access Token，不建议使用账号密码。
+
+也可以在 GitHub 的 `Actions` 页面手动运行 `Docker Publish` 工作流。
+
 当前 Dockerfile 使用 `node:22-alpine`。如果构建环境的 Docker Hub 镜像代理不可用，可以临时换成可访问的官方镜像源构建，但不要把临时文件提交到仓库。
 
 ## 数据库初始化和更新

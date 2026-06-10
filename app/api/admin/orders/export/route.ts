@@ -13,14 +13,27 @@ export async function GET(request: Request) {
   if (unauthorized) return unauthorized;
 
   const params = new URL(request.url).searchParams;
+  const query = Object.fromEntries(params.entries());
+  const search = query.search || query.email || "";
+  const searchPayerNotes = search
+    ? await prisma.payerNote.findMany({
+        where: { note: { contains: search } },
+        select: { payerId: true },
+      })
+    : [];
   const [orders, config] = await Promise.all([
     prisma.order.findMany({
-      where: orderWhereFromQuery(Object.fromEntries(params.entries())),
+      where: orderWhereFromQuery(query, searchPayerNotes.map((payerNote) => payerNote.payerId)),
       orderBy: { createdAt: "desc" },
       take: 1000,
     }),
     getConfigMap(),
   ]);
+  const payerIds = Array.from(new Set(orders.map((order) => order.paypalPayerId).filter((payerId): payerId is string => Boolean(payerId))));
+  const payerNotes = payerIds.length
+    ? await prisma.payerNote.findMany({ where: { payerId: { in: payerIds } } })
+    : [];
+  const payerNoteById = new Map(payerNotes.map((payerNote) => [payerNote.payerId, payerNote.note]));
   const displayTimeZone = normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE);
 
   const workbook = new ExcelJS.Workbook();
@@ -34,6 +47,7 @@ export async function GET(request: Request) {
     { header: "买家邮箱", key: "buyerEmail", width: 28 },
     { header: "买家昵称", key: "buyerNickname", width: 18 },
     { header: "备注", key: "internalNote", width: 32 },
+    { header: "付款人备注", key: "payerNote", width: 32 },
     { header: "PayPal 买家邮箱", key: "paypalBuyerEmail", width: 28 },
     { header: "PayPal 买家昵称", key: "paypalBuyerNickname", width: 18 },
     { header: "PayPal Payer ID", key: "paypalPayerId", width: 22 },
@@ -62,6 +76,7 @@ export async function GET(request: Request) {
       buyerEmail: displayOrderEmail(order),
       buyerNickname: displayOrderNickname(order),
       internalNote: order.internalNote || "",
+      payerNote: order.paypalPayerId ? payerNoteById.get(order.paypalPayerId) || "" : "",
       paypalBuyerEmail: order.paypalBuyerEmail || "",
       paypalBuyerNickname: order.paypalBuyerNickname || "",
       paypalPayerId: order.paypalPayerId || "",

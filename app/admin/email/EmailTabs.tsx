@@ -46,15 +46,25 @@ export function EmailTabs({
   const [adminPreview, setAdminPreview] = useState(adminHtml);
   const [shipmentPreview, setShipmentPreview] = useState(shipmentHtml);
 
+  function handleTabClick(tabId: EmailTabId) {
+    setActive(tabId);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tabId);
+    url.searchParams.delete("test");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
   return (
     <section className="admin-card tab-card">
       <div className="admin-tabs" role="tablist" aria-label="邮件配置">
         {tabs.map((tab) => (
           <button
+            aria-selected={active === tab.id}
             className={active === tab.id ? "is-active" : ""}
             key={tab.id}
+            role="tab"
             type="button"
-            onClick={() => setActive(tab.id)}
+            onClick={() => handleTabClick(tab.id)}
           >
             {tab.label}
           </button>

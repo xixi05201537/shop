@@ -9,14 +9,23 @@ const messages: Record<string, string> = {
   deleted: "删除成功",
   uploaded: "上传成功",
   shipped: "发货邮件已发送",
+  batchShipped: "批量发货已处理",
   note: "备注已保存",
 };
 
-const toastParams = ["saved", "deleted", "uploaded", "shipped", "resent", "note"];
+const toastParams = ["saved", "deleted", "uploaded", "shipped", "batchShipped", "resent", "note", "shipError"];
 
 function resentMessage(value: string | null) {
   if (value === "buyer") return "买家邮件已发送";
   if (value === "admin") return "管理员邮件已发送";
+  return null;
+}
+
+function shipErrorMessage(value: string | null) {
+  if (value === "reship") return "包含已发货订单，请确认后再批量发货";
+  if (value === "tracking") return "请填写运单号";
+  if (value === "empty") return "请选择需要发货的订单";
+  if (value === "paid") return "没有可发货的已支付订单";
   return null;
 }
 
@@ -26,6 +35,9 @@ export function AdminToast() {
     const resent = searchParams.get("resent");
     const resentText = resentMessage(resent);
     if (resentText) return { key: `resent:${resent}`, message: resentText };
+    const shipError = searchParams.get("shipError");
+    const shipErrorText = shipErrorMessage(shipError);
+    if (shipErrorText) return { key: `shipError:${shipError}`, message: shipErrorText };
 
     for (const [key, text] of Object.entries(messages)) {
       if (searchParams.get(key)) return { key, message: text };

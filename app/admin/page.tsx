@@ -16,14 +16,6 @@ export default async function AdminHome() {
       { shipmentEmailStatus: "failed" },
     ],
   };
-  const needsFollowUpWhere = {
-    OR: [
-      { internalNote: { not: null } },
-      { buyerEmailStatus: "failed" },
-      { adminEmailStatus: "failed" },
-      { shipmentEmailStatus: "failed" },
-    ],
-  };
   const [
     orders,
     paidOrders,
@@ -35,7 +27,6 @@ export default async function AdminHome() {
     articles,
     product,
     recentPaidOrders,
-    followUpOrders,
     auditLogs,
     config,
   ] = await Promise.all([
@@ -49,7 +40,6 @@ export default async function AdminHome() {
     prisma.article.count(),
     prisma.product.findFirst({ orderBy: { updatedAt: "desc" } }),
     prisma.order.findMany({ where: { status: "paid" }, orderBy: { paidAt: "desc" }, take: 5 }),
-    prisma.order.findMany({ where: needsFollowUpWhere, orderBy: { updatedAt: "desc" }, take: 5 }),
     listRecentAuditLogs(5),
     getConfigMap(),
   ]);
@@ -121,30 +111,24 @@ export default async function AdminHome() {
           <div className="admin-card dashboard-panel">
             <div className="section-title-row">
               <div>
-                <h2>需要跟进</h2>
-                <p>有备注或邮件异常的订单，别让它们沉到列表里。</p>
+                <h2>最近操作</h2>
+                <p>配置、发货、重发邮件、备注和图片操作会记录在这里。</p>
               </div>
-              <Link className="secondary-button" href="/admin/orders?emailIssue=1">
+              <Link className="secondary-button" href="/admin/audit-logs">
                 查看全部
               </Link>
             </div>
-            {followUpOrders.length ? (
-              <div className="dashboard-order-list">
-                {followUpOrders.map((order) => (
-                  <Link className="dashboard-order-row" href={`/admin/orders/${order.id}`} key={order.id}>
-                    <div>
-                      <strong>{order.orderNumber}</strong>
-                      <span>{order.internalNote ? `备注：${order.internalNote}` : "邮件状态需要处理"}</span>
-                    </div>
-                    <div>
-                      <strong>{formatUsd(order.totalAmount)}</strong>
-                      <span className={`status-badge status-${order.status}`}>{orderStatusLabel(order.status)}</span>
-                    </div>
-                  </Link>
+            {auditLogs.length ? (
+              <div className="audit-log-list">
+                {auditLogs.map((log: { id: string; summary: string; action: string; createdAt: Date }) => (
+                  <div className="audit-log-row" key={log.id}>
+                    <strong>{log.summary}</strong>
+                    <span>{formatDateTimeWithOffset(log.createdAt, displayTimeZone)} · {log.action}</span>
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="empty-state">暂无需要跟进的订单。</div>
+              <div className="empty-state">暂无操作记录。</div>
             )}
           </div>
         </div>
@@ -202,29 +186,6 @@ export default async function AdminHome() {
               </Link>
               <Link className="secondary-button" href="/admin/upload">上传图片</Link>
             </div>
-          </div>
-          <div className="admin-card dashboard-panel">
-            <div className="section-title-row">
-              <div>
-                <h2>最近操作</h2>
-                <p>配置、发货、重发邮件、备注和图片操作会记录在这里。</p>
-              </div>
-              <Link className="secondary-button" href="/admin/audit-logs">
-                查看全部
-              </Link>
-            </div>
-            {auditLogs.length ? (
-              <div className="audit-log-list">
-                {auditLogs.map((log: { id: string; summary: string; action: string; createdAt: Date }) => (
-                  <div className="audit-log-row" key={log.id}>
-                    <strong>{log.summary}</strong>
-                    <span>{formatDateTimeWithOffset(log.createdAt, displayTimeZone)} · {log.action}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">暂无操作记录。</div>
-            )}
           </div>
         </div>
       </section>

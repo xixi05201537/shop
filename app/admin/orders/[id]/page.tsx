@@ -6,6 +6,7 @@ import { getConfigMap } from "@/lib/config";
 import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, formatUsd, normalizeDisplayTimeZone } from "@/lib/format";
 import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
+import { OrderNoteDialog, PayerNoteDialog } from "../OrderNoteDialog";
 import { ShipOrderDialog } from "./ShipOrderDialog";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const [order, config] = await Promise.all([prisma.order.findUnique({ where: { id } }), getConfigMap()]);
   if (!order) notFound();
+  const payerNote = order.paypalPayerId
+    ? await prisma.payerNote.findUnique({ where: { payerId: order.paypalPayerId } })
+    : null;
   const displayTimeZone = normalizeDisplayTimeZone(config.displayTimeZone || DEFAULT_DISPLAY_TIME_ZONE);
 
   return (
@@ -44,20 +48,34 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <strong>{order.quantity}</strong>
           </div>
         </dl>
-        <form className="internal-note-form" action="/api/admin/orders/note" method="post">
-          <input type="hidden" name="id" value={order.id} />
-          <label>
-            内部备注
-            <textarea
-              name="internalNote"
-              defaultValue={order.internalNote || ""}
-              placeholder="例如：客户已联系、已人工确认、特殊要求。仅后台可见。"
+        <section className={order.internalNote ? "internal-note-summary has-note" : "internal-note-summary"}>
+          <div>
+            <strong>内部备注</strong>
+            <p>{order.internalNote || "暂无备注"}</p>
+          </div>
+          <OrderNoteDialog
+            orderId={order.id}
+            note={order.internalNote}
+            triggerClassName="secondary-button internal-note-edit-button"
+            triggerChildren={order.internalNote ? "编辑备注" : "添加备注"}
+          />
+        </section>
+        <section className={payerNote?.note ? "internal-note-summary has-note payer-note-summary" : "internal-note-summary payer-note-summary"}>
+          <div>
+            <strong>付款人备注</strong>
+            <p>{payerNote?.note || (order.paypalPayerId ? "暂无付款人备注" : "缺少 PayPal Payer ID，暂不能记录付款人备注")}</p>
+            {order.paypalPayerId ? <small>Payer ID：{order.paypalPayerId}</small> : null}
+          </div>
+          {order.paypalPayerId ? (
+            <PayerNoteDialog
+              payerId={order.paypalPayerId}
+              note={payerNote?.note}
+              returnTo={`/admin/orders/${order.id}`}
+              triggerClassName="secondary-button internal-note-edit-button"
+              triggerChildren={payerNote?.note ? "编辑付款人备注" : "添加付款人备注"}
             />
-          </label>
-          <SubmitButton className="secondary-button" loadingText="保存中...">
-            保存备注
-          </SubmitButton>
-        </form>
+          ) : null}
+        </section>
         <table className="admin-table">
           <tbody>
             <tr>
