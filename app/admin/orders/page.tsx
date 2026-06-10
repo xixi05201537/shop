@@ -72,6 +72,18 @@ export default async function OrdersAdmin({
           : query.status
             ? orderStatusLabel(query.status)
             : "";
+  const hasActiveOrderFilter = Boolean(
+    search ||
+      query.status ||
+      query.fulfillment ||
+      query.emailIssue ||
+      query.dateFrom ||
+      query.dateTo ||
+      query.minAmount ||
+      query.maxAmount ||
+      query.nickname ||
+      query.paypalOrderId,
+  );
 
   return (
     <>
@@ -97,13 +109,14 @@ export default async function OrdersAdmin({
               <option value="pending">待发货</option>
               <option value="shipped">已发货</option>
             </select>
+            <input type="hidden" name="pageSize" value={String(pageSize)} />
             <input type="hidden" name="emailIssue" value={query.emailIssue || ""} />
             <input name="dateFrom" type="date" defaultValue={query.dateFrom || ""} />
             <input name="dateTo" type="date" defaultValue={query.dateTo || ""} />
             <div className="order-filter-actions">
               <button className="admin-button order-action-button" type="submit">
                 <Search aria-hidden="true" size={16} />
-                <span>筛选</span>
+                <span>搜索</span>
               </button>
               <Link className="secondary-button order-action-button order-action-reset" href="/admin/orders">
                 <RotateCcw aria-hidden="true" size={16} />
@@ -252,6 +265,16 @@ export default async function OrdersAdmin({
                 </tr>
               );
             })}
+            {!orders.length ? (
+              <tr className="orders-empty-row">
+                <td colSpan={10}>
+                  <div className="orders-empty-state">
+                    <strong>{hasActiveOrderFilter ? "没有符合条件的订单" : "暂无订单记录"}</strong>
+                    <span>{hasActiveOrderFilter ? "可以调整筛选条件后再试，或点击上方清除筛选。" : "新的支付订单会显示在这里。"}</span>
+                  </div>
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
         <div className="admin-pagination">

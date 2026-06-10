@@ -153,11 +153,11 @@ export default async function AdminHome() {
                 <span>付款率</span>
                 <strong>{paidRate}%</strong>
               </Link>
-              <Link className={emailIssues ? "is-danger" : ""} href="/admin/orders?emailIssue=1">
+              <Link href="/admin/orders?emailIssue=1">
                 <span>邮件发送异常</span>
                 <strong>{emailIssues}</strong>
               </Link>
-              <Link className={webhookIssues ? "is-danger" : ""} href="/admin/settings">
+              <Link href="/admin/settings">
                 <span>Webhook 异常</span>
                 <strong>{webhookIssues}</strong>
               </Link>

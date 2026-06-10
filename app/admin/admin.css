@@ -809,22 +809,13 @@
   padding: 12px;
   background: rgba(255, 255, 255, 0.78);
   color: var(--muted);
-  font-weight: 900;
-}
-
-.dashboard-check-list a.is-danger {
-  border-color: rgba(152, 36, 79, 0.1);
-  background: rgba(255, 255, 255, 0.78);
-  color: #9f1239;
-}
-
-.dashboard-check-list a.is-danger strong {
-  color: #be123c;
+  font-weight: 850;
 }
 
 .dashboard-check-list strong {
   color: var(--cherry);
   font-size: 1.05rem;
+  font-weight: 900;
   white-space: nowrap;
 }
 
@@ -2570,6 +2561,36 @@ button.uploaded-image-card {
   white-space: nowrap;
 }
 
+.admin-table .orders-empty-row td {
+  border-bottom: 0;
+  padding: 0;
+}
+
+.admin-table tbody .orders-empty-row:hover {
+  background: transparent;
+}
+
+.orders-empty-state {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 132px;
+  padding: 28px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.orders-empty-state strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.orders-empty-state span {
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
 .admin-card:has(.admin-table) {
   overflow-x: auto;
 }
@@ -2597,6 +2618,10 @@ button.uploaded-image-card {
 
 .admin-table tbody tr:hover {
   background: rgba(255, 231, 240, 0.35);
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .admin-table td:first-child a,

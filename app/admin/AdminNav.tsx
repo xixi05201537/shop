@@ -6,13 +6,13 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/admin", label: "概览", icon: Home, exact: true },
-  { href: "/admin/product", label: "商品", icon: Package },
   { href: "/admin/orders", label: "订单", icon: ReceiptText },
+  { href: "/admin/product", label: "商品", icon: Package },
   { href: "/admin/upload", label: "图片", icon: FileImage },
   { href: "/admin/email", label: "邮件", icon: Mail },
-  { href: "/admin/settings", label: "设置", icon: Settings },
-  { href: "/admin/floating-widget", label: "浮窗", icon: Sparkles },
   { href: "/admin/articles", label: "文章", icon: FileText },
+  { href: "/admin/floating-widget", label: "浮窗", icon: Sparkles },
+  { href: "/admin/settings", label: "设置", icon: Settings },
 ] as const;
 
 export function AdminNav() {
