@@ -323,7 +323,6 @@ docker pull aoizzz/misakishop:latest
 
 - `aoizzz/misakishop:latest`
 - `aoizzz/misakishop:1.<自动递增编号>`
-- `aoizzz/misakishop:sha-<短提交编号>`
 
 一般部署使用 `latest` 即可；如果需要指定某次构建，可以在 GitHub Actions 运行记录里看到编号，例如 `1.23`。
 
