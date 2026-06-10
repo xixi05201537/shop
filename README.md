@@ -322,7 +322,10 @@ docker pull aoizzz/misakishop:latest
 仓库包含 GitHub Actions 工作流 `.github/workflows/docker-publish.yml`。推送到 `master` 分支时会自动构建 `linux/amd64` 镜像并推送到 Docker Hub：
 
 - `aoizzz/misakishop:latest`
-- `aoizzz/misakishop:<commit-sha>`
+- `aoizzz/misakishop:1.<自动递增编号>`
+- `aoizzz/misakishop:sha-<短提交编号>`
+
+一般部署使用 `latest` 即可；如果需要指定某次构建，可以在 GitHub Actions 运行记录里看到编号，例如 `1.23`。
 
 首次使用前，在 GitHub 仓库里配置：
 
