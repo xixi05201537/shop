@@ -5,6 +5,15 @@ export function formatUsd(value: number) {
   }).format(value);
 }
 
+export function formatCurrency(value: number | null | undefined, currency = "USD") {
+  if (value === null || typeof value === "undefined") return "";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export const DEFAULT_DISPLAY_TIME_ZONE = "UTC";
 
 export const DISPLAY_TIME_ZONE_OPTIONS = [

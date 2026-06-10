@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FileImage, FileText, Home, LogOut, Mail, Package, ReceiptText, Settings, Sparkles } from "lucide-react";
+import { FileImage, FileText, Home, Images, LogOut, Mail, Package, ReceiptText, Settings, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/admin", label: "概览", icon: Home, exact: true },
   { href: "/admin/orders", label: "订单", icon: ReceiptText },
   { href: "/admin/product", label: "商品", icon: Package },
+  { href: "/admin/selection-pages", label: "选品单", icon: Images },
   { href: "/admin/upload", label: "图片", icon: FileImage },
   { href: "/admin/email", label: "邮件", icon: Mail },
   { href: "/admin/articles", label: "文章", icon: FileText },

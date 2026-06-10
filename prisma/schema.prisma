@@ -32,6 +32,81 @@ model Product {
   updatedAt               DateTime @updatedAt
 }
 
+model SelectionPage {
+  id             String                @id @default(cuid())
+  title          String
+  slug           String                @unique
+  description    String?               @db.LongText
+  submitLabel    String                @default("提交选择")
+  isPublished    Boolean               @default(true)
+  showPrices     Boolean               @default(true)
+  allowQuantity  Boolean               @default(true)
+  requireName    Boolean               @default(false)
+  requireEmail   Boolean               @default(false)
+  requireContact Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  items          SelectionItem[]
+  submissions    SelectionSubmission[]
+}
+
+model SelectionItem {
+  id          String          @id @default(cuid())
+  pageId      String
+  page        SelectionPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  title       String
+  imageUrl    String          @db.VarChar(2048)
+  description String?         @db.LongText
+  price       Float?
+  currency    String          @default("USD")
+  sortOrder   Int             @default(0)
+  minQuantity Int             @default(1)
+  maxQuantity Int             @default(99)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  submissions SelectionSubmissionItem[]
+
+  @@index([pageId, sortOrder])
+}
+
+model SelectionSubmission {
+  id            String                    @id @default(cuid())
+  pageId        String
+  page          SelectionPage             @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  customerName  String?
+  customerEmail String?
+  customerContact String?
+  note          String?                   @db.LongText
+  status        String                    @default("new")
+  totalQuantity Int
+  totalAmount   Float?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  items         SelectionSubmissionItem[]
+
+  @@index([pageId, createdAt])
+  @@index([status])
+}
+
+model SelectionSubmissionItem {
+  id                  String              @id @default(cuid())
+  submissionId        String
+  submission          SelectionSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  itemId              String?
+  item                SelectionItem?      @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  titleSnapshot       String
+  imageSnapshot       String              @db.VarChar(2048)
+  descriptionSnapshot String?             @db.LongText
+  priceSnapshot       Float?
+  currencySnapshot    String              @default("USD")
+  quantity            Int
+  lineTotal           Float?
+
+  @@index([submissionId])
+  @@index([itemId])
+}
+
 model Article {
   id        String   @id @default(cuid())
   slug      String   @unique
