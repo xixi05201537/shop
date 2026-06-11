@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Eye, Minus, Plus, Send, ShoppingBag, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, Clock3, Eye, Minus, Plus, Send, ShoppingBag, Trash2, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
+import { CandySelectedIcon } from "./CandySelectedIcon";
 
 type SelectionItemView = {
   id: string;
@@ -39,6 +40,106 @@ type SubmissionResult = {
   path: string;
 };
 
+type SelectionHistoryRecord = {
+  id: string;
+  reference: string;
+  path: string;
+  pageTitle: string;
+  totalQuantity: number;
+  submittedAt: string;
+};
+
+type SelectionDraft = {
+  selected: SelectedMap;
+  customerName: string;
+  customerEmail: string;
+  customerContact: string;
+  note: string;
+  updatedAt: string;
+};
+
+const selectionHistoryStorageKey = "misaki-selection-history";
+const maxSelectionHistoryRecords = 12;
+
+function selectionDraftStorageKey(slug: string) {
+  return `misaki-selection-draft:${slug}`;
+}
+
+function selectionReturnRefreshStorageKey(slug: string) {
+  return `misaki-selection-return-refresh:${slug}`;
+}
+
+function readSelectionHistory() {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(selectionHistoryStorageKey) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is SelectionHistoryRecord => {
+        return Boolean(
+          item &&
+            typeof item.id === "string" &&
+            typeof item.reference === "string" &&
+            typeof item.path === "string" &&
+            typeof item.pageTitle === "string" &&
+            typeof item.totalQuantity === "number" &&
+            typeof item.submittedAt === "string",
+        );
+      })
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+      .slice(0, maxSelectionHistoryRecords);
+  } catch {
+    return [];
+  }
+}
+
+function writeSelectionHistory(record: SelectionHistoryRecord) {
+  const next = [record, ...readSelectionHistory().filter((item) => item.id !== record.id)].slice(0, maxSelectionHistoryRecords);
+  window.localStorage.setItem(selectionHistoryStorageKey, JSON.stringify(next));
+  return next;
+}
+
+function historyTimeLabel(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(date);
+}
+
+function readSelectionDraft(slug: string, itemIds: Set<string>): SelectionDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(selectionDraftStorageKey(slug)) || "null");
+    if (!parsed || typeof parsed !== "object") return null;
+    const rawSelected = parsed.selected && typeof parsed.selected === "object" ? parsed.selected : {};
+    const selected = Object.fromEntries(
+      Object.entries(rawSelected)
+        .filter(([id, quantity]) => itemIds.has(id) && Number.isFinite(Number(quantity)) && Number(quantity) > 0)
+        .map(([id, quantity]) => [id, Math.floor(Number(quantity))]),
+    );
+
+    return {
+      selected,
+      customerName: typeof parsed.customerName === "string" ? parsed.customerName : "",
+      customerEmail: typeof parsed.customerEmail === "string" ? parsed.customerEmail : "",
+      customerContact: typeof parsed.customerContact === "string" ? parsed.customerContact : "",
+      note: typeof parsed.note === "string" ? parsed.note : "",
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeSelectionDraft(slug: string, draft: SelectionDraft) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(selectionDraftStorageKey(slug), JSON.stringify(draft));
+}
+
+function clearSelectionDraft(slug: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(selectionDraftStorageKey(slug));
+}
+
 export function SelectionClient({ page }: { page: SelectionPageView }) {
   const [selected, setSelected] = useState<SelectedMap>({});
   const [preview, setPreview] = useState<SelectionItemView | null>(null);
@@ -51,7 +152,11 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<SelectionHistoryRecord[]>([]);
   const mobileBarRef = useRef<HTMLDivElement | null>(null);
+  const draftHydratedRef = useRef(false);
+  const itemIds = useMemo(() => new Set(page.items.map((item) => item.id)), [page.items]);
 
   const selectedItems = useMemo(
     () =>
@@ -66,6 +171,90 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
     ? selectedItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0)
     : 0;
   const submitLabel = /[\u4e00-\u9fa5]/.test(page.submitLabel) ? "Submit" : page.submitLabel || "Submit";
+  const refreshHistory = useCallback(() => {
+    setHistory(readSelectionHistory());
+  }, []);
+  const refreshHistorySoon = useCallback(() => {
+    refreshHistory();
+    window.requestAnimationFrame(refreshHistory);
+    window.setTimeout(refreshHistory, 80);
+    window.setTimeout(refreshHistory, 260);
+  }, [refreshHistory]);
+  const restoreDraft = useCallback(() => {
+    const draft = readSelectionDraft(page.slug, itemIds);
+    if (!draft) return;
+    setSelected(draft.selected);
+    setCustomerName(draft.customerName);
+    setCustomerEmail(draft.customerEmail);
+    setCustomerContact(draft.customerContact);
+    setNote(draft.note);
+  }, [itemIds, page.slug]);
+
+  useEffect(() => {
+    const refreshKey = selectionReturnRefreshStorageKey(page.slug);
+    const refreshState = window.sessionStorage.getItem(refreshKey);
+    if (refreshState === "pending") {
+      window.sessionStorage.setItem(refreshKey, "done");
+      window.location.reload();
+      return;
+    }
+    if (refreshState === "done") {
+      window.sessionStorage.removeItem(refreshKey);
+    }
+  }, [page.slug]);
+
+  useEffect(() => {
+    restoreDraft();
+    draftHydratedRef.current = true;
+  }, [restoreDraft]);
+
+  useEffect(() => {
+    if (!draftHydratedRef.current) return;
+    writeSelectionDraft(page.slug, {
+      selected,
+      customerName,
+      customerEmail,
+      customerContact,
+      note,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [customerContact, customerEmail, customerName, note, page.slug, selected]);
+
+  useEffect(() => {
+    refreshHistorySoon();
+
+    const syncVisibleHistory = () => {
+      if (document.visibilityState === "visible") {
+        restoreDraft();
+        refreshHistorySoon();
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        restoreDraft();
+        refreshHistory();
+      }
+    }, 1200);
+
+    const syncPageState = () => {
+      restoreDraft();
+      refreshHistorySoon();
+    };
+
+    window.addEventListener("pageshow", syncPageState);
+    window.addEventListener("popstate", syncPageState);
+    window.addEventListener("focus", syncPageState);
+    document.addEventListener("visibilitychange", syncVisibleHistory);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("pageshow", syncPageState);
+      window.removeEventListener("popstate", syncPageState);
+      window.removeEventListener("focus", syncPageState);
+      document.removeEventListener("visibilitychange", syncVisibleHistory);
+    };
+  }, [refreshHistory, refreshHistorySoon, restoreDraft]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -134,12 +323,30 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Could not submit your selection. Please try again.");
-      setSubmissionResult({
+      const result = {
         id: data.submissionId || "",
         reference: data.reference || "",
         path: data.path || "",
+      };
+      setSubmissionResult({
+        id: result.id,
+        reference: result.reference,
+        path: result.path,
       });
+      if (result.id && result.reference && result.path) {
+        setHistory(
+          writeSelectionHistory({
+            id: result.id,
+            reference: result.reference,
+            path: result.path,
+            pageTitle: page.title,
+            totalQuantity,
+            submittedAt: new Date().toISOString(),
+          }),
+        );
+      }
       setSubmitted(true);
+      clearSelectionDraft(page.slug);
       setSelected({});
       setNote("");
     } catch (error) {
@@ -167,6 +374,16 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
     setCartOpen(false);
     reviewSelection();
     document.querySelector("#selection-submit-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openHistory() {
+    setHistory(readSelectionHistory());
+    setHistoryOpen(true);
+    refreshHistorySoon();
+  }
+
+  function rememberHistoryNavigation() {
+    window.sessionStorage.setItem(selectionReturnRefreshStorageKey(page.slug), "pending");
   }
 
   if (submitted) {
@@ -210,9 +427,16 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
           <h1 className="display">{page.title}</h1>
           {page.description ? <p>{page.description}</p> : null}
         </div>
-        <div className="selection-hero-note">
-          <span>Available items</span>
-          <strong>{page.items.length}</strong>
+        <div className="selection-hero-actions">
+          <div className="selection-hero-note">
+            <span>Available items</span>
+            <strong>{page.items.length}</strong>
+          </div>
+          <button className="selection-history-button" type="button" onClick={openHistory}>
+            <Clock3 size={16} />
+            选品记录
+            {history.length ? <small>{history.length}</small> : null}
+          </button>
         </div>
       </section>
 
@@ -246,7 +470,7 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
                   </button>
                   {isSelected ? (
                     <span className="selection-check">
-                      <Check size={17} />
+                      <CandySelectedIcon />
                     </span>
                   ) : null}
                   {(itemLabel || itemPrice) ? (
@@ -416,6 +640,41 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
             <button className="selection-cart-review-button" type="button" onClick={scrollToReview}>
               Review
             </button>
+          </section>
+        </div>
+      ) : null}
+
+      {historyOpen ? (
+        <div className="selection-history-sheet-overlay" role="dialog" aria-modal="true" onClick={() => setHistoryOpen(false)}>
+          <section className="selection-history-sheet" onClick={(event) => event.stopPropagation()}>
+            <div className="selection-cart-sheet-head">
+              <div>
+                <span>History</span>
+                <strong>选品记录</strong>
+                <small>{history.length ? `${history.length} records` : "No records yet"}</small>
+              </div>
+              <button type="button" aria-label="Close selection history" onClick={() => setHistoryOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {history.length ? (
+              <div className="selection-history-sheet-list">
+                {history.map((record) => (
+                  <a href={record.path} className="selection-history-sheet-item" key={record.id} onClick={rememberHistoryNavigation}>
+                    <div>
+                      <span>{record.reference}</span>
+                      <strong>{record.pageTitle}</strong>
+                      <small>
+                        {record.totalQuantity} items{historyTimeLabel(record.submittedAt) ? ` · ${historyTimeLabel(record.submittedAt)}` : ""}
+                      </small>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="selection-cart-empty">还没有历史选品记录。</div>
+            )}
           </section>
         </div>
       ) : null}

@@ -7,8 +7,15 @@ import { SelectionPageForm } from "../SelectionPageForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditSelectionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditSelectionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const query = searchParams ? await searchParams : {};
   const [page, baseUrl] = await Promise.all([
     prisma.selectionPage.findUnique({
       where: { id },
@@ -60,6 +67,7 @@ export default async function EditSelectionPage({ params }: { params: Promise<{ 
             管理选品项
           </Link>
         </div>
+        {query.error === "save" ? <div className="admin-notice">保存失败，请检查链接标识是否重复或稍后重试。</div> : null}
         <SelectionPageForm page={page} />
       </section>
     </>

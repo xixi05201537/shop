@@ -6,10 +6,32 @@
 - Local:         http://localhost:4000
 - Network:       http://172.27.48.1:4000
 - Environments: .env
-✓ Ready in 394ms
+✓ Ready in 508ms
 
- GET /admin/settings 200 in 760ms (next.js: 134ms, proxy.ts: 216ms, application-code: 410ms)
-✓ Compiled in 17ms
- GET /admin/settings 200 in 160ms (next.js: 37ms, proxy.ts: 20ms, application-code: 103ms)
- GET /admin/settings 200 in 61ms (next.js: 4ms, proxy.ts: 5ms, application-code: 51ms)
-✓ Compiled in 17ms
+ GET /admin/selection-pages/cmq84dj7q0000gmpoi4cwcoqs/items 200 in 1154ms (next.js: 535ms, proxy.ts: 180ms, application-code: 439ms)
+✓ Compiled in 53ms
+✓ Compiled in 109ms
+ POST /api/admin/uploads/clipboard 200 in 153ms (next.js: 70ms, proxy.ts: 9ms, application-code: 74ms)
+ POST /api/admin/selection-items 303 in 89ms (next.js: 45ms, proxy.ts: 8ms, application-code: 36ms)
+ GET /admin/selection-pages/cmq84dj7q0000gmpoi4cwcoqs/items?saved=1 200 in 225ms (next.js: 45ms, proxy.ts: 5ms, application-code: 175ms)
+ GET /select/043975 200 in 439ms (next.js: 368ms, application-code: 71ms)
+ GET /select/043975 200 in 96ms (next.js: 41ms, application-code: 55ms)
+✓ Compiled in 27ms
+✓ Compiled in 46ms
+ GET /admin/selection-pages/cmq84dj7q0000gmpoi4cwcoqs/items 200 in 246ms (next.js: 40ms, proxy.ts: 6ms, application-code: 201ms)
+ GET /select/043975 200 in 91ms (next.js: 36ms, application-code: 55ms)
+✓ Compiled in 75ms
+✓ Compiled in 23ms
+✓ Compiled in 19ms
+✓ Compiled in 23ms
+ GET /select/043975 200 in 95ms (next.js: 42ms, application-code: 53ms)
+✓ Compiled in 133ms
+ GET /select/043975 200 in 332ms (next.js: 113ms, application-code: 219ms)
+ GET /select/043975 200 in 87ms (next.js: 12ms, application-code: 76ms)
+ GET /admin/selection-pages/cmq84dj7q0000gmpoi4cwcoqs/items 200 in 441ms (next.js: 233ms, proxy.ts: 55ms, application-code: 152ms)
+ GET /admin/selection-pages/cmq84dj7q0000gmpoi4cwcoqs/items 200 in 104ms (next.js: 10ms, proxy.ts: 43ms, application-code: 52ms)
+✓ Compiled in 22ms
+✓ Compiled in 11ms
+ GET /select/043975 200 in 263ms (next.js: 84ms, application-code: 179ms)
+ GET /admin/selection-pages/cmq84dj7q0000gmpoi4cwcoqs/items 200 in 323ms (next.js: 200ms, proxy.ts: 53ms, application-code: 70ms)
+[?25h

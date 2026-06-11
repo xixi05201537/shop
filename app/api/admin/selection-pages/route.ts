@@ -10,13 +10,23 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const isCreate = !formData.get("id");
-  const page = await saveSelectionPageForm(formData);
-  await writeAuditLog({
-    action: formData.get("id") ? "save" : "create",
-    targetType: "selection-page",
-    targetId: page.id,
-    summary: `保存选品单：${page.title}`,
-  });
+  let page;
+  try {
+    page = await saveSelectionPageForm(formData);
+    await writeAuditLog({
+      action: formData.get("id") ? "save" : "create",
+      targetType: "selection-page",
+      targetId: page.id,
+      summary: `保存选品单：${page.title}`,
+    });
+  } catch (error) {
+    console.error("Failed to save selection page", error);
+    const id = String(formData.get("id") || "");
+    const nextPath = id
+      ? `/admin/selection-pages/${id}?error=save`
+      : "/admin/selection-pages/new?error=save";
+    return NextResponse.redirect(appUrl(nextPath, request), { status: 303 });
+  }
 
   const nextPath = isCreate
     ? `/admin/selection-pages/${page.id}/items?created=1`

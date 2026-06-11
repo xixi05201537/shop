@@ -82,6 +82,7 @@ function renderSelectionTemplate(
   template: string,
   submission: SelectionSubmissionForEmail,
   selectionLink: string,
+  supportEmail: string,
   timeZone?: string | null,
   escapeValues = true,
 ) {
@@ -94,7 +95,8 @@ function renderSelectionTemplate(
     selectionPageTitle: submission.page.title,
     customerName: submission.customerName || "friend",
     customerEmail: submission.customerEmail || "",
-    customerContact: submission.customerContact || "",
+    customerContact: supportEmail,
+    supportEmail,
     totalQuantity: String(submission.totalQuantity),
     totalAmount,
     currency: firstCurrency,
@@ -230,6 +232,7 @@ export async function sendSelectionEmail(submission: SelectionSubmissionForEmail
       config.selectionEmailSubject || defaultSelectionEmailSubject,
       submission,
       selectionLink,
+      config.supportEmail || config.smtpFromEmail,
       config.displayTimeZone,
       false,
     ),
@@ -237,6 +240,7 @@ export async function sendSelectionEmail(submission: SelectionSubmissionForEmail
       config.selectionEmailHtml || defaultSelectionEmailHtml,
       submission,
       selectionLink,
+      config.supportEmail || config.smtpFromEmail,
       config.displayTimeZone,
     ),
   });
@@ -363,6 +367,7 @@ export async function sendTestEmail(target: string, to: string) {
       config.selectionEmailSubject || defaultSelectionEmailSubject,
       submission,
       selectionLink,
+      config.supportEmail || config.smtpFromEmail,
       config.displayTimeZone,
       false,
     )}`;
@@ -370,6 +375,7 @@ export async function sendTestEmail(target: string, to: string) {
       config.selectionEmailHtml || defaultSelectionEmailHtml,
       submission,
       selectionLink,
+      config.supportEmail || config.smtpFromEmail,
       config.displayTimeZone,
     );
     const info = await sendHtmlMail(mailer, {

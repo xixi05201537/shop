@@ -35,11 +35,12 @@ export function normalizeSlug(value: string) {
     .replace(/^-+|-+$/g, "")
     .slice(0, SLUG_MAX_LENGTH)
     .replace(/^-+|-+$/g, "");
-  return slug || randomSelectionSlug();
+  const legacyGeneratedSlug = slug.match(/^p-([a-f0-9]{6})$/);
+  return legacyGeneratedSlug?.[1] || slug || randomSelectionSlug();
 }
 
 function randomSelectionSlug() {
-  return `p-${randomBytes(3).toString("hex")}`;
+  return randomBytes(3).toString("hex");
 }
 
 async function uniqueSelectionSlug(slug: string, currentId?: string) {
@@ -67,7 +68,11 @@ export async function saveSelectionPageForm(formData: FormData) {
   const previousPage = id
     ? await prisma.selectionPage.findUnique({ where: { id }, select: { slug: true } })
     : null;
-  const slug = await uniqueSelectionSlug(normalizeSlug(textValue(formData, "slug")), id || undefined);
+  const slugInput = textValue(formData, "slug");
+  const slug = await uniqueSelectionSlug(
+    normalizeSlug(slugInput || previousPage?.slug || title),
+    id || undefined,
+  );
   const data = {
     title,
     slug,

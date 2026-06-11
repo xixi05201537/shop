@@ -1247,6 +1247,13 @@ button.uploaded-image-card {
   flex-wrap: wrap;
 }
 
+.selection-items-toolbar-actions .link-copy-button {
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
 .selection-items-list-head {
   margin-bottom: 14px;
 }
@@ -1463,26 +1470,28 @@ button.uploaded-image-card {
 
 .selection-item-admin-image-meta {
   position: absolute;
-  right: 10px;
+  right: 12px;
   bottom: 10px;
-  left: 10px;
+  left: 12px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
   pointer-events: none;
 }
 
 .selection-item-admin-image-meta span,
 .selection-item-admin-image-meta strong {
-  max-width: min(62%, 160px);
+  min-width: 0;
+  max-width: min(68%, 180px);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.94);
+  border: 0;
   border-radius: 999px;
-  padding: 6px 11px;
-  background: linear-gradient(135deg, rgba(220, 252, 241, 0.96), rgba(255, 255, 255, 0.9));
-  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.13);
-  color: var(--cherry);
+  padding: 7px 12px;
+  background: linear-gradient(135deg, rgba(224, 255, 245, 0.96), rgba(255, 253, 245, 0.94));
+  box-shadow: 0 9px 20px rgba(24, 94, 80, 0.16);
+  color: #23564d;
   font-size: 0.78rem;
   font-weight: 1000;
   line-height: 1;
@@ -1491,16 +1500,30 @@ button.uploaded-image-card {
   backdrop-filter: blur(14px);
 }
 
-.selection-item-admin-image-meta strong {
-  flex: 0 0 auto;
-  max-width: 42%;
-  margin-left: auto;
-  background: linear-gradient(135deg, rgba(255, 231, 240, 0.98), rgba(255, 255, 255, 0.92));
-  box-shadow: 0 8px 20px rgba(219, 39, 119, 0.14);
-  color: var(--rose-600);
+.selection-item-admin-image-meta span {
+  flex: 0 1 auto;
 }
 
-.selection-item-admin-preview div {
+.selection-item-admin-image-meta strong {
+  flex: 0 0 auto;
+  max-width: 44%;
+  margin-left: auto;
+  background: linear-gradient(135deg, #ffe7f0, #fff);
+  box-shadow: 0 9px 20px rgba(152, 36, 79, 0.16);
+  color: var(--cherry);
+}
+
+.selection-item-admin-image-meta span {
+  color: #23564d;
+}
+
+.selection-item-admin-image-meta span:only-child,
+.selection-item-admin-image-meta strong:only-child {
+  max-width: 100%;
+  margin-left: 0;
+}
+
+.selection-item-admin-image-button + div {
   display: grid;
   gap: 6px;
   min-width: 0;
@@ -4454,10 +4477,11 @@ button.uploaded-image-card {
 
 .admin-image-preview-dialog {
   position: relative;
-  width: min(900px, 100%);
-  max-height: min(900px, calc(100dvh - 48px));
+  width: min(1040px, 100%);
+  max-height: calc(100dvh - 48px);
   display: grid;
-  overflow: auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.88);
   border-radius: 22px;
   background: #fffafd;
@@ -4465,15 +4489,15 @@ button.uploaded-image-card {
 }
 
 .admin-image-preview-dialog > button {
-  position: sticky;
+  position: absolute;
   top: 14px;
+  right: 14px;
   justify-self: end;
   z-index: 2;
   display: grid;
   place-items: center;
   width: 40px;
   height: 40px;
-  margin: 14px 14px -54px 0;
   border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
@@ -4483,7 +4507,8 @@ button.uploaded-image-card {
 
 .admin-image-preview-dialog > img {
   width: 100%;
-  max-height: 72dvh;
+  min-height: 0;
+  max-height: min(78dvh, 820px);
   object-fit: contain;
   background: #fff;
 }
