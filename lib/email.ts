@@ -6,12 +6,20 @@ import {
   defaultAdminEmailSubject,
   defaultBuyerEmailHtml,
   defaultBuyerEmailSubject,
+  defaultSelectionEmailHtml,
+  defaultSelectionEmailSubject,
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
 } from "@/lib/email-defaults";
-import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
+import { DEFAULT_DISPLAY_TIME_ZONE, formatCurrency, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
 import { orderEmailRecipients } from "@/lib/paypal-order-details";
-import type { Order } from "@prisma/client";
+import { selectionSubmissionNumber } from "@/lib/selection";
+import type { Order, SelectionPage, SelectionSubmission, SelectionSubmissionItem } from "@prisma/client";
+
+type SelectionSubmissionForEmail = SelectionSubmission & {
+  page: Pick<SelectionPage, "title" | "slug">;
+  items: SelectionSubmissionItem[];
+};
 
 function renderTemplate(template: string, order: Order, timeZone?: string | null) {
   const displayTimeZone = normalizeDisplayTimeZone(timeZone || DEFAULT_DISPLAY_TIME_ZONE);
@@ -49,6 +57,56 @@ function renderTextFromHtml(html: string) {
     .replace(/&#39;/g, "'")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderSelectionItems(submission: SelectionSubmissionForEmail) {
+  return submission.items
+    .map((item) => {
+      const label = item.titleSnapshot.trim() || "Untitled item";
+      const price = item.lineTotal === null ? "" : ` · ${formatCurrency(item.lineTotal, item.currencySnapshot)}`;
+      return `<div style="margin:0 0 8px;"><strong>${escapeHtml(label)}</strong> × ${item.quantity}${escapeHtml(price)}</div>`;
+    })
+    .join("");
+}
+
+function renderSelectionTemplate(
+  template: string,
+  submission: SelectionSubmissionForEmail,
+  selectionLink: string,
+  timeZone?: string | null,
+  escapeValues = true,
+) {
+  const displayTimeZone = normalizeDisplayTimeZone(timeZone || DEFAULT_DISPLAY_TIME_ZONE);
+  const firstCurrency = submission.items.find((item) => item.currencySnapshot)?.currencySnapshot || "USD";
+  const totalAmount = submission.totalAmount === null ? "Not priced" : formatCurrency(submission.totalAmount, firstCurrency);
+  const values: Record<string, string> = {
+    selectionReference: selectionSubmissionNumber(submission.id),
+    selectionLink,
+    selectionPageTitle: submission.page.title,
+    customerName: submission.customerName || "friend",
+    customerEmail: submission.customerEmail || "",
+    customerContact: submission.customerContact || "",
+    totalQuantity: String(submission.totalQuantity),
+    totalAmount,
+    currency: firstCurrency,
+    items: renderSelectionItems(submission),
+    note: submission.note || "",
+    submittedAt: formatDateTimeWithOffset(submission.createdAt, displayTimeZone),
+  };
+
+  return Object.entries(values).reduce((content, [key, value]) => {
+    const rendered = key === "items" || !escapeValues ? value : escapeHtml(value);
+    return content.replaceAll(`{{${key}}}`, rendered);
+  }, template);
 }
 
 function recipientText(value: string | nodemailer.SendMailOptions["to"]) {
@@ -160,6 +218,31 @@ export async function sendShipmentEmail(order: Order) {
   return "sent";
 }
 
+export async function sendSelectionEmail(submission: SelectionSubmissionForEmail, baseUrl: string) {
+  const { config, mailer } = await transporter();
+  if (!submission.customerEmail) return "skipped";
+  if (config.selectionEmailEnabled === "false") return "disabled";
+  const selectionLink = new URL(`/select/${submission.page.slug}/submission/${submission.id}`, baseUrl).toString();
+  await sendHtmlMail(mailer, {
+    from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
+    to: submission.customerEmail,
+    subject: renderSelectionTemplate(
+      config.selectionEmailSubject || defaultSelectionEmailSubject,
+      submission,
+      selectionLink,
+      config.displayTimeZone,
+      false,
+    ),
+    html: renderSelectionTemplate(
+      config.selectionEmailHtml || defaultSelectionEmailHtml,
+      submission,
+      selectionLink,
+      config.displayTimeZone,
+    ),
+  });
+  return "sent";
+}
+
 function testOrder(): Order {
   const now = new Date();
   return {
@@ -197,6 +280,53 @@ function testOrder(): Order {
   };
 }
 
+function testSelectionSubmission(): SelectionSubmissionForEmail {
+  const now = new Date();
+  return {
+    id: "test-selection",
+    pageId: "test-selection-page",
+    page: {
+      title: "Summer Picks",
+      slug: "summer-picks",
+    },
+    customerName: "Misaki",
+    customerEmail: "buyer@example.com",
+    customerContact: "@misaki",
+    note: "Please keep the card if available.",
+    status: "new",
+    totalQuantity: 3,
+    totalAmount: 18,
+    createdAt: now,
+    updatedAt: now,
+    items: [
+      {
+        id: "test-selection-item-1",
+        submissionId: "test-selection",
+        itemId: "test-item-1",
+        titleSnapshot: "Sticker",
+        imageSnapshot: "/uploads/sticker.jpg",
+        descriptionSnapshot: "Glossy sticker",
+        priceSnapshot: 4,
+        currencySnapshot: "USD",
+        quantity: 2,
+        lineTotal: 8,
+      },
+      {
+        id: "test-selection-item-2",
+        submissionId: "test-selection",
+        itemId: "test-item-2",
+        titleSnapshot: "Card",
+        imageSnapshot: "/uploads/card.jpg",
+        descriptionSnapshot: null,
+        priceSnapshot: 10,
+        currencySnapshot: "USD",
+        quantity: 1,
+        lineTotal: 10,
+      },
+    ],
+  };
+}
+
 export async function sendTestEmail(target: string, to: string) {
   const { config, mailer } = await transporter();
   const order = testOrder();
@@ -217,6 +347,31 @@ export async function sendTestEmail(target: string, to: string) {
   if (target === "shipment") {
     const subject = `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.displayTimeZone)}`;
     const html = renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.displayTimeZone);
+    const info = await sendHtmlMail(mailer, {
+      from,
+      to,
+      subject,
+      html,
+    });
+    return info;
+  }
+
+  if (target === "selection") {
+    const submission = testSelectionSubmission();
+    const selectionLink = "https://example.com/select/summer-picks/submission/test-selection";
+    const subject = `[Test] ${renderSelectionTemplate(
+      config.selectionEmailSubject || defaultSelectionEmailSubject,
+      submission,
+      selectionLink,
+      config.displayTimeZone,
+      false,
+    )}`;
+    const html = renderSelectionTemplate(
+      config.selectionEmailHtml || defaultSelectionEmailHtml,
+      submission,
+      selectionLink,
+      config.displayTimeZone,
+    );
     const info = await sendHtmlMail(mailer, {
       from,
       to,

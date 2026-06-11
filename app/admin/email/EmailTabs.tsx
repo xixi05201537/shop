@@ -10,8 +10,11 @@ import {
   defaultAdminEmailSubject,
   defaultBuyerEmailHtml,
   defaultBuyerEmailSubject,
+  defaultSelectionEmailHtml,
+  defaultSelectionEmailSubject,
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
+  selectionTemplateVariables,
   templateVariables,
 } from "@/lib/email-defaults";
 
@@ -22,6 +25,7 @@ const tabs = [
   { id: "buyer", label: "买家邮件配置" },
   { id: "seller", label: "卖家邮件配置" },
   { id: "shipment", label: "发货邮件配置" },
+  { id: "selection", label: "选品邮件配置" },
 ] as const;
 type EmailTabId = (typeof tabs)[number]["id"];
 
@@ -42,9 +46,12 @@ export function EmailTabs({
   const adminHtml = config.adminEmailHtml || defaultAdminEmailHtml;
   const shipmentSubject = config.shipmentEmailSubject || defaultShipmentEmailSubject;
   const shipmentHtml = config.shipmentEmailHtml || defaultShipmentEmailHtml;
+  const selectionSubject = config.selectionEmailSubject || defaultSelectionEmailSubject;
+  const selectionHtml = config.selectionEmailHtml || defaultSelectionEmailHtml;
   const [buyerPreview, setBuyerPreview] = useState(buyerHtml);
   const [adminPreview, setAdminPreview] = useState(adminHtml);
   const [shipmentPreview, setShipmentPreview] = useState(shipmentHtml);
+  const [selectionPreview, setSelectionPreview] = useState(selectionHtml);
 
   function handleTabClick(tabId: EmailTabId) {
     setActive(tabId);
@@ -143,7 +150,7 @@ export function EmailTabs({
                 <div className="rich-preview" dangerouslySetInnerHTML={{ __html: buyerPreview }} />
               </section>
             </div>
-            <TemplateVariableHelp />
+            <TemplateVariableHelp variables={templateVariables} />
             <div className="admin-save-bar">
               <SubmitButton loadingText="保存中...">
                 保存买家邮件
@@ -182,7 +189,7 @@ export function EmailTabs({
                 <div className="rich-preview" dangerouslySetInnerHTML={{ __html: adminPreview }} />
               </section>
             </div>
-            <TemplateVariableHelp />
+            <TemplateVariableHelp variables={templateVariables} />
             <div className="admin-save-bar">
               <SubmitButton loadingText="保存中...">
                 保存卖家邮件
@@ -221,7 +228,7 @@ export function EmailTabs({
                 <div className="rich-preview" dangerouslySetInnerHTML={{ __html: shipmentPreview }} />
               </section>
             </div>
-            <TemplateVariableHelp />
+            <TemplateVariableHelp variables={templateVariables} />
             <div className="admin-save-bar">
               <SubmitButton loadingText="保存中...">
                 保存发货邮件
@@ -231,6 +238,45 @@ export function EmailTabs({
           <TestEmailForm target="shipment" />
         </>
       ) : null}
+
+      {active === "selection" ? (
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="selection" />
+            <label className="checkbox-row">
+              <span>
+                <input name="selectionEmailEnabled" type="checkbox" defaultChecked={config.selectionEmailEnabled !== "false"} /> 启用选品确认邮件
+              </span>
+            </label>
+            <label>
+              选品邮件标题
+              <input name="selectionEmailSubject" defaultValue={selectionSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                选品富文本邮件模板
+                <RichTemplateEditor
+                  name="selectionEmailHtml"
+                  defaultValue={selectionHtml}
+                  onChange={setSelectionPreview}
+                  presets={[{ label: "使用精致模板", value: defaultSelectionEmailHtml }]}
+                />
+              </label>
+              <section className="email-preview-panel" aria-label="选品邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: selectionPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp variables={selectionTemplateVariables} />
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">
+                保存选品邮件
+              </SubmitButton>
+            </div>
+          </form>
+          <TestEmailForm target="selection" />
+        </>
+      ) : null}
     </section>
   );
 }
@@ -238,7 +284,7 @@ export function EmailTabs({
 function TestEmailForm({
   target,
 }: {
-  target: "buyer" | "seller" | "shipment";
+  target: "buyer" | "seller" | "shipment" | "selection";
 }) {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -306,12 +352,12 @@ function TestEmailForm({
   );
 }
 
-function TemplateVariableHelp() {
+function TemplateVariableHelp({ variables }: { variables: string[] }) {
   return (
     <div className="template-variable-help">
       <span>可用变量</span>
       <div>
-        {templateVariables.map((variable) => (
+        {variables.map((variable) => (
           <CopyVariableButton key={variable} value={variable} />
         ))}
       </div>

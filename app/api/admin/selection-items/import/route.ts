@@ -10,27 +10,43 @@ import { imagesByRow, isSelectionItemWorksheet, rowToSelectionItem, saveImported
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const wantsJson = request.headers.get("x-import-mode") === "dialog" || request.headers.get("accept")?.includes("application/json");
+  const fail = (pageId: string, error: string, status = 400) =>
+    wantsJson
+      ? NextResponse.json({ ok: false, error }, { status })
+      : NextResponse.redirect(appUrl(`/admin/selection-pages/${pageId}/items?imported=0&error=${error}`, request), { status: 303 });
+
   const unauthorized = await requireAdminApi();
-  if (unauthorized) return unauthorized;
+  if (unauthorized) {
+    return wantsJson ? NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 }) : unauthorized;
+  }
 
   const formData = await request.formData();
   const pageId = String(formData.get("pageId") || "");
   const file = formData.get("file");
   const page = await prisma.selectionPage.findUnique({ where: { id: pageId }, select: { id: true, slug: true } });
-  if (!page) return NextResponse.redirect(appUrl("/admin/selection-pages?imported=0", request), { status: 303 });
+  if (!page) {
+    return wantsJson
+      ? NextResponse.json({ ok: false, error: "page" }, { status: 404 })
+      : NextResponse.redirect(appUrl("/admin/selection-pages?imported=0", request), { status: 303 });
+  }
   if (!(file instanceof File) || !file.size) {
-    return NextResponse.redirect(appUrl(`/admin/selection-pages/${pageId}/items?imported=0&error=file`, request), { status: 303 });
+    return fail(pageId, "file");
   }
 
   const workbook = new ExcelJS.Workbook();
   const loadWorkbook = workbook.xlsx.load as (buffer: unknown) => Promise<ExcelJS.Workbook>;
-  await loadWorkbook.call(workbook.xlsx, Buffer.from(await file.arrayBuffer()));
+  try {
+    await loadWorkbook.call(workbook.xlsx, Buffer.from(await file.arrayBuffer()));
+  } catch {
+    return fail(pageId, "parse");
+  }
   const worksheet = workbook.worksheets[0];
   if (!worksheet) {
-    return NextResponse.redirect(appUrl(`/admin/selection-pages/${pageId}/items?imported=0&error=sheet`, request), { status: 303 });
+    return fail(pageId, "sheet");
   }
   if (!isSelectionItemWorksheet(worksheet)) {
-    return NextResponse.redirect(appUrl(`/admin/selection-pages/${pageId}/items?imported=0&error=template`, request), { status: 303 });
+    return fail(pageId, "template");
   }
 
   const embeddedImages = imagesByRow(workbook, worksheet);
@@ -75,6 +91,10 @@ export async function POST(request: Request) {
     summary: `Imported ${imported} selection items`,
     metadata: { imported, skipped, filename: file.name },
   });
+
+  if (wantsJson) {
+    return NextResponse.json({ ok: true, imported, skipped });
+  }
 
   return NextResponse.redirect(appUrl(`/admin/selection-pages/${pageId}/items?imported=${imported}&skipped=${skipped}`, request), {
     status: 303,

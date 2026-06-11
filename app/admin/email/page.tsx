@@ -17,7 +17,7 @@ export default async function EmailAdmin({
       <header className="admin-header">
         <div>
           <h1 className="display">邮件</h1>
-          <p>配置 SMTP、买家通知、卖家通知和发货邮件模板。</p>
+          <p>配置 SMTP、买家通知、卖家通知、发货邮件和选品确认模板。</p>
         </div>
       </header>
       <EmailTabs

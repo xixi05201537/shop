@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const email = String(formData.get("testEmail") || "").trim();
   const target = String(formData.get("target") || "buyer");
-  const redirectTarget = target === "seller" || target === "shipment" ? target : "buyer";
+  const redirectTarget = target === "seller" || target === "shipment" || target === "selection" ? target : "buyer";
   const wantsJson = request.headers.get("Accept")?.includes("application/json");
 
   if (!email) {

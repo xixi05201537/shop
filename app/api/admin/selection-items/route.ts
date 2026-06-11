@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     action: formData.get("id") ? "save" : "create",
     targetType: "selection-item",
     targetId: item.id,
-    summary: `保存选品项：${item.title}`,
+    summary: `保存选品项：${item.title || "未填写标签"}`,
   });
 
   return NextResponse.redirect(appUrl(`/admin/selection-pages/${item.pageId}/items?saved=1`, request), { status: 303 });

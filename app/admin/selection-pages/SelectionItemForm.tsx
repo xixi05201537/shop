@@ -54,7 +54,7 @@ export function SelectionItemForm({
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("selectionItemTitlePresets") || "[]");
+      const saved = JSON.parse(localStorage.getItem("selectionItemLabelPresets") || localStorage.getItem("selectionItemTitlePresets") || "[]");
       const base = Array.isArray(saved) ? saved.filter((value) => typeof value === "string" && value.trim()) : [];
       setPresets(base);
     } catch {
@@ -65,7 +65,7 @@ export function SelectionItemForm({
   function savePresets(next: string[]) {
     const unique = Array.from(new Set(next.map((value) => value.trim()).filter(Boolean))).slice(0, 16);
     setPresets(unique);
-    localStorage.setItem("selectionItemTitlePresets", JSON.stringify(unique));
+    localStorage.setItem("selectionItemLabelPresets", JSON.stringify(unique));
   }
 
   function addPreset(value: string) {
@@ -165,15 +165,8 @@ export function SelectionItemForm({
                 </div>
               </label>
               <label>
-                名称
-                <input name="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="图片下方显示的名称" required />
-                <div className="selection-preset-add">
-                  <span>预设</span>
-                  <input value={presetInput} onChange={(event) => setPresetInput(event.target.value)} placeholder="新增名称预设" />
-                  <button type="button" onClick={() => addPreset(presetInput || title)}>
-                    添加预设
-                  </button>
-                </div>
+                标签
+                <input name="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例如 Sticker、Card，可不填" />
                 <div className="selection-preset-row">
                   {presets.map((preset) => (
                     <span className="selection-preset-chip" key={preset}>
@@ -185,6 +178,13 @@ export function SelectionItemForm({
                       </button>
                     </span>
                   ))}
+                </div>
+                <div className="selection-preset-add">
+                  <span>预设</span>
+                  <input value={presetInput} onChange={(event) => setPresetInput(event.target.value)} placeholder="新增标签预设" />
+                  <button type="button" onClick={() => addPreset(presetInput || title)}>
+                    添加预设
+                  </button>
                 </div>
               </label>
             </div>
@@ -229,11 +229,13 @@ export function SelectionItemForm({
                 aria-label="预览图片"
               >
                 {imageUrl ? <img src={imageUrl} alt={title || "选品图片预览"} /> : <strong>图片预览</strong>}
+                <div className="selection-item-live-preview-meta">
+                  {title ? <span>{title}</span> : null}
+                  {previewPrice ? <strong>{previewPrice}</strong> : null}
+                </div>
               </button>
               <div>
-                <strong>{title || "选品名称"}</strong>
                 {description ? <p>{description}</p> : <p>介绍会显示在这里。</p>}
-                {previewPrice ? <span>{previewPrice}</span> : null}
               </div>
             </article>
           </aside>

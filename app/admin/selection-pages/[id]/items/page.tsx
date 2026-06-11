@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requestBaseUrl } from "@/lib/request-url";
 import { formatCurrency } from "@/lib/format";
 import { listUploadedImages } from "@/lib/uploads";
+import { SelectionImportDialog } from "../../SelectionImportDialog";
 import { SelectionItemDialog } from "../../SelectionItemDialog";
 import { SelectionItemPreviewButton } from "../../SelectionItemPreviewButton";
 
@@ -88,15 +89,7 @@ export default async function SelectionPageItems({
             <Download size={16} />
             导出 Excel
           </a>
-          <form className="selection-items-import-form" action="/api/admin/selection-items/import" method="post" encType="multipart/form-data">
-            <input type="hidden" name="pageId" value={page.id} />
-            <label className="secondary-button">
-              <Upload size={16} />
-              导入 Excel
-              <input name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
-            </label>
-            <SubmitButton className="admin-button" loadingText="导入中...">上传导入</SubmitButton>
-          </form>
+          <SelectionImportDialog pageId={page.id} />
           <SelectionItemDialog item={{ pageId: page.id }} uploadedImages={imageOptions} triggerLabel="添加选品项" />
           <Link className="secondary-button" href="/admin/upload">
             <Upload size={16} />
@@ -115,40 +108,43 @@ export default async function SelectionPageItems({
         </div>
         {page.items.length ? (
           <div className="selection-item-admin-grid">
-            {page.items.map((item) => (
-              <article className="admin-card selection-item-admin-card" key={item.id}>
-                <div className="selection-item-admin-preview">
-                  <SelectionItemPreviewButton
-                    imageUrl={item.imageUrl}
-                    title={item.title}
-                    description={item.description}
-                    detail={item.price === null ? "未设置价格" : formatCurrency(item.price, item.currency)}
-                  />
-                  <div>
-                    <strong>{item.title}</strong>
-                    <span>{item.price === null ? "未设置价格" : formatCurrency(item.price, item.currency)}</span>
-                    {item.description ? <p>{item.description}</p> : null}
-                    <small>
-                      排序 {item.sortOrder} · {item.isActive ? "显示中" : "已隐藏"} · 数量 {item.minQuantity}-{item.maxQuantity}
-                    </small>
+            {page.items.map((item) => {
+              const itemLabel = item.title.trim() || "未填写标签";
+              const priceLabel = item.price === null ? "" : formatCurrency(item.price, item.currency);
+
+              return (
+                <article className="admin-card selection-item-admin-card" key={item.id}>
+                  <div className="selection-item-admin-preview">
+                    <SelectionItemPreviewButton
+                      imageUrl={item.imageUrl}
+                      title={item.title}
+                      description={item.description}
+                      detail={priceLabel}
+                    />
+                    <div>
+                      {item.description ? <p>{item.description}</p> : null}
+                      <small>
+                        排序 {item.sortOrder} · {item.isActive ? "显示中" : "已隐藏"} · 数量 {item.minQuantity}-{item.maxQuantity}
+                      </small>
+                    </div>
                   </div>
-                </div>
-                <div className="selection-item-card-actions">
-                  <SelectionItemDialog
-                    item={item}
-                    uploadedImages={imageOptions}
-                    triggerClassName="table-action-button"
-                    triggerLabel="编辑"
-                  />
-                  <form className="selection-delete-form" action="/api/admin/selection-items/delete" method="post">
-                    <input type="hidden" name="id" value={item.id} />
-                    <SubmitButton className="table-action-button danger" loadingText="删除中...">
-                      删除
-                    </SubmitButton>
-                  </form>
-                </div>
-              </article>
-            ))}
+                  <div className="selection-item-card-actions">
+                    <SelectionItemDialog
+                      item={item}
+                      uploadedImages={imageOptions}
+                      triggerClassName="table-action-button"
+                      triggerLabel="编辑"
+                    />
+                    <form className="selection-delete-form" action="/api/admin/selection-items/delete" method="post">
+                      <input type="hidden" name="id" value={item.id} />
+                      <SubmitButton className="table-action-button danger" loadingText="删除中...">
+                        删除
+                      </SubmitButton>
+                    </form>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">还没有选品项。可以添加单个选品项，也可以导入 Excel 批量创建。</div>

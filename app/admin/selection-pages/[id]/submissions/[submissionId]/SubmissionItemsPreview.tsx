@@ -17,19 +17,23 @@ export function SubmissionItemsPreview({ items }: { items: SubmissionPreviewItem
   return (
     <>
       <div className="selection-submission-items selection-submission-detail-items">
-        {items.map((item) => (
-          <div className="selection-submission-item selection-submission-detail-item" key={item.id}>
-            <button className="selection-submission-image-button" type="button" onClick={() => setPreview(item)} aria-label={`预览 ${item.title}`}>
-              <img src={item.image} alt={item.title} />
-              <span>查看大图</span>
-            </button>
-            <div>
-              <strong>{item.title}</strong>
-              {item.description ? <span>{item.description}</span> : null}
-              <small>{item.detail}</small>
+        {items.map((item) => {
+          const itemLabel = item.title.trim() || "未填写标签";
+
+          return (
+            <div className="selection-submission-item selection-submission-detail-item" key={item.id}>
+              <button className="selection-submission-image-button" type="button" onClick={() => setPreview(item)} aria-label={`预览 ${itemLabel}`}>
+                <img src={item.image} alt={itemLabel} />
+                <span>查看大图</span>
+              </button>
+              <div>
+                <strong>{itemLabel}</strong>
+                {item.description ? <span>{item.description}</span> : null}
+                <small>{item.detail}</small>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {preview ? (
@@ -38,9 +42,9 @@ export function SubmissionItemsPreview({ items }: { items: SubmissionPreviewItem
             <button type="button" aria-label="关闭预览" onClick={() => setPreview(null)}>
               <X size={20} />
             </button>
-            <img src={preview.image} alt={preview.title} />
+            <img src={preview.image} alt={preview.title.trim() || "未填写标签"} />
             <div>
-              <strong>{preview.title}</strong>
+              <strong>{preview.title.trim() || "未填写标签"}</strong>
               {preview.description ? <p>{preview.description}</p> : null}
               <span>{preview.detail}</span>
             </div>

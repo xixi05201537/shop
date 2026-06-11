@@ -76,9 +76,12 @@ export async function saveSelectionPageForm(formData: FormData) {
     isPublished: formData.get("isPublished") === "on",
     showPrices: formData.get("showPrices") === "on",
     allowQuantity: formData.get("allowQuantity") === "on",
-    requireName: formData.get("requireName") === "on",
-    requireEmail: formData.get("requireEmail") === "on",
-    requireContact: formData.get("requireContact") === "on",
+    showName: formData.get("showName") === "on",
+    showEmail: formData.get("showEmail") === "on",
+    showContact: formData.get("showContact") === "on",
+    requireName: formData.get("showName") === "on" && formData.get("requireName") === "on",
+    requireEmail: formData.get("showEmail") === "on" && formData.get("requireEmail") === "on",
+    requireContact: formData.get("showContact") === "on" && formData.get("requireContact") === "on",
   };
 
   const page = id
@@ -100,7 +103,7 @@ export async function saveSelectionItemForm(formData: FormData) {
   const pageId = textValue(formData, "pageId");
   const data = {
     pageId,
-    title: textValue(formData, "title", "未命名选品"),
+    title: textValue(formData, "title"),
     imageUrl: textValue(formData, "imageUrl"),
     description: optionalTextValue(formData, "description"),
     price: optionalPrice(formData),

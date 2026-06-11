@@ -51,7 +51,9 @@ export function SelectionItemDialog({
             <X size={16} />
           </button>
         </div>
-        <SelectionItemForm item={item} uploadedImages={uploadedImages} mode={mode} />
+        <div className="selection-item-dialog-body">
+          <SelectionItemForm item={item} uploadedImages={uploadedImages} mode={mode} />
+        </div>
       </dialog>
     </>
   );

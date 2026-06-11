@@ -9,6 +9,9 @@ type SelectionPageFormData = {
   isPublished?: boolean;
   showPrices?: boolean;
   allowQuantity?: boolean;
+  showName?: boolean;
+  showEmail?: boolean;
+  showContact?: boolean;
   requireName?: boolean;
   requireEmail?: boolean;
   requireContact?: boolean;
@@ -66,12 +69,27 @@ export function SelectionPageForm({ page }: { page?: SelectionPageFormData }) {
         </label>
         <label className="checkbox-row">
           <span>
+            <input name="showName" type="checkbox" defaultChecked={page?.showName ?? true} /> 显示姓名框
+          </span>
+        </label>
+        <label className="checkbox-row">
+          <span>
             <input name="requireName" type="checkbox" defaultChecked={page?.requireName ?? false} /> 姓名必填
           </span>
         </label>
         <label className="checkbox-row">
           <span>
+            <input name="showEmail" type="checkbox" defaultChecked={page?.showEmail ?? true} /> 显示邮箱框
+          </span>
+        </label>
+        <label className="checkbox-row">
+          <span>
             <input name="requireEmail" type="checkbox" defaultChecked={page?.requireEmail ?? false} /> 邮箱必填
+          </span>
+        </label>
+        <label className="checkbox-row">
+          <span>
+            <input name="showContact" type="checkbox" defaultChecked={page?.showContact ?? true} /> 显示联系方式框
           </span>
         </label>
         <label className="checkbox-row">

@@ -24,7 +24,7 @@ type ExcelImage = {
 
 export const selectionItemColumns = [
   { header: "Image", key: "image", width: 18 },
-  { header: "Title", key: "title", width: 24 },
+  { header: "Label", key: "title", width: 24 },
   { header: "Description", key: "description", width: 36 },
   { header: "Price", key: "price", width: 12 },
   { header: "Currency", key: "currency", width: 12 },
@@ -98,7 +98,7 @@ export function rowToSelectionItem(row: ExcelJS.Row): SelectionItemExcelRow | nu
   if (!title && !imageUrl && !hasAnyValue) return null;
 
   return {
-    title: title || "Untitled item",
+    title,
     description: optionalCellText(row.getCell(3)),
     price: optionalCellNumber(row.getCell(4)),
     currency: normalizeCurrency(cellText(row.getCell(5))),
@@ -117,7 +117,7 @@ export function isSelectionItemWorksheet(worksheet: ExcelJS.Worksheet) {
     : [];
   return (
     normalized[1] === "image" &&
-    normalized[2] === "title" &&
+    (normalized[2] === "label" || normalized[2] === "title") &&
     normalized[4] === "price" &&
     normalized[5] === "currency" &&
     normalized[10] === "image url"

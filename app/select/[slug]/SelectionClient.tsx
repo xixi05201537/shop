@@ -22,6 +22,9 @@ type SelectionPageView = {
   submitLabel: string;
   showPrices: boolean;
   allowQuantity: boolean;
+  showName: boolean;
+  showEmail: boolean;
+  showContact: boolean;
   requireName: boolean;
   requireEmail: boolean;
   requireContact: boolean;
@@ -122,11 +125,11 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName,
-          customerEmail,
-          customerContact,
-          note,
           items: selectedItems.map((item) => ({ id: item.id, quantity: item.quantity })),
+          customerName: page.showName ? customerName : "",
+          customerEmail: page.showEmail ? customerEmail : "",
+          customerContact: page.showContact ? customerContact : "",
+          note,
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -218,6 +221,9 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
           {page.items.map((item) => {
             const quantity = selected[item.id];
             const isSelected = Boolean(quantity);
+            const itemLabel = item.title.trim();
+            const itemAlt = itemLabel || "Selection item";
+            const itemPrice = page.showPrices && item.price !== null ? formatCurrency(item.price, item.currency) : "";
 
             return (
               <article
@@ -226,11 +232,11 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
                 onClick={() => toggleItem(item)}
               >
                 <div className="selection-image-wrap">
-                  <img src={item.imageUrl} alt={item.title} loading="lazy" />
+                  <img src={item.imageUrl} alt={itemAlt} loading="lazy" />
                   <button
                     className="selection-preview-button"
                     type="button"
-                    aria-label={`Preview ${item.title}`}
+                    aria-label={`Preview ${itemAlt}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       setPreview(item);
@@ -243,11 +249,15 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
                       <Check size={17} />
                     </span>
                   ) : null}
+                  {(itemLabel || itemPrice) ? (
+                    <div className="selection-image-meta">
+                      {itemLabel ? <span>{itemLabel}</span> : <span aria-hidden="true" />}
+                      {itemPrice ? <strong>{itemPrice}</strong> : null}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="selection-card-body">
-                  <strong>{item.title}</strong>
                   {item.description ? <p>{item.description}</p> : null}
-                  {page.showPrices && item.price !== null ? <span>{formatCurrency(item.price, item.currency)}</span> : null}
                   {page.allowQuantity ? (
                     <div
                       className={`selection-card-stepper ${isSelected ? "" : "is-placeholder"}`}
@@ -297,18 +307,24 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
             {canShowTotal ? <small>{formatCurrency(totalAmount)}</small> : null}
           </div>
           <div className="selection-contact-grid">
-            <label>
-              Name{page.requireName ? " *" : ""}
-              <input value={customerName} required={page.requireName} onChange={(event) => setCustomerName(event.target.value)} />
-            </label>
-            <label>
-              Email{page.requireEmail ? " *" : ""}
-              <input type="email" value={customerEmail} required={page.requireEmail} onChange={(event) => setCustomerEmail(event.target.value)} />
-            </label>
-            <label>
-              Contact{page.requireContact ? " *" : ""}
-              <input value={customerContact} required={page.requireContact} onChange={(event) => setCustomerContact(event.target.value)} />
-            </label>
+            {page.showName ? (
+              <label>
+                Name{page.requireName ? " *" : ""}
+                <input value={customerName} required={page.requireName} onChange={(event) => setCustomerName(event.target.value)} />
+              </label>
+            ) : null}
+            {page.showEmail ? (
+              <label>
+                Email{page.requireEmail ? " *" : ""}
+                <input type="email" value={customerEmail} required={page.requireEmail} onChange={(event) => setCustomerEmail(event.target.value)} />
+              </label>
+            ) : null}
+            {page.showContact ? (
+              <label>
+                Contact{page.requireContact ? " *" : ""}
+                <input value={customerContact} required={page.requireContact} onChange={(event) => setCustomerContact(event.target.value)} />
+              </label>
+            ) : null}
             <label>
               Notes
               <textarea value={note} onChange={(event) => setNote(event.target.value)} />
@@ -352,35 +368,46 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
 
             {selectedItems.length ? (
               <div className="selection-cart-list">
-                {selectedItems.map((item) => (
-                  <article className="selection-cart-item" key={item.id}>
-                    <img src={item.imageUrl} alt={item.title} />
-                    <div>
-                      <strong>{item.title}</strong>
-                      {page.showPrices && item.price !== null ? <span>{formatCurrency(item.price, item.currency)}</span> : null}
-                      {page.allowQuantity ? (
-                        <div className="selection-cart-stepper">
-                          <button type="button" onClick={() => setQuantity(item, item.quantity - 1)} aria-label={`Decrease ${item.title}`}>
-                            <Minus size={15} />
-                          </button>
-                          <input
-                            value={item.quantity}
-                            min={item.minQuantity}
-                            max={item.maxQuantity}
-                            type="number"
-                            onChange={(event) => setQuantity(item, Number(event.target.value))}
-                          />
-                          <button type="button" onClick={() => setQuantity(item, item.quantity + 1)} aria-label={`Increase ${item.title}`}>
-                            <Plus size={15} />
+                {selectedItems.map((item) => {
+                  const itemLabel = item.title.trim() || "Unlabeled item";
+                  const itemPrice = page.showPrices && item.price !== null ? formatCurrency(item.price, item.currency) : "";
+
+                  return (
+                    <article className="selection-cart-item" key={item.id}>
+                      <img src={item.imageUrl} alt={itemLabel} />
+                      <div className="selection-cart-item-content">
+                        <div className="selection-cart-item-meta">
+                          <strong>{itemLabel}</strong>
+                          {itemPrice ? <span>{itemPrice}</span> : null}
+                        </div>
+                        <div className="selection-cart-item-actions">
+                          {page.allowQuantity ? (
+                            <div className="selection-cart-stepper">
+                              <button type="button" onClick={() => setQuantity(item, item.quantity - 1)} aria-label={`Decrease ${itemLabel}`}>
+                                <Minus size={15} />
+                              </button>
+                              <input
+                                value={item.quantity}
+                                min={item.minQuantity}
+                                max={item.maxQuantity}
+                                type="number"
+                                onChange={(event) => setQuantity(item, Number(event.target.value))}
+                              />
+                              <button type="button" onClick={() => setQuantity(item, item.quantity + 1)} aria-label={`Increase ${itemLabel}`}>
+                                <Plus size={15} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="selection-cart-quantity">Qty {item.quantity}</span>
+                          )}
+                          <button type="button" aria-label={`Remove ${itemLabel}`} onClick={() => removeItem(item)}>
+                            <Trash2 size={16} />
                           </button>
                         </div>
-                      ) : null}
-                    </div>
-                    <button type="button" aria-label={`Remove ${item.title}`} onClick={() => removeItem(item)}>
-                      <Trash2 size={17} />
-                    </button>
-                  </article>
-                ))}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <div className="selection-cart-empty">No picks yet.</div>
@@ -399,9 +426,9 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
             <button type="button" aria-label="Close preview" onClick={() => setPreview(null)}>
               <X size={20} />
             </button>
-            <img src={preview.imageUrl} alt={preview.title} />
+            <img src={preview.imageUrl} alt={preview.title.trim() || "Selection item"} />
             <div>
-              <strong>{preview.title}</strong>
+              <strong>{preview.title.trim() || "Unlabeled item"}</strong>
               {preview.description ? <p>{preview.description}</p> : null}
               {page.showPrices && preview.price !== null ? <span>{formatCurrency(preview.price, preview.currency)}</span> : null}
             </div>

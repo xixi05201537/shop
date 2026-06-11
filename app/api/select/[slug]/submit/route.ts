@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { sendSelectionEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { appUrl } from "@/lib/redirect";
 import { selectionSubmissionNumber } from "@/lib/selection";
 
 type SubmitBody = {
@@ -31,9 +33,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const customerContact = cleanText(body.customerContact);
   const note = cleanText(body.note);
 
-  if (page.requireName && !customerName) return NextResponse.json({ error: "Please enter your name." }, { status: 400 });
-  if (page.requireEmail && !customerEmail) return NextResponse.json({ error: "Please enter your email." }, { status: 400 });
-  if (page.requireContact && !customerContact) return NextResponse.json({ error: "Please enter your contact information." }, { status: 400 });
+  if (page.showName && page.requireName && !customerName) return NextResponse.json({ error: "Please enter your name." }, { status: 400 });
+  if (page.showEmail && page.requireEmail && !customerEmail) return NextResponse.json({ error: "Please enter your email." }, { status: 400 });
+  if (page.showContact && page.requireContact && !customerContact) return NextResponse.json({ error: "Please enter your contact information." }, { status: 400 });
 
   const requested = new Map<string, number>();
   for (const item of body.items || []) {
@@ -64,9 +66,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
   const submission = await prisma.selectionSubmission.create({
     data: {
       pageId: page.id,
-      customerName: customerName || null,
-      customerEmail: customerEmail || null,
-      customerContact: customerContact || null,
+      customerName: page.showName && customerName ? customerName : null,
+      customerEmail: page.showEmail && customerEmail ? customerEmail : null,
+      customerContact: page.showContact && customerContact ? customerContact : null,
       note: note || null,
       totalQuantity,
       totalAmount,
@@ -83,8 +85,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
         })),
       },
     },
-    select: { id: true },
+    include: {
+      page: { select: { title: true, slug: true } },
+      items: true,
+    },
   });
+
+  if (submission.customerEmail) {
+    try {
+      await sendSelectionEmail(submission, appUrl("/", request).origin);
+    } catch (error) {
+      console.error("Selection email failed", error);
+    }
+  }
 
   return NextResponse.json({
     ok: true,

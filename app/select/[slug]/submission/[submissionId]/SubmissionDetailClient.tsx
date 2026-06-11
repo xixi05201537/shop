@@ -194,55 +194,63 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
         </section>
 
         <section className="selection-public-items" aria-label="Selected items">
-          {selectedItems.map((item) => (
-            <article className="selection-public-item selection-public-item-editable" key={item.id}>
-              <button className="selection-public-image-button" type="button" onClick={() => setPreview(item)} aria-label={`Preview ${item.title}`}>
-                <img src={item.imageUrl} alt={item.title} />
-              </button>
-              <div className="selection-public-item-copy">
-                <strong>{item.title}</strong>
-                {item.description ? <p>{item.description}</p> : null}
-                <span>
-                  Quantity {item.quantity}
-                  {detail.showPrices && item.price !== null ? ` · ${formatCurrency(item.price, item.currency)}` : ""}
-                </span>
-                <div className="selection-edit-actions">
-                  {detail.allowQuantity ? (
-                    <div className="selection-edit-stepper">
-                      <button type="button" onClick={() => setQuantity(item, item.quantity - 1)} aria-label="Decrease quantity">
-                        <Minus size={15} />
-                      </button>
-                      <input value={item.quantity} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setQuantity(item, Number(event.target.value))} />
-                      <button type="button" onClick={() => setQuantity(item, item.quantity + 1)} aria-label="Increase quantity">
-                        <Plus size={15} />
-                      </button>
-                    </div>
-                  ) : null}
-                  <button className="selection-remove-button" type="button" onClick={() => removeItem(item.id)}>
-                    <Trash2 size={15} />
-                    Remove
-                  </button>
+          {selectedItems.map((item) => {
+            const itemLabel = item.title.trim() || "Unlabeled item";
+
+            return (
+              <article className="selection-public-item selection-public-item-editable" key={item.id}>
+                <button className="selection-public-image-button" type="button" onClick={() => setPreview(item)} aria-label={`Preview ${itemLabel}`}>
+                  <img src={item.imageUrl} alt={itemLabel} />
+                </button>
+                <div className="selection-public-item-copy">
+                  <div className="selection-public-item-meta">
+                    <strong>{itemLabel}</strong>
+                    {detail.showPrices && item.price !== null ? <span>{formatCurrency(item.price, item.currency)}</span> : null}
+                  </div>
+                  {item.description ? <p>{item.description}</p> : null}
+                  <div className="selection-edit-actions">
+                    {detail.allowQuantity ? (
+                      <div className="selection-edit-stepper">
+                        <button type="button" onClick={() => setQuantity(item, item.quantity - 1)} aria-label="Decrease quantity">
+                          <Minus size={15} />
+                        </button>
+                        <input value={item.quantity} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setQuantity(item, Number(event.target.value))} />
+                        <button type="button" onClick={() => setQuantity(item, item.quantity + 1)} aria-label="Increase quantity">
+                          <Plus size={15} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="selection-edit-quantity">Qty {item.quantity}</span>
+                    )}
+                    <button className="selection-remove-button" type="button" onClick={() => removeItem(item.id)}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-          {detail.unavailableItems.map((item) => (
-            <article className="selection-public-item is-unavailable" key={item.id}>
-              <button
-                className="selection-public-image-button"
-                type="button"
-                onClick={() => setPreview({ title: item.title, imageUrl: item.image, description: item.description, price: item.price, currency: item.currency })}
-                aria-label={`Preview ${item.title}`}
-              >
-                <img src={item.image} alt={item.title} />
-              </button>
-              <div className="selection-public-item-copy">
-                <strong>{item.title}</strong>
-                {item.description ? <p>{item.description}</p> : null}
-                <span>Unavailable item · Quantity {item.quantity}</span>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
+          {detail.unavailableItems.map((item) => {
+            const itemLabel = item.title.trim() || "Unlabeled item";
+
+            return (
+              <article className="selection-public-item is-unavailable" key={item.id}>
+                <button
+                  className="selection-public-image-button"
+                  type="button"
+                  onClick={() => setPreview({ title: item.title, imageUrl: item.image, description: item.description, price: item.price, currency: item.currency })}
+                  aria-label={`Preview ${itemLabel}`}
+                >
+                  <img src={item.image} alt={itemLabel} />
+                </button>
+                <div className="selection-public-item-copy">
+                  <strong>{itemLabel}</strong>
+                  {item.description ? <p>{item.description}</p> : null}
+                  <span>Unavailable item · Quantity {item.quantity}</span>
+                </div>
+              </article>
+            );
+          })}
         </section>
 
         <section className="selection-add-more">
@@ -252,32 +260,37 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
           </div>
           {availableItems.length ? (
             <div className="selection-add-more-grid">
-              {availableItems.map((item) => (
-                <article className="selection-add-card" key={item.id}>
-                  <button className="selection-public-image-button" type="button" onClick={() => setPreview(item)} aria-label={`Preview ${item.title}`}>
-                    <img src={item.imageUrl} alt={item.title} />
-                  </button>
-                  <div className="selection-add-copy">
-                    <strong>{item.title}</strong>
-                    {detail.showPrices ? item.price === null ? <span>Price not set</span> : <span>{formatCurrency(item.price, item.currency)}</span> : null}
-                  </div>
-                  {detail.allowQuantity ? (
-                    <div className="selection-add-stepper">
-                      <button type="button" onClick={() => setAddQuantity(item, getAddQuantity(item) - 1)} aria-label="Decrease quantity">
-                        <Minus size={15} />
-                      </button>
-                      <input value={getAddQuantity(item)} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setAddQuantity(item, Number(event.target.value))} />
-                      <button type="button" onClick={() => setAddQuantity(item, getAddQuantity(item) + 1)} aria-label="Increase quantity">
-                        <Plus size={15} />
+              {availableItems.map((item) => {
+                const itemLabel = item.title.trim() || "Unlabeled item";
+
+                return (
+                  <article className="selection-add-card" key={item.id}>
+                    <button className="selection-public-image-button" type="button" onClick={() => setPreview(item)} aria-label={`Preview ${itemLabel}`}>
+                      <img src={item.imageUrl} alt={itemLabel} />
+                    </button>
+                    <div className="selection-add-copy selection-add-meta">
+                      <strong>{itemLabel}</strong>
+                      {detail.showPrices ? item.price === null ? <span>Price not set</span> : <span>{formatCurrency(item.price, item.currency)}</span> : null}
+                    </div>
+                    <div className="selection-add-actions">
+                      {detail.allowQuantity ? (
+                        <div className="selection-add-stepper">
+                          <button type="button" onClick={() => setAddQuantity(item, getAddQuantity(item) - 1)} aria-label="Decrease quantity">
+                            <Minus size={15} />
+                          </button>
+                          <input value={getAddQuantity(item)} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setAddQuantity(item, Number(event.target.value))} />
+                          <button type="button" onClick={() => setAddQuantity(item, getAddQuantity(item) + 1)} aria-label="Increase quantity">
+                            <Plus size={15} />
+                          </button>
+                        </div>
+                      ) : null}
+                      <button className="selection-add-button" type="button" onClick={() => addItem(item)} aria-label={`Add ${itemLabel}`}>
+                        <Check size={16} />
                       </button>
                     </div>
-                  ) : null}
-                  <button className="selection-add-button" type="button" onClick={() => addItem(item)}>
-                    <Check size={15} />
-                    Add
-                  </button>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <p className="selection-public-note">All available items are already in this selection.</p>
@@ -303,9 +316,9 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
               <button type="button" aria-label="Close preview" onClick={() => setPreview(null)}>
                 <X size={20} />
               </button>
-              <img src={preview.imageUrl} alt={preview.title} />
+              <img src={preview.imageUrl} alt={preview.title.trim() || "Unlabeled item"} />
               <div>
-                <strong>{preview.title}</strong>
+                <strong>{preview.title.trim() || "Unlabeled item"}</strong>
                 {preview.description ? <p>{preview.description}</p> : null}
                 {detail.showPrices && preview.price !== null ? <span>{formatCurrency(preview.price, preview.currency)}</span> : null}
               </div>

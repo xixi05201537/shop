@@ -78,7 +78,7 @@ export default async function SelectionSubmissionsPage({
       <form className="admin-card selection-submission-search" action={`/admin/selection-pages/${page.id}/submissions`} method="get">
         <label>
           搜索提交
-          <input name="q" defaultValue={query} placeholder="编号、客户、邮箱、联系方式、备注或选品名称" />
+          <input name="q" defaultValue={query} placeholder="编号、客户、邮箱、联系方式、备注或选品标签" />
         </label>
         <button className="admin-button" type="submit">
           搜索
@@ -153,12 +153,16 @@ export default async function SelectionSubmissionsPage({
                     </td>
                     <td>
                       <div className="selection-submission-preview">
-                        {submission.items.slice(0, 4).map((item) => (
-                          <span key={item.id} title={`${item.titleSnapshot} x ${item.quantity}`}>
-                            <img src={item.imageSnapshot} alt={item.titleSnapshot} />
-                            <strong>{item.quantity}</strong>
-                          </span>
-                        ))}
+                        {submission.items.slice(0, 4).map((item) => {
+                          const itemLabel = item.titleSnapshot.trim() || "未填写标签";
+
+                          return (
+                            <span key={item.id} title={`${itemLabel} x ${item.quantity}`}>
+                              <img src={item.imageSnapshot} alt={itemLabel} />
+                              <strong>{item.quantity}</strong>
+                            </span>
+                          );
+                        })}
                         {submission.items.length > 4 ? <em>+{submission.items.length - 4}</em> : null}
                       </div>
                     </td>
