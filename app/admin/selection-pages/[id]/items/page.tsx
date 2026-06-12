@@ -2,13 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ClipboardList, Download, Settings, Upload } from "lucide-react";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
-import { SubmitButton } from "@/components/SubmitButton";
 import { prisma } from "@/lib/prisma";
 import { requestBaseUrl } from "@/lib/request-url";
 import { formatCurrency } from "@/lib/format";
 import { listUploadedImages } from "@/lib/uploads";
 import { SelectionImportDialog } from "../../SelectionImportDialog";
 import { SelectionItemDialog } from "../../SelectionItemDialog";
+import { SelectionItemDeleteForm } from "../../SelectionItemDeleteForm";
 import { SelectionItemPreviewButton } from "../../SelectionItemPreviewButton";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +27,9 @@ export default async function SelectionPageItems({
       where: { id },
       include: {
         items: { orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] },
+        submissions: {
+          select: { items: { select: { itemId: true } } },
+        },
         _count: { select: { submissions: true } },
       },
     }),
@@ -41,6 +44,13 @@ export default async function SelectionPageItems({
   const imported = typeof query.imported === "string" ? query.imported : "";
   const skipped = typeof query.skipped === "string" ? query.skipped : "";
   const importError = typeof query.error === "string" ? query.error : "";
+  const selectedCounts = page.submissions.reduce<Record<string, number>>((counts, submission) => {
+    for (const item of submission.items) {
+      if (!item.itemId) continue;
+      counts[item.itemId] = (counts[item.itemId] || 0) + 1;
+    }
+    return counts;
+  }, {});
 
   return (
     <>
@@ -111,6 +121,7 @@ export default async function SelectionPageItems({
             {page.items.map((item) => {
               const itemLabel = item.title.trim() || "未填写标签";
               const priceLabel = item.price === null ? "" : formatCurrency(item.price, item.currency);
+              const selectedCount = selectedCounts[item.id] || 0;
 
               return (
                 <article className="admin-card selection-item-admin-card" key={item.id}>
@@ -125,6 +136,7 @@ export default async function SelectionPageItems({
                       {item.description ? <p>{item.description}</p> : null}
                       <small>
                         排序 {item.sortOrder} · {item.isActive ? "显示中" : "已隐藏"} · 数量 {item.minQuantity}-{item.maxQuantity}
+                        {selectedCount ? ` · 已被选择 ${selectedCount} 次` : ""}
                       </small>
                     </div>
                   </div>
@@ -132,15 +144,11 @@ export default async function SelectionPageItems({
                     <SelectionItemDialog
                       item={item}
                       uploadedImages={imageOptions}
+                      selectedCount={selectedCount}
                       triggerClassName="table-action-button"
                       triggerLabel="编辑"
                     />
-                    <form className="selection-delete-form" action="/api/admin/selection-items/delete" method="post">
-                      <input type="hidden" name="id" value={item.id} />
-                      <SubmitButton className="table-action-button danger" loadingText="删除中...">
-                        删除
-                      </SubmitButton>
-                    </form>
+                    <SelectionItemDeleteForm itemId={item.id} selectedCount={selectedCount} />
                   </div>
                 </article>
               );

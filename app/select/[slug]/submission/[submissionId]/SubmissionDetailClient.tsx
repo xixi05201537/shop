@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Minus, Plus, Trash2, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
+import { isSelectionSubmissionEditable, selectionSubmissionPublicStatus } from "@/lib/selection-status";
 
 type EditableItem = {
   id: string;
@@ -31,6 +32,7 @@ type SubmissionDetail = {
   reference: string;
   slug: string;
   pageTitle: string;
+  status: string;
   submittedAt: string;
   customerName: string | null;
   customerEmail: string | null;
@@ -73,13 +75,17 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
   }, 0);
   const hasPricedItems = detail.showPrices && selectedItems.some((item) => item.price !== null);
   const hasUnpricedItems = detail.showPrices && selectedItems.some((item) => item.price === null);
+  const statusMeta = selectionSubmissionPublicStatus(detail.status);
+  const canEdit = isSelectionSubmissionEditable(detail.status);
 
   function addItem(item: EditableItem) {
+    if (!canEdit) return;
     setSelected((current) => ({ ...current, [item.id]: detail.allowQuantity ? getAddQuantity(item) : 1 }));
     setMessage("");
   }
 
   function removeItem(id: string) {
+    if (!canEdit) return;
     setSelected((current) => {
       const next = { ...current };
       delete next[id];
@@ -89,6 +95,7 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
   }
 
   function setQuantity(item: EditableItem, quantity: number) {
+    if (!canEdit) return;
     setSelected((current) => ({
       ...current,
       [item.id]: detail.allowQuantity ? Math.max(item.minQuantity, Math.min(item.maxQuantity, Math.floor(quantity || item.minQuantity))) : 1,
@@ -100,6 +107,7 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
   }
 
   function setAddQuantity(item: EditableItem, quantity: number) {
+    if (!canEdit) return;
     setAddQuantities((current) => ({
       ...current,
       [item.id]: Math.max(item.minQuantity, Math.min(item.maxQuantity, Math.floor(quantity || item.minQuantity))),
@@ -108,6 +116,10 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
 
   async function saveChanges() {
     setMessage("");
+    if (!canEdit) {
+      setMessage(statusMeta.publicMessage);
+      return;
+    }
     if (!selectedItems.length) {
       setMessage("Please keep at least one item in your selection.");
       return;
@@ -148,6 +160,12 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
 
         <section className="selection-public-summary">
           <div>
+            <span>Status</span>
+            <strong>
+              <span className={`selection-public-status is-${detail.status}`}>{statusMeta.publicLabel}</span>
+            </strong>
+          </div>
+          <div>
             <span>Submitted at</span>
             <strong>{detail.submittedAt}</strong>
           </div>
@@ -186,10 +204,16 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
 
         {detail.note ? <p className="selection-public-note">{detail.note}</p> : null}
 
+        <p className={`selection-status-note ${canEdit ? "is-editable" : "is-locked"}`}>{statusMeta.publicMessage}</p>
+
         <section className="selection-edit-toolbar">
           <div>
-            <strong>Edit your selection</strong>
-            <span>Remove items you do not want, adjust quantities, or add more items below.</span>
+            <strong>{canEdit ? "Edit your selection" : "Selection locked"}</strong>
+            <span>
+              {canEdit
+                ? "Remove items you do not want, adjust quantities, or add more items below."
+                : "The seller has updated this selection status, so changes are no longer available."}
+            </span>
           </div>
         </section>
 
@@ -211,18 +235,18 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
                   <div className="selection-edit-actions">
                     {detail.allowQuantity ? (
                       <div className="selection-edit-stepper">
-                        <button type="button" onClick={() => setQuantity(item, item.quantity - 1)} aria-label="Decrease quantity">
+                        <button type="button" disabled={!canEdit} onClick={() => setQuantity(item, item.quantity - 1)} aria-label="Decrease quantity">
                           <Minus size={15} />
                         </button>
-                        <input value={item.quantity} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setQuantity(item, Number(event.target.value))} />
-                        <button type="button" onClick={() => setQuantity(item, item.quantity + 1)} aria-label="Increase quantity">
+                        <input value={item.quantity} disabled={!canEdit} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setQuantity(item, Number(event.target.value))} />
+                        <button type="button" disabled={!canEdit} onClick={() => setQuantity(item, item.quantity + 1)} aria-label="Increase quantity">
                           <Plus size={15} />
                         </button>
                       </div>
                     ) : (
                       <span className="selection-edit-quantity">Qty {item.quantity}</span>
                     )}
-                    <button className="selection-remove-button" type="button" onClick={() => removeItem(item.id)}>
+                    <button className="selection-remove-button" type="button" disabled={!canEdit} onClick={() => removeItem(item.id)}>
                       <Trash2 size={15} />
                     </button>
                   </div>
@@ -256,9 +280,9 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
         <section className="selection-add-more">
           <div>
             <strong>Add more items</strong>
-            <span>These items are still available on the original selection page.</span>
+            <span>{canEdit ? "These items are still available on the original selection page." : "Adding more items is unavailable after confirmation."}</span>
           </div>
-          {availableItems.length ? (
+          {canEdit && availableItems.length ? (
             <div className="selection-add-more-grid">
               {availableItems.map((item) => {
                 const itemLabel = item.title.trim() || "Unlabeled item";
@@ -275,16 +299,16 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
                     <div className="selection-add-actions">
                       {detail.allowQuantity ? (
                         <div className="selection-add-stepper">
-                          <button type="button" onClick={() => setAddQuantity(item, getAddQuantity(item) - 1)} aria-label="Decrease quantity">
+                          <button type="button" disabled={!canEdit} onClick={() => setAddQuantity(item, getAddQuantity(item) - 1)} aria-label="Decrease quantity">
                             <Minus size={15} />
                           </button>
-                          <input value={getAddQuantity(item)} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setAddQuantity(item, Number(event.target.value))} />
-                          <button type="button" onClick={() => setAddQuantity(item, getAddQuantity(item) + 1)} aria-label="Increase quantity">
+                          <input value={getAddQuantity(item)} disabled={!canEdit} type="number" min={item.minQuantity} max={item.maxQuantity} onChange={(event) => setAddQuantity(item, Number(event.target.value))} />
+                          <button type="button" disabled={!canEdit} onClick={() => setAddQuantity(item, getAddQuantity(item) + 1)} aria-label="Increase quantity">
                             <Plus size={15} />
                           </button>
                         </div>
                       ) : null}
-                      <button className="selection-add-button" type="button" onClick={() => addItem(item)} aria-label={`Add ${itemLabel}`}>
+                      <button className="selection-add-button" type="button" disabled={!canEdit} onClick={() => addItem(item)} aria-label={`Add ${itemLabel}`}>
                         <Check size={16} />
                       </button>
                     </div>
@@ -293,7 +317,9 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
               })}
             </div>
           ) : (
-            <p className="selection-public-note">All available items are already in this selection.</p>
+            <p className="selection-public-note">
+              {canEdit ? "All available items are already in this selection." : "This selection is locked and cannot be changed."}
+            </p>
           )}
         </section>
 
@@ -304,8 +330,8 @@ export function SubmissionDetailClient({ detail }: { detail: SubmissionDetail })
               {selectedItems.length} pick{selectedItems.length === 1 ? "" : "s"} · {totalQuantity} item{totalQuantity === 1 ? "" : "s"}
             </span>
           </div>
-          <button type="button" onClick={saveChanges} disabled={saving}>
-            {saving ? "Saving..." : "Save changes"}
+          <button type="button" onClick={saveChanges} disabled={saving || !canEdit}>
+            {canEdit ? (saving ? "Saving..." : "Save changes") : "Locked"}
           </button>
           {message ? <div className={`selection-edit-message ${message.startsWith("Saved") ? "is-success" : ""}`}>{message}</div> : null}
         </section>

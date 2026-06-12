@@ -81,12 +81,13 @@ model SelectionSubmission {
   customerEmail String?
   customerContact String?
   note          String?                   @db.LongText
-  status        String                    @default("new")
+  status        String                    @default("pending")
   totalQuantity Int
   totalAmount   Float?
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
   items         SelectionSubmissionItem[]
+  checkouts     SelectionCheckoutSubmission[]
 
   @@index([pageId, createdAt])
   @@index([status])
@@ -108,6 +109,44 @@ model SelectionSubmissionItem {
 
   @@index([submissionId])
   @@index([itemId])
+}
+
+model SelectionCheckout {
+  id              String                        @id @default(cuid())
+  token           String                        @unique
+  status          String                        @default("pending")
+  customerName    String?
+  customerEmail   String?
+  customerContact String?
+  totalQuantity   Int
+  subtotalAmount   Float                         @default(0)
+  totalAmount     Float
+  currency        String                        @default("USD")
+  emailRecipient   String?
+  emailStatus      String                        @default("pending")
+  emailError       String?                       @db.LongText
+  emailedAt        DateTime?
+  paypalOrderId   String?                       @unique
+  paypalCaptureId String?
+  paypalRawSummary String?                      @db.LongText
+  paidAt          DateTime?
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+  submissions     SelectionCheckoutSubmission[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SelectionCheckoutSubmission {
+  id           String              @id @default(cuid())
+  checkoutId   String
+  checkout     SelectionCheckout   @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  submissionId String
+  submission   SelectionSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([checkoutId, submissionId])
+  @@index([submissionId])
 }
 
 model Article {

@@ -3,6 +3,7 @@ import { getPublicConfig } from "@/lib/config";
 import { formatDateTimeWithOffset } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { selectionSubmissionNumber } from "@/lib/selection";
+import { normalizeSelectionSubmissionStatus } from "@/lib/selection-status";
 import "../../../../shop.css";
 import { SubmissionDetailClient } from "./SubmissionDetailClient";
 
@@ -51,6 +52,7 @@ export default async function PublicSelectionSubmissionPage({
         reference: selectionSubmissionNumber(submission.id),
         slug: submission.page.slug,
         pageTitle: submission.page.title,
+        status: normalizeSelectionSubmissionStatus(submission.status),
         submittedAt: formatDateTimeWithOffset(submission.createdAt, config.displayTimeZone),
         customerName: submission.customerName,
         customerEmail: submission.customerEmail,

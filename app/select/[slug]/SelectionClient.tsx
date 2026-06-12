@@ -60,13 +60,10 @@ type SelectionDraft = {
 
 const selectionHistoryStorageKey = "misaki-selection-history";
 const maxSelectionHistoryRecords = 12;
+const sheetAnimationMs = 180;
 
 function selectionDraftStorageKey(slug: string) {
   return `misaki-selection-draft:${slug}`;
-}
-
-function selectionReturnRefreshStorageKey(slug: string) {
-  return `misaki-selection-return-refresh:${slug}`;
 }
 
 function readSelectionHistory() {
@@ -152,10 +149,16 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [cartClosing, setCartClosing] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyClosing, setHistoryClosing] = useState(false);
   const [history, setHistory] = useState<SelectionHistoryRecord[]>([]);
   const mobileBarRef = useRef<HTMLDivElement | null>(null);
   const draftHydratedRef = useRef(false);
+  const cartVisibleRef = useRef(false);
+  const historyVisibleRef = useRef(false);
+  const cartCloseTimerRef = useRef<number | null>(null);
+  const historyCloseTimerRef = useRef<number | null>(null);
   const itemIds = useMemo(() => new Set(page.items.map((item) => item.id)), [page.items]);
 
   const selectedItems = useMemo(
@@ -176,9 +179,7 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   }, []);
   const refreshHistorySoon = useCallback(() => {
     refreshHistory();
-    window.requestAnimationFrame(refreshHistory);
     window.setTimeout(refreshHistory, 80);
-    window.setTimeout(refreshHistory, 260);
   }, [refreshHistory]);
   const restoreDraft = useCallback(() => {
     const draft = readSelectionDraft(page.slug, itemIds);
@@ -189,19 +190,6 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
     setCustomerContact(draft.customerContact);
     setNote(draft.note);
   }, [itemIds, page.slug]);
-
-  useEffect(() => {
-    const refreshKey = selectionReturnRefreshStorageKey(page.slug);
-    const refreshState = window.sessionStorage.getItem(refreshKey);
-    if (refreshState === "pending") {
-      window.sessionStorage.setItem(refreshKey, "done");
-      window.location.reload();
-      return;
-    }
-    if (refreshState === "done") {
-      window.sessionStorage.removeItem(refreshKey);
-    }
-  }, [page.slug]);
 
   useEffect(() => {
     restoreDraft();
@@ -277,6 +265,21 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
       window.removeEventListener("orientationchange", syncVisualViewport);
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (cartCloseTimerRef.current) window.clearTimeout(cartCloseTimerRef.current);
+      if (historyCloseTimerRef.current) window.clearTimeout(historyCloseTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    cartVisibleRef.current = cartOpen || cartClosing;
+  }, [cartClosing, cartOpen]);
+
+  useEffect(() => {
+    historyVisibleRef.current = historyOpen || historyClosing;
+  }, [historyClosing, historyOpen]);
 
   function toggleItem(item: SelectionItemView) {
     setMessage("");
@@ -371,19 +374,53 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   }
 
   function scrollToReview() {
-    setCartOpen(false);
+    closeCart();
     reviewSelection();
     document.querySelector("#selection-submit-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function openCart() {
+    if (cartCloseTimerRef.current) {
+      window.clearTimeout(cartCloseTimerRef.current);
+      cartCloseTimerRef.current = null;
+    }
+    setCartClosing(false);
+    cartVisibleRef.current = true;
+    setCartOpen(true);
+  }
+
+  function closeCart() {
+    if (!cartVisibleRef.current || cartCloseTimerRef.current) return;
+    setCartClosing(true);
+    cartCloseTimerRef.current = window.setTimeout(() => {
+      setCartOpen(false);
+      setCartClosing(false);
+      cartVisibleRef.current = false;
+      cartCloseTimerRef.current = null;
+    }, sheetAnimationMs);
+  }
+
   function openHistory() {
+    if (historyCloseTimerRef.current) {
+      window.clearTimeout(historyCloseTimerRef.current);
+      historyCloseTimerRef.current = null;
+    }
     setHistory(readSelectionHistory());
+    setHistoryClosing(false);
+    historyVisibleRef.current = true;
     setHistoryOpen(true);
     refreshHistorySoon();
   }
 
-  function rememberHistoryNavigation() {
-    window.sessionStorage.setItem(selectionReturnRefreshStorageKey(page.slug), "pending");
+  function closeHistory() {
+    if (!historyVisibleRef.current || historyCloseTimerRef.current) return;
+    setHistoryClosing(true);
+    historyCloseTimerRef.current = window.setTimeout(() => {
+      setHistoryOpen(false);
+      setHistoryClosing(false);
+      historyVisibleRef.current = false;
+      historyCloseTimerRef.current = null;
+    }, sheetAnimationMs);
   }
 
   if (submitted) {
@@ -562,7 +599,7 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
         </aside>
 
         <div className="selection-mobile-bar" ref={mobileBarRef} aria-label="Selection summary">
-          <button className="selection-mobile-cart-button" type="button" onClick={() => setCartOpen(true)} aria-label="View selected items">
+          <button className="selection-mobile-cart-button" type="button" onClick={openCart} aria-label="View selected items">
             <ShoppingBag size={19} />
             {selectedItems.length ? <small>{selectedItems.length}</small> : null}
           </button>
@@ -576,8 +613,13 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
         </div>
       </form>
 
-      {cartOpen ? (
-        <div className="selection-cart-sheet-overlay" role="dialog" aria-modal="true" onClick={() => setCartOpen(false)}>
+      {cartOpen || cartClosing ? (
+        <div
+          className={`selection-cart-sheet-overlay ${cartClosing ? "is-closing" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          onClick={closeCart}
+        >
           <section className="selection-cart-sheet" onClick={(event) => event.stopPropagation()}>
             <div className="selection-cart-sheet-head">
               <div>
@@ -585,7 +627,7 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
                 <strong>{selectedItems.length} pick{selectedItems.length === 1 ? "" : "s"} / {totalQuantity} item{totalQuantity === 1 ? "" : "s"}</strong>
                 {canShowTotal ? <small>{formatCurrency(totalAmount)}</small> : null}
               </div>
-              <button type="button" aria-label="Close selected items" onClick={() => setCartOpen(false)}>
+              <button type="button" aria-label="Close selected items" onClick={closeCart}>
                 <X size={18} />
               </button>
             </div>
@@ -644,8 +686,13 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
         </div>
       ) : null}
 
-      {historyOpen ? (
-        <div className="selection-history-sheet-overlay" role="dialog" aria-modal="true" onClick={() => setHistoryOpen(false)}>
+      {historyOpen || historyClosing ? (
+        <div
+          className={`selection-history-sheet-overlay ${historyClosing ? "is-closing" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          onClick={closeHistory}
+        >
           <section className="selection-history-sheet" onClick={(event) => event.stopPropagation()}>
             <div className="selection-cart-sheet-head">
               <div>
@@ -653,15 +700,18 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
                 <strong>选品记录</strong>
                 <small>{history.length ? `${history.length} records` : "No records yet"}</small>
               </div>
-              <button type="button" aria-label="Close selection history" onClick={() => setHistoryOpen(false)}>
+              <button type="button" aria-label="Close selection history" onClick={closeHistory}>
                 <X size={18} />
               </button>
             </div>
+            <p className="selection-history-local-note">
+              Records are saved only on this device. They will not appear if you switch browsers or devices.
+            </p>
 
             {history.length ? (
               <div className="selection-history-sheet-list">
                 {history.map((record) => (
-                  <a href={record.path} className="selection-history-sheet-item" key={record.id} onClick={rememberHistoryNavigation}>
+                  <a href={record.path} className="selection-history-sheet-item" key={record.id}>
                     <div>
                       <span>{record.reference}</span>
                       <strong>{record.pageTitle}</strong>

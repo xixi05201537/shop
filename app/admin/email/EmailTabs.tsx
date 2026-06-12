@@ -12,8 +12,11 @@ import {
   defaultBuyerEmailSubject,
   defaultSelectionEmailHtml,
   defaultSelectionEmailSubject,
+  defaultSelectionCheckoutEmailHtml,
+  defaultSelectionCheckoutEmailSubject,
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
+  selectionCheckoutTemplateVariables,
   selectionTemplateVariables,
   templateVariables,
 } from "@/lib/email-defaults";
@@ -26,6 +29,7 @@ const tabs = [
   { id: "seller", label: "卖家邮件配置" },
   { id: "shipment", label: "发货邮件配置" },
   { id: "selection", label: "选品邮件配置" },
+  { id: "selection-checkout", label: "选品付款邮件" },
 ] as const;
 type EmailTabId = (typeof tabs)[number]["id"];
 
@@ -48,10 +52,13 @@ export function EmailTabs({
   const shipmentHtml = config.shipmentEmailHtml || defaultShipmentEmailHtml;
   const selectionSubject = config.selectionEmailSubject || defaultSelectionEmailSubject;
   const selectionHtml = config.selectionEmailHtml || defaultSelectionEmailHtml;
+  const selectionCheckoutSubject = config.selectionCheckoutEmailSubject || defaultSelectionCheckoutEmailSubject;
+  const selectionCheckoutHtml = config.selectionCheckoutEmailHtml || defaultSelectionCheckoutEmailHtml;
   const [buyerPreview, setBuyerPreview] = useState(buyerHtml);
   const [adminPreview, setAdminPreview] = useState(adminHtml);
   const [shipmentPreview, setShipmentPreview] = useState(shipmentHtml);
   const [selectionPreview, setSelectionPreview] = useState(selectionHtml);
+  const [selectionCheckoutPreview, setSelectionCheckoutPreview] = useState(selectionCheckoutHtml);
 
   function handleTabClick(tabId: EmailTabId) {
     setActive(tabId);
@@ -277,6 +284,48 @@ export function EmailTabs({
           <TestEmailForm target="selection" />
         </>
       ) : null}
+
+      {active === "selection-checkout" ? (
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="selection-checkout" />
+            <label className="checkbox-row">
+              <span>
+                <input
+                  name="selectionCheckoutEmailEnabled"
+                  type="checkbox"
+                  defaultChecked={config.selectionCheckoutEmailEnabled !== "false"}
+                />{" "}
+                启用选品付款确认邮件
+              </span>
+            </label>
+            <label>
+              选品付款邮件标题
+              <input name="selectionCheckoutEmailSubject" defaultValue={selectionCheckoutSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                选品付款富文本邮件模板
+                <RichTemplateEditor
+                  name="selectionCheckoutEmailHtml"
+                  defaultValue={selectionCheckoutHtml}
+                  onChange={setSelectionCheckoutPreview}
+                  presets={[{ label: "使用精致模板", value: defaultSelectionCheckoutEmailHtml }]}
+                />
+              </label>
+              <section className="email-preview-panel" aria-label="选品付款邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: selectionCheckoutPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp variables={selectionCheckoutTemplateVariables} />
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">保存选品付款邮件</SubmitButton>
+            </div>
+          </form>
+          <TestEmailForm target="selection-checkout" />
+        </>
+      ) : null}
     </section>
   );
 }
@@ -284,7 +333,7 @@ export function EmailTabs({
 function TestEmailForm({
   target,
 }: {
-  target: "buyer" | "seller" | "shipment" | "selection";
+  target: "buyer" | "seller" | "shipment" | "selection" | "selection-checkout";
 }) {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [loading, setLoading] = useState(false);

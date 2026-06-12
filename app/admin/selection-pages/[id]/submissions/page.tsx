@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { DEFAULT_DISPLAY_TIME_ZONE, formatCurrency, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
 import { requestBaseUrl } from "@/lib/request-url";
 import { selectionSubmissionNumber } from "@/lib/selection";
+import { normalizeSelectionSubmissionStatus, selectionSubmissionStatusLabel } from "@/lib/selection-status";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,7 @@ export default async function SelectionSubmissionsPage({
                 <th>客户</th>
                 <th>邮箱</th>
                 <th>联系方式</th>
+                <th>状态</th>
                 <th>数量</th>
                 <th>预估金额</th>
                 <th>选品预览</th>
@@ -120,6 +122,7 @@ export default async function SelectionSubmissionsPage({
                 const detailPath = `/admin/selection-pages/${page.id}/submissions/${submission.id}`;
                 const publicPath = `/select/${page.slug}/submission/${submission.id}`;
                 const publicUrl = new URL(publicPath, baseUrl).toString();
+                const normalizedStatus = normalizeSelectionSubmissionStatus(submission.status);
 
                 return (
                   <tr className="selection-submission-table-row" key={submission.id}>
@@ -142,6 +145,11 @@ export default async function SelectionSubmissionsPage({
                     <td>
                       <span className="orders-table-ellipsis" title={submission.customerContact || "未填写"}>
                         {submission.customerContact || "未填写"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge status-selection-${normalizedStatus}`}>
+                        {selectionSubmissionStatusLabel(submission.status)}
                       </span>
                     </td>
                     <td>{submission.totalQuantity}</td>

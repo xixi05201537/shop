@@ -72,6 +72,9 @@ export async function saveEmailForm(formData: FormData) {
   if (formData.has("selectionEmailSubject") || formData.has("selectionEmailHtml")) {
     values.selectionEmailEnabled = formData.get("selectionEmailEnabled") === "on" ? "true" : "false";
   }
+  if (formData.has("selectionCheckoutEmailSubject") || formData.has("selectionCheckoutEmailHtml")) {
+    values.selectionCheckoutEmailEnabled = formData.get("selectionCheckoutEmailEnabled") === "on" ? "true" : "false";
+  }
   if (formData.has("buyerEmailSubject")) values.buyerEmailSubject = String(formData.get("buyerEmailSubject") || "");
   if (formData.has("buyerEmailHtml")) values.buyerEmailHtml = sanitizeEmailHtml(String(formData.get("buyerEmailHtml") || ""));
   if (formData.has("adminEmailSubject")) values.adminEmailSubject = String(formData.get("adminEmailSubject") || "");
@@ -83,6 +86,10 @@ export async function saveEmailForm(formData: FormData) {
   if (formData.has("selectionEmailSubject")) values.selectionEmailSubject = String(formData.get("selectionEmailSubject") || "");
   if (formData.has("selectionEmailHtml")) {
     values.selectionEmailHtml = sanitizeEmailHtml(String(formData.get("selectionEmailHtml") || ""));
+  }
+  if (formData.has("selectionCheckoutEmailSubject")) values.selectionCheckoutEmailSubject = String(formData.get("selectionCheckoutEmailSubject") || "");
+  if (formData.has("selectionCheckoutEmailHtml")) {
+    values.selectionCheckoutEmailHtml = sanitizeEmailHtml(String(formData.get("selectionCheckoutEmailHtml") || ""));
   }
 
   await setConfigValues(values, ["smtpPassword"]);

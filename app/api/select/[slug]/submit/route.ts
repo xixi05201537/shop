@@ -70,6 +70,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
       customerEmail: page.showEmail && customerEmail ? customerEmail : null,
       customerContact: page.showContact && customerContact ? customerContact : null,
       note: note || null,
+      status: "pending",
       totalQuantity,
       totalAmount,
       items: {

@@ -8,17 +8,35 @@ import {
   defaultBuyerEmailSubject,
   defaultSelectionEmailHtml,
   defaultSelectionEmailSubject,
+  defaultSelectionCheckoutEmailHtml,
+  defaultSelectionCheckoutEmailSubject,
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
 } from "@/lib/email-defaults";
 import { DEFAULT_DISPLAY_TIME_ZONE, formatCurrency, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
 import { orderEmailRecipients } from "@/lib/paypal-order-details";
 import { selectionSubmissionNumber } from "@/lib/selection";
-import type { Order, SelectionPage, SelectionSubmission, SelectionSubmissionItem } from "@prisma/client";
+import { selectionCheckoutNumber } from "@/lib/selection-checkout";
+import type {
+  Order,
+  SelectionCheckout,
+  SelectionPage,
+  SelectionSubmission,
+  SelectionSubmissionItem,
+} from "@prisma/client";
 
 type SelectionSubmissionForEmail = SelectionSubmission & {
   page: Pick<SelectionPage, "title" | "slug">;
   items: SelectionSubmissionItem[];
+};
+
+type SelectionCheckoutForEmail = SelectionCheckout & {
+  submissions: Array<{
+    submission: SelectionSubmission & {
+      page: Pick<SelectionPage, "title" | "slug">;
+      items: SelectionSubmissionItem[];
+    };
+  }>;
 };
 
 function renderTemplate(template: string, order: Order, timeZone?: string | null) {
@@ -78,6 +96,22 @@ function renderSelectionItems(submission: SelectionSubmissionForEmail) {
     .join("");
 }
 
+function renderSelectionCheckoutItems(checkout: SelectionCheckoutForEmail) {
+  return checkout.submissions
+    .map(({ submission }) => {
+      const title = `<div style="margin:12px 0 6px;color:#98244f;font-weight:900;">${escapeHtml(submission.page.title)} · ${escapeHtml(selectionSubmissionNumber(submission.id))}</div>`;
+      const items = submission.items
+        .map((item) => {
+          const label = item.titleSnapshot.trim() || "Untitled item";
+          const price = item.lineTotal === null ? " · Price pending" : ` · ${formatCurrency(item.lineTotal, item.currencySnapshot)}`;
+          return `<div style="margin:0 0 8px;"><strong>${escapeHtml(label)}</strong> × ${item.quantity}${escapeHtml(price)}</div>`;
+        })
+        .join("");
+      return `${title}${items}`;
+    })
+    .join("");
+}
+
 function renderSelectionTemplate(
   template: string,
   submission: SelectionSubmissionForEmail,
@@ -103,6 +137,39 @@ function renderSelectionTemplate(
     items: renderSelectionItems(submission),
     note: submission.note || "",
     submittedAt: formatDateTimeWithOffset(submission.createdAt, displayTimeZone),
+  };
+
+  return Object.entries(values).reduce((content, [key, value]) => {
+    const rendered = key === "items" || !escapeValues ? value : escapeHtml(value);
+    return content.replaceAll(`{{${key}}}`, rendered);
+  }, template);
+}
+
+function renderSelectionCheckoutTemplate(
+  template: string,
+  checkout: SelectionCheckoutForEmail,
+  checkoutLink: string,
+  supportEmail: string,
+  timeZone?: string | null,
+  escapeValues = true,
+) {
+  const displayTimeZone = normalizeDisplayTimeZone(timeZone || DEFAULT_DISPLAY_TIME_ZONE);
+  const hasDiscount = checkout.subtotalAmount > checkout.totalAmount;
+  const firstSubmission = checkout.submissions[0]?.submission;
+  const values: Record<string, string> = {
+    checkoutReference: selectionCheckoutNumber(checkout.token),
+    checkoutLink,
+    customerName: checkout.customerName || firstSubmission?.customerName || "friend",
+    customerEmail: checkout.customerEmail || firstSubmission?.customerEmail || "",
+    customerContact: checkout.customerContact || firstSubmission?.customerContact || "",
+    supportEmail,
+    totalQuantity: String(checkout.totalQuantity),
+    subtotalAmount: formatCurrency(checkout.subtotalAmount, checkout.currency),
+    totalAmount: formatCurrency(checkout.totalAmount, checkout.currency),
+    priceLabel: hasDiscount ? "Discount price" : "Total",
+    currency: checkout.currency,
+    items: renderSelectionCheckoutItems(checkout),
+    createdAt: formatDateTimeWithOffset(checkout.createdAt, displayTimeZone),
   };
 
   return Object.entries(values).reduce((content, [key, value]) => {
@@ -247,6 +314,34 @@ export async function sendSelectionEmail(submission: SelectionSubmissionForEmail
   return "sent";
 }
 
+export async function sendSelectionCheckoutEmail(checkout: SelectionCheckoutForEmail, baseUrl: string, recipients?: string) {
+  const { config, mailer } = await transporter();
+  const to = recipients || checkout.emailRecipient || checkout.customerEmail || "";
+  if (!to.trim()) return "skipped";
+  if (config.selectionCheckoutEmailEnabled === "false") return "disabled";
+  const checkoutLink = new URL(`/select/checkout/${checkout.token}`, baseUrl).toString();
+  await sendHtmlMail(mailer, {
+    from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
+    to,
+    subject: renderSelectionCheckoutTemplate(
+      config.selectionCheckoutEmailSubject || defaultSelectionCheckoutEmailSubject,
+      checkout,
+      checkoutLink,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+      false,
+    ),
+    html: renderSelectionCheckoutTemplate(
+      config.selectionCheckoutEmailHtml || defaultSelectionCheckoutEmailHtml,
+      checkout,
+      checkoutLink,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+    ),
+  });
+  return "sent";
+}
+
 function testOrder(): Order {
   const now = new Date();
   return {
@@ -331,6 +426,34 @@ function testSelectionSubmission(): SelectionSubmissionForEmail {
   };
 }
 
+function testSelectionCheckout(): SelectionCheckoutForEmail {
+  const submission = testSelectionSubmission();
+  const now = new Date();
+  return {
+    id: "test-checkout",
+    token: "testcheckouttoken",
+    status: "pending",
+    customerName: submission.customerName,
+    customerEmail: submission.customerEmail,
+    customerContact: submission.customerContact,
+    totalQuantity: submission.totalQuantity,
+    subtotalAmount: 18,
+    totalAmount: 15,
+    currency: "USD",
+    emailRecipient: submission.customerEmail,
+    emailStatus: "pending",
+    emailError: null,
+    emailedAt: null,
+    paypalOrderId: null,
+    paypalCaptureId: null,
+    paypalRawSummary: null,
+    paidAt: null,
+    createdAt: now,
+    updatedAt: now,
+    submissions: [{ submission }],
+  };
+}
+
 export async function sendTestEmail(target: string, to: string) {
   const { config, mailer } = await transporter();
   const order = testOrder();
@@ -375,6 +498,33 @@ export async function sendTestEmail(target: string, to: string) {
       config.selectionEmailHtml || defaultSelectionEmailHtml,
       submission,
       selectionLink,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+    );
+    const info = await sendHtmlMail(mailer, {
+      from,
+      to,
+      subject,
+      html,
+    });
+    return info;
+  }
+
+  if (target === "selection-checkout") {
+    const checkout = testSelectionCheckout();
+    const checkoutLink = "https://example.com/select/checkout/testcheckouttoken";
+    const subject = `[Test] ${renderSelectionCheckoutTemplate(
+      config.selectionCheckoutEmailSubject || defaultSelectionCheckoutEmailSubject,
+      checkout,
+      checkoutLink,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+      false,
+    )}`;
+    const html = renderSelectionCheckoutTemplate(
+      config.selectionCheckoutEmailHtml || defaultSelectionCheckoutEmailHtml,
+      checkout,
+      checkoutLink,
       config.supportEmail || config.smtpFromEmail,
       config.displayTimeZone,
     );

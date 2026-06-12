@@ -74,7 +74,7 @@ export async function checkPaypalHealth() {
   };
 }
 
-export async function createPaypalOrder(totalAmount: number, orderNumber: string) {
+export async function createPaypalOrder(totalAmount: number, orderNumber: string, currency = "USD") {
   const { token, settings } = await accessToken();
   const response = await fetch(`${paypalBase(settings.env)}/v2/checkout/orders`, {
     method: "POST",
@@ -95,7 +95,7 @@ export async function createPaypalOrder(totalAmount: number, orderNumber: string
         {
           reference_id: orderNumber,
           amount: {
-            currency_code: "USD",
+            currency_code: currency,
             value: totalAmount.toFixed(2),
           },
         },

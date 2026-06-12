@@ -27,10 +27,12 @@ export function AdminNav() {
         const active = exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (
-          <Link aria-current={active ? "page" : undefined} className={active ? "is-active" : undefined} href={item.href} key={item.href}>
-            <Icon size={18} />
-            <span>{item.label}</span>
-          </Link>
+          <div className="admin-nav-group" key={item.href}>
+            <Link aria-current={active ? "page" : undefined} className={active ? "is-active" : undefined} href={item.href}>
+              <Icon size={18} />
+              <span>{item.label}</span>
+            </Link>
+          </div>
         );
       })}
       <form action="/api/admin/logout" method="post">

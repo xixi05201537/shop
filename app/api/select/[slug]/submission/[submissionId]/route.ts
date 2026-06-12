@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { selectionSubmissionNumber } from "@/lib/selection";
+import { isSelectionSubmissionEditable, selectionSubmissionPublicStatus } from "@/lib/selection-status";
 
 type UpdateBody = {
   items?: Array<{ id?: string; quantity?: number }>;
@@ -25,6 +26,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ sl
 
   if (!submission) {
     return NextResponse.json({ error: "This selection could not be found." }, { status: 404 });
+  }
+  if (!isSelectionSubmissionEditable(submission.status)) {
+    return NextResponse.json(
+      { error: selectionSubmissionPublicStatus(submission.status).publicMessage },
+      { status: 409 },
+    );
   }
 
   const requested = new Map<string, number>();

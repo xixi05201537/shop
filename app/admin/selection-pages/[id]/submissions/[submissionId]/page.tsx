@@ -6,6 +6,7 @@ import { DEFAULT_DISPLAY_TIME_ZONE, formatCurrency, formatDateTimeWithOffset, no
 import { prisma } from "@/lib/prisma";
 import { requestBaseUrl } from "@/lib/request-url";
 import { selectionSubmissionNumber } from "@/lib/selection";
+import { normalizeSelectionSubmissionStatus, selectionSubmissionStatuses, selectionSubmissionStatusLabel } from "@/lib/selection-status";
 import { SubmissionItemsPreview } from "./SubmissionItemsPreview";
 
 export const dynamic = "force-dynamic";
@@ -44,9 +45,10 @@ export default async function SelectionSubmissionDetailPage({
   const publicPath = `/select/${submission.page.slug}/submission/${submission.id}`;
   const publicUrl = new URL(publicPath, baseUrl).toString();
   const reference = selectionSubmissionNumber(submission.id);
+  const normalizedStatus = normalizeSelectionSubmissionStatus(submission.status);
 
   return (
-    <>
+    <div className="selection-submission-detail-page">
       <header className="admin-header">
         <div>
           <span className="eyebrow">客户提交详情</span>
@@ -104,12 +106,41 @@ export default async function SelectionSubmissionDetailPage({
           <strong>{submission.totalQuantity}</strong>
         </div>
         <div>
+          <span>状态</span>
+          <strong>
+            <span className={`status-badge status-selection-${normalizedStatus}`}>
+              {selectionSubmissionStatusLabel(submission.status)}
+            </span>
+          </strong>
+        </div>
+        <div>
           <span>预估金额</span>
           <strong>
             {estimatedAmount === null ? "未设置价格" : formatCurrency(estimatedAmount)}
             {estimatedAmount !== null && hasUnpricedItems ? <small>部分未计价</small> : null}
           </strong>
         </div>
+      </section>
+
+      <section className="admin-card selection-submission-status-card">
+        <div>
+          <h2>提交状态</h2>
+          <p>只有待确认状态允许客户继续修改；已确认、已付款、已完成、已取消都会锁定客户链接。</p>
+        </div>
+        <form action="/api/admin/selection-submissions/status" method="post">
+          <input type="hidden" name="id" value={submission.id} />
+          <input type="hidden" name="returnTo" value={`/admin/selection-pages/${submission.pageId}/submissions/${submission.id}`} />
+          <select name="status" defaultValue={normalizedStatus}>
+            {selectionSubmissionStatuses.map((status) => (
+              <option value={status} key={status}>
+                {selectionSubmissionStatusLabel(status)}
+              </option>
+            ))}
+          </select>
+          <button className="admin-button" type="submit">
+            更新状态
+          </button>
+        </form>
       </section>
 
       {submission.note ? (
@@ -137,6 +168,6 @@ export default async function SelectionSubmissionDetailPage({
           }))}
         />
       </section>
-    </>
+    </div>
   );
 }
