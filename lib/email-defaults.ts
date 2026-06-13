@@ -52,7 +52,6 @@ export const paymentRequestTemplateVariables = [
   "{{totalAmount}}",
   "{{currency}}",
   "{{images}}",
-  "{{adminNote}}",
   "{{createdAt}}",
 ];
 
@@ -362,10 +361,6 @@ export const defaultPaymentRequestEmailHtml = [
   '<tr><td style="padding:18px 18px;border-radius:20px;background-color:#98244f;">',
   '<p style="margin:0px 0px 4px;color:#ffffff;font-size:12px;font-weight:900;line-height:1.3;text-transform:uppercase;">Total</p>',
   '<p style="margin:0;color:#ffffff;font-size:26px;font-weight:900;line-height:1.25;word-break:break-word;">{{totalAmount}}</p>',
-  '</td></tr>',
-  '<tr><td style="padding:14px 18px;border-radius:16px;background-color:#ffffff;">',
-  '<p style="margin:0px 0px 4px;color:#776471;font-size:12px;font-weight:900;line-height:1.3;text-transform:uppercase;">Note</p>',
-  '<p style="margin:0;color:#352331;font-size:14px;font-weight:800;line-height:1.65;word-break:break-word;">{{adminNote}}</p>',
   '</td></tr>',
   '</tbody></table>',
   '</td></tr>',

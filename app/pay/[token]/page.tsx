@@ -72,8 +72,11 @@ export default async function PublicPaymentRequestPage({ params }: { params: Pro
             id: image.id,
             imageUrl: image.imageUrl,
             caption: image.caption,
+            captionText: englishOnlyText(image.caption, ""),
             label: englishOnlyText(image.caption, `Payment image ${index + 1}`),
             price: formatCurrency(image.price, paymentRequest.currency),
+            quantity: image.quantity,
+            lineTotal: formatCurrency(image.price * image.quantity, paymentRequest.currency),
           }))}
         />
 

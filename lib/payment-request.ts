@@ -65,12 +65,14 @@ export function parsePaymentRequestImages(formData: FormData) {
   const urls = formData.getAll("imageUrl").map((value) => String(value).trim());
   const captions = formData.getAll("imageCaption").map((value) => String(value).trim());
   const prices = formData.getAll("imagePrice").map((value) => String(value).trim());
+  const quantities = formData.getAll("imageQuantity").map((value) => String(value).trim());
 
   return urls
     .map((imageUrl, index) => ({
       imageUrl,
       caption: captions[index] || null,
       price: Number(prices[index] || 0),
+      quantity: Number(quantities[index] || 1),
       sortOrder: index,
     }))
     .filter((image) => image.imageUrl)
@@ -78,7 +80,10 @@ export function parsePaymentRequestImages(formData: FormData) {
       if (!Number.isFinite(image.price) || image.price < 0) {
         throw new PaymentRequestError("image-price", "每张图片的价格必须是大于或等于 0 的数字。");
       }
-      return { ...image, price: Number(image.price.toFixed(2)) };
+      if (!Number.isFinite(image.quantity) || image.quantity < 1) {
+        throw new PaymentRequestError("image-quantity", "每张图片的数量必须是大于或等于 1 的整数。");
+      }
+      return { ...image, price: Number(image.price.toFixed(2)), quantity: Math.floor(image.quantity) };
     });
 }
 
@@ -89,7 +94,7 @@ export function parsePaymentRequestForm(formData: FormData) {
   const status = normalizePaymentRequestStatus(String(formData.get("status") || "pending"));
   const adminNote = String(formData.get("adminNote") || "").trim() || null;
   const images = parsePaymentRequestImages(formData);
-  const totalAmount = Number(images.reduce((sum, image) => sum + image.price, 0).toFixed(2));
+  const totalAmount = Number(images.reduce((sum, image) => sum + image.price * image.quantity, 0).toFixed(2));
 
   if (!title) throw new PaymentRequestError("title", "请填写付款单标题。");
   if (!images.length) throw new PaymentRequestError("images", "请至少添加一张图片。");

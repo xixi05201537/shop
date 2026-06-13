@@ -131,12 +131,13 @@ function renderPaymentRequestImages(paymentRequest: PaymentRequestForEmail, base
       const imageUrl = new URL(image.imageUrl, baseUrl).toString();
       const caption = image.caption?.trim() || paymentRequest.title;
       const price = formatCurrency(image.price, paymentRequest.currency);
+      const lineTotal = formatCurrency(image.price * image.quantity, paymentRequest.currency);
       return [
         '<div style="margin:0 0 12px;">',
         `<a href="${escapeHtml(imageUrl)}" style="display:block;color:#cf2f6c;text-decoration:none;font-weight:900;">`,
         `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(caption)}" style="display:block;width:100%;max-width:520px;border:1px solid #f3d5df;border-radius:16px;background-color:#ffffff;" />`,
         "</a>",
-        `<div style="margin:6px 0 0;color:#776471;font-size:13px;font-weight:800;">${escapeHtml(caption)} · <span style="color:#98244f;font-weight:900;">${escapeHtml(price)}</span></div>`,
+        `<div style="margin:6px 0 0;color:#776471;font-size:13px;font-weight:800;">${escapeHtml(caption)} · ${escapeHtml(price)} × ${image.quantity} · <span style="color:#98244f;font-weight:900;">${escapeHtml(lineTotal)}</span></div>`,
         "</div>",
       ].join("");
     })
@@ -228,7 +229,6 @@ function renderPaymentRequestTemplate(
     totalAmount: formatCurrency(paymentRequest.totalAmount, paymentRequest.currency),
     currency: paymentRequest.currency,
     images: renderPaymentRequestImages(paymentRequest, baseUrl),
-    adminNote: paymentRequest.adminNote || "",
     createdAt: formatDateTimeWithOffset(paymentRequest.createdAt, displayTimeZone),
     paidAt: formatDateTimeWithOffset(paymentRequest.paidAt, displayTimeZone),
     paypalCaptureId: paymentRequest.paypalCaptureId || "",
@@ -643,6 +643,7 @@ function testPaymentRequest(): PaymentRequestForEmail {
         imageUrl: "/sample-product.svg",
         caption: "Reserved item",
         price: 28,
+        quantity: 1,
         sortOrder: 0,
       },
     ],

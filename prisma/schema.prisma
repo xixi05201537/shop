@@ -184,6 +184,7 @@ model PaymentRequestImage {
   imageUrl         String         @db.VarChar(2048)
   caption          String?        @db.VarChar(255)
   price            Float          @default(0)
+  quantity         Int            @default(1)
   sortOrder        Int            @default(0)
 
   @@index([paymentRequestId, sortOrder])

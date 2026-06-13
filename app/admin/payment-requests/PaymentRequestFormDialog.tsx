@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clipboard, ImagePlus, Plus, Trash2, Upload, X } from "lucide-react";
+import { Clipboard, Download, FileSpreadsheet, ImagePlus, Plus, Trash2, Upload, X } from "lucide-react";
 import type { UploadedImageOption } from "@/app/admin/product/ProductAdminForm";
 
 type PaymentImage = {
   imageUrl: string;
   caption: string;
   price: string;
+  quantity: string;
 };
 
 type PaymentRequestFormValue = {
@@ -28,7 +29,7 @@ const emptyPaymentRequest: PaymentRequestFormValue = {
   currency: "USD",
   status: "pending",
   adminNote: "",
-  images: [{ imageUrl: "", caption: "", price: "" }],
+  images: [{ imageUrl: "", caption: "", price: "", quantity: "1" }],
 };
 
 export function PaymentRequestFormDialog({
@@ -43,12 +44,18 @@ export function PaymentRequestFormDialog({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const pickerDialogRef = useRef<HTMLDialogElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const excelInputRef = useRef<HTMLInputElement | null>(null);
   const initialValue = paymentRequest || emptyPaymentRequest;
-  const [images, setImages] = useState<PaymentImage[]>(initialValue.images.length ? initialValue.images : [{ imageUrl: "", caption: "", price: "" }]);
+  const [images, setImages] = useState<PaymentImage[]>(
+    initialValue.images.length
+      ? initialValue.images.map((image) => ({ ...image, quantity: image.quantity || "1" }))
+      : [{ imageUrl: "", caption: "", price: "", quantity: "1" }],
+  );
   const [imageOptions, setImageOptions] = useState<UploadedImageOption[]>(uploadedImages);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
   const [localUploadIndex, setLocalUploadIndex] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
   const calculatedTotal = useMemo(
     () =>
@@ -56,7 +63,8 @@ export function PaymentRequestFormDialog({
         images
           .reduce((sum, image) => {
             const price = Number(image.price);
-            return sum + (Number.isFinite(price) && price > 0 ? price : 0);
+            const quantity = Number(image.quantity);
+            return sum + (Number.isFinite(price) && price > 0 ? price : 0) * (Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1);
           }, 0)
           .toFixed(2),
       ),
@@ -85,7 +93,7 @@ export function PaymentRequestFormDialog({
       if (index !== null && current[index]) {
         return current.map((image, itemIndex) => (itemIndex === index ? { ...image, imageUrl: path } : image));
       }
-      return [...current, { imageUrl: path, caption: "", price: "" }];
+      return [...current, { imageUrl: path, caption: "", price: "", quantity: "1" }];
     });
   }
 
@@ -149,6 +157,35 @@ export function PaymentRequestFormDialog({
     }
   }
 
+  async function importExcelFile(file?: File | null) {
+    if (!file) return;
+    setUploadMessage("");
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/admin/payment-requests/import", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: formData,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "导入失败，请检查 Excel 格式。");
+      const importedImages = Array.isArray(data.images) ? data.images : [];
+      if (!importedImages.length) throw new Error("Excel 里没有可导入的图片行。");
+      importedImages.forEach((image: PaymentImage) => {
+        if (image.imageUrl) addUploadedOption(image.imageUrl);
+      });
+      setImages(importedImages);
+      setUploadMessage(`已导入 ${importedImages.length} 行，数量和总金额已自动计算。`);
+    } catch (error) {
+      setUploadMessage(error instanceof Error ? error.message : "导入失败，请检查 Excel 格式。");
+    } finally {
+      setImporting(false);
+      if (excelInputRef.current) excelInputRef.current.value = "";
+    }
+  }
+
   return (
     <>
       <button className={paymentRequest ? "table-action-button" : "admin-button"} type="button" onClick={() => dialogRef.current?.showModal()}>
@@ -207,6 +244,21 @@ export function PaymentRequestFormDialog({
                 <strong>图片</strong>
                 <div className="payment-image-upload-actions">
                   <input
+                    ref={excelInputRef}
+                    type="file"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    hidden
+                    onChange={(event) => void importExcelFile(event.target.files?.[0])}
+                  />
+                  <a className="secondary-button" href="/api/admin/payment-requests/template">
+                    <Download size={16} />
+                    下载模板
+                  </a>
+                  <button className="secondary-button" type="button" onClick={() => excelInputRef.current?.click()} disabled={importing}>
+                    <FileSpreadsheet size={16} />
+                    {importing ? "导入中..." : "导入 Excel"}
+                  </button>
+                  <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
@@ -216,7 +268,7 @@ export function PaymentRequestFormDialog({
                   <button
                     className="secondary-button"
                     type="button"
-                    onClick={() => setImages((current) => [...current, { imageUrl: "", caption: "", price: "" }])}
+                    onClick={() => setImages((current) => [...current, { imageUrl: "", caption: "", price: "", quantity: "1" }])}
                   >
                     <Plus size={16} />
                     添加图片
@@ -240,8 +292,19 @@ export function PaymentRequestFormDialog({
                         inputMode="decimal"
                         value={image.price}
                         onChange={(event) => updateImage(index, { price: event.target.value })}
-                        placeholder="价格"
+                        placeholder="单价"
                       />
+                      <input
+                        name="imageQuantity"
+                        type="number"
+                        min="1"
+                        step="1"
+                        inputMode="numeric"
+                        value={image.quantity}
+                        onChange={(event) => updateImage(index, { quantity: event.target.value })}
+                        placeholder="数量"
+                      />
+                      <strong className="payment-image-line-total">{formatMoney(lineTotal(image), initialValue.currency || "USD")}</strong>
                       <div className="payment-image-card-actions">
                         <button
                           className="payment-image-icon-button"
@@ -282,7 +345,7 @@ export function PaymentRequestFormDialog({
                           className="payment-image-icon-button is-danger"
                           type="button"
                           title="删除"
-                          onClick={() => setImages((current) => (current.length > 1 ? current.filter((_, itemIndex) => itemIndex !== index) : [{ imageUrl: "", caption: "", price: "" }]))}
+                          onClick={() => setImages((current) => (current.length > 1 ? current.filter((_, itemIndex) => itemIndex !== index) : [{ imageUrl: "", caption: "", price: "", quantity: "1" }]))}
                           aria-label="删除"
                         >
                           <Trash2 size={17} />
@@ -301,8 +364,8 @@ export function PaymentRequestFormDialog({
             </section>
 
             <label>
-              备注
-              <textarea name="adminNote" defaultValue={initialValue.adminNote} placeholder="内部备注或随邮件发送给客户的补充说明。" />
+              内部备注
+              <textarea name="adminNote" defaultValue={initialValue.adminNote} placeholder="只给后台内部查看，不会显示在客户页面或邮件里。" />
             </label>
           </div>
 
@@ -353,4 +416,10 @@ export function PaymentRequestFormDialog({
 
 function formatMoney(value: number, currency: string) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(value || 0);
+}
+
+function lineTotal(image: PaymentImage) {
+  const price = Number(image.price);
+  const quantity = Number(image.quantity);
+  return Number(((Number.isFinite(price) && price > 0 ? price : 0) * (Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1)).toFixed(2));
 }

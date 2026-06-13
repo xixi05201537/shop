@@ -127,6 +127,7 @@ export default async function PaymentRequestsAdmin({
                               imageUrl: image.imageUrl,
                               caption: image.caption || "",
                               price: image.price ? String(image.price) : "",
+                              quantity: image.quantity ? String(image.quantity) : "1",
                             })),
                           }}
                         />

@@ -7,8 +7,11 @@ type PaymentRequestImage = {
   id: string;
   imageUrl: string;
   caption: string | null;
+  captionText: string;
   label: string;
   price: string;
+  quantity: number;
+  lineTotal: string;
 };
 
 export function PaymentRequestGallery({ images }: { images: PaymentRequestImage[] }) {
@@ -33,7 +36,10 @@ export function PaymentRequestGallery({ images }: { images: PaymentRequestImage[
                   <Sparkles size={14} />
                   Item {index + 1}
                 </span>
-                <em>{image.price}</em>
+                <em>{image.lineTotal}</em>
+              </div>
+              <div className="payment-request-public-image-detail">
+                <span>{image.price} x {image.quantity}</span>
               </div>
               <strong>{image.label}</strong>
             </div>
@@ -42,16 +48,21 @@ export function PaymentRequestGallery({ images }: { images: PaymentRequestImage[
       </section>
 
       {preview ? (
-        <div className="selection-preview-overlay" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
+        <div className="selection-preview-overlay payment-request-preview-overlay" role="dialog" aria-modal="true" onClick={() => setPreview(null)}>
           <div className="selection-preview-dialog payment-request-preview-dialog" onClick={(event) => event.stopPropagation()}>
             <button type="button" aria-label="Close preview" onClick={() => setPreview(null)}>
               <X size={20} />
             </button>
-            <img src={preview.imageUrl} alt={preview.label} />
-            <div>
-              <strong>{preview.label}</strong>
-              <span>{preview.price}</span>
-            </div>
+            <figure className={`payment-request-preview-figure${preview.captionText ? " has-caption" : ""}`}>
+              <div className="payment-request-preview-image-wrap">
+                <img src={preview.imageUrl} alt={preview.label} />
+                <div className="payment-request-preview-price-bar">
+                  <span>{preview.price} x {preview.quantity}</span>
+                  <strong>{preview.lineTotal}</strong>
+                </div>
+              </div>
+              {preview.captionText ? <figcaption>{preview.captionText}</figcaption> : null}
+            </figure>
           </div>
         </div>
       ) : null}
