@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { prisma } from "@/lib/prisma";
-import { appUrl } from "@/lib/redirect";
+import { appUrl, safeReturnTo } from "@/lib/redirect";
+
+const MAX_NOTE_LENGTH = 4000;
 
 export async function POST(request: Request) {
   const unauthorized = await requireAdminApi();
@@ -10,7 +12,7 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const id = String(formData.get("id") || "");
-  const internalNote = String(formData.get("internalNote") || "").trim();
+  const internalNote = String(formData.get("internalNote") || "").trim().slice(0, MAX_NOTE_LENGTH);
   if (!id) return NextResponse.redirect(appUrl("/admin/orders", request), { status: 303 });
 
   const order = await prisma.order.update({
@@ -25,5 +27,6 @@ export async function POST(request: Request) {
   });
 
   const returnTo = String(formData.get("returnTo") || `/admin/orders/${id}`);
-  return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}note=1`, request), { status: 303 });
+  const safe = safeReturnTo(returnTo, `/admin/orders/${id}`);
+  return NextResponse.redirect(appUrl(`${safe}${safe.includes("?") ? "&" : "?"}note=1`, request), { status: 303 });
 }

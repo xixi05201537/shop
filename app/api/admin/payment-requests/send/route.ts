@@ -5,6 +5,7 @@ import { sendPaymentRequestEmail } from "@/lib/email";
 import { normalizeEmailRecipients, paymentRequestNumber, revalidatePaymentRequest } from "@/lib/payment-request";
 import { prisma } from "@/lib/prisma";
 import { appUrl } from "@/lib/redirect";
+import type { EmailStatus } from "@prisma/client";
 
 export async function POST(request: Request) {
   const unauthorized = await requireAdminApi();
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.redirect(appUrl("/admin/payment-requests?error=已付款的付款单不能重复发送付款邀请。", request), { status: 303 });
   }
 
-  let emailStatus = "skipped";
+  let emailStatus: EmailStatus = "skipped";
   let emailError: string | null = null;
   try {
     emailStatus = await sendPaymentRequestEmail(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 export function SubmitButton({
@@ -15,6 +15,15 @@ export function SubmitButton({
   const { pending } = useFormStatus();
   const [clicked, setClicked] = useState(false);
   const loading = pending || clicked;
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // Intentionally reset the optimistic "clicked" state once the form action finishes.
+  useEffect(() => {
+    if (!pending && clicked) {
+      setClicked(false);
+    }
+  }, [pending, clicked]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
     const form = event.currentTarget.form;

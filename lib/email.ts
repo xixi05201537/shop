@@ -27,6 +27,7 @@ import type {
   Order,
   PaymentRequest,
   PaymentRequestImage,
+  PaymentRequestStatus,
   SelectionCheckout,
   SelectionPage,
   SelectionSubmission,
@@ -51,7 +52,7 @@ type PaymentRequestForEmail = PaymentRequest & {
   images: PaymentRequestImage[];
 };
 
-function renderTemplate(template: string, order: Order, timeZone?: string | null) {
+function renderTemplate(template: string, order: Order, supportEmail: string, timeZone?: string | null) {
   const displayTimeZone = normalizeDisplayTimeZone(timeZone || DEFAULT_DISPLAY_TIME_ZONE);
   const values: Record<string, string> = {
     orderId: order.orderNumber,
@@ -64,6 +65,7 @@ function renderTemplate(template: string, order: Order, timeZone?: string | null
     currency: order.currency,
     paidAt: formatDateTimeWithOffset(order.paidAt, displayTimeZone),
     trackingNumber: order.trackingNumber || "",
+    supportEmail,
   };
 
   return Object.entries(values).reduce(
@@ -316,8 +318,8 @@ export async function sendBuyerEmail(order: Order) {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: recipients.to,
     cc: recipients.cc,
-    subject: renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order, config.displayTimeZone),
-    html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order, config.displayTimeZone),
+    subject: renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone),
+    html: renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone),
   });
   return "sent";
 }
@@ -328,8 +330,8 @@ export async function sendAdminEmail(order: Order) {
   await sendHtmlMail(mailer, {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: config.adminNotifyEmail,
-    subject: renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order, config.displayTimeZone),
-    html: renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order, config.displayTimeZone),
+    subject: renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone),
+    html: renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone),
   });
   return "sent";
 }
@@ -343,8 +345,8 @@ export async function sendShipmentEmail(order: Order) {
     from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
     to: recipients.to,
     cc: recipients.cc,
-    subject: renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.displayTimeZone),
-    html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.displayTimeZone),
+    subject: renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone),
+    html: renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone),
   });
   return "sent";
 }
@@ -550,7 +552,7 @@ function testSelectionSubmission(): SelectionSubmissionForEmail {
     customerEmail: "buyer@example.com",
     customerContact: "@misaki",
     note: "Please keep the card if available.",
-    status: "new",
+    status: "pending",
     totalQuantity: 3,
     totalAmount: 18,
     createdAt: now,
@@ -656,8 +658,8 @@ export async function sendTestEmail(target: string, to: string) {
   const from = `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`;
 
   if (target === "seller") {
-    const subject = `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order, config.displayTimeZone)}`;
-    const html = renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order, config.displayTimeZone);
+    const subject = `[Test] ${renderTemplate(config.adminEmailSubject || defaultAdminEmailSubject, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone)}`;
+    const html = renderTemplate(config.adminEmailHtml || defaultAdminEmailHtml, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone);
     const info = await sendHtmlMail(mailer, {
       from,
       to,
@@ -668,8 +670,8 @@ export async function sendTestEmail(target: string, to: string) {
   }
 
   if (target === "shipment") {
-    const subject = `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.displayTimeZone)}`;
-    const html = renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.displayTimeZone);
+    const subject = `[Test] ${renderTemplate(config.shipmentEmailSubject || defaultShipmentEmailSubject, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone)}`;
+    const html = renderTemplate(config.shipmentEmailHtml || defaultShipmentEmailHtml, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone);
     const info = await sendHtmlMail(mailer, {
       from,
       to,
@@ -765,7 +767,7 @@ export async function sendTestEmail(target: string, to: string) {
   if (target === "payment-request-paid") {
     const paymentRequest = {
       ...testPaymentRequest(),
-      status: "paid",
+      status: "paid" as PaymentRequestStatus,
       paidAt: new Date(),
       paypalCaptureId: "PAYPAL-TEST-CAPTURE",
     };
@@ -796,8 +798,8 @@ export async function sendTestEmail(target: string, to: string) {
     return info;
   }
 
-  const subject = `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order, config.displayTimeZone)}`;
-  const html = renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order, config.displayTimeZone);
+  const subject = `[Test] ${renderTemplate(config.buyerEmailSubject || defaultBuyerEmailSubject, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone)}`;
+  const html = renderTemplate(config.buyerEmailHtml || defaultBuyerEmailHtml, order, config.supportEmail || config.smtpFromEmail, config.displayTimeZone);
   const info = await sendHtmlMail(mailer, {
     from,
     to,

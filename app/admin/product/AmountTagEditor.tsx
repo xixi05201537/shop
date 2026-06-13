@@ -96,16 +96,18 @@ export function AmountTagEditor({ amounts, defaultAmount }: AmountTagEditorProps
 }
 
 function parseInitialAmounts(value: string) {
+  const text = value.trim();
+  if (!text) return [];
   try {
-    const parsed = JSON.parse(value);
+    const parsed = JSON.parse(text);
     if (Array.isArray(parsed)) return parsed.map(Number).filter((item) => Number.isFinite(item) && item > 0);
   } catch {
-    return value
-      .split(",")
-      .map((item) => Number(item.trim()))
-      .filter((item) => Number.isFinite(item) && item > 0);
+    // Not a JSON array: fall back to comma-separated values.
   }
-  return [];
+  return text
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isFinite(item) && item > 0);
 }
 
 function formatAmount(value: number) {

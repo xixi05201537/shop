@@ -1,18 +1,10 @@
 import { readdir, stat, unlink } from "node:fs/promises";
-import { basename, join, resolve, sep } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 const imageExtensions = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"]);
 
 function normalizedUploadDir() {
-  const configured = process.env.UPLOAD_DIR || "./public/uploads";
-  const absolute = resolve(/* turbopackIgnore: true */ process.cwd(), configured);
-  const publicUploads = resolve(/* turbopackIgnore: true */ process.cwd(), "public", "uploads");
-
-  if (absolute === publicUploads || absolute.endsWith(`${sep}public${sep}uploads`)) {
-    return absolute;
-  }
-
-  return publicUploads;
+  return resolve(process.cwd(), "public", "uploads");
 }
 
 export function getUploadDir() {

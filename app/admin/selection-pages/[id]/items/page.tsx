@@ -119,7 +119,6 @@ export default async function SelectionPageItems({
         {page.items.length ? (
           <div className="selection-item-admin-grid">
             {page.items.map((item) => {
-              const itemLabel = item.title.trim() || "未填写标签";
               const priceLabel = item.price === null ? "" : formatCurrency(item.price, item.currency);
               const selectedCount = selectedCounts[item.id] || 0;
 

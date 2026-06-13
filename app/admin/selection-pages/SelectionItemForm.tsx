@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCurrency } from "@/lib/format";
@@ -39,7 +39,14 @@ export function SelectionItemForm({
   const [description, setDescription] = useState(item.description || "");
   const [price, setPrice] = useState(item.price === null || item.price === undefined ? "" : String(item.price));
   const [currency, setCurrency] = useState(item.currency || "USD");
-  const [presets, setPresets] = useState<string[]>([]);
+  const [presets, setPresets] = useState<string[]>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("selectionItemLabelPresets") || localStorage.getItem("selectionItemTitlePresets") || "[]");
+      return Array.isArray(saved) ? saved.filter((value) => typeof value === "string" && value.trim()) : [];
+    } catch {
+      return [];
+    }
+  });
   const [presetInput, setPresetInput] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -51,16 +58,6 @@ export function SelectionItemForm({
     const value = Number(price);
     return Number.isFinite(value) && value >= 0 ? formatCurrency(value, currency || "USD") : "";
   }, [currency, price]);
-
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("selectionItemLabelPresets") || localStorage.getItem("selectionItemTitlePresets") || "[]");
-      const base = Array.isArray(saved) ? saved.filter((value) => typeof value === "string" && value.trim()) : [];
-      setPresets(base);
-    } catch {
-      setPresets([]);
-    }
-  }, []);
 
   function savePresets(next: string[]) {
     const unique = Array.from(new Set(next.map((value) => value.trim()).filter(Boolean))).slice(0, 16);
@@ -151,7 +148,7 @@ export function SelectionItemForm({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     hidden
                     onChange={(event) => void handleLocalImage(event.target.files?.[0])}
                   />

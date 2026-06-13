@@ -4,7 +4,7 @@ import { markOrderPaid } from "@/lib/order-service";
 import { verifyPaypalWebhook } from "@/lib/paypal";
 import { revalidatePaymentRequest } from "@/lib/payment-request";
 import { prisma } from "@/lib/prisma";
-import { appUrl } from "@/lib/redirect";
+import { requestBaseUrl } from "@/lib/request-url";
 
 function pickResourceId(payload: Record<string, unknown>) {
   const resource = payload.resource as Record<string, unknown> | undefined;
@@ -29,19 +29,23 @@ function logWebhook(stage: string, details: Record<string, unknown>) {
   console.info(`[paypal-webhook] ${stage}`, details);
 }
 
+function amountsMatch(a: number, b: number) {
+  return Math.abs(a - b) <= 0.001;
+}
+
 export async function POST(request: Request) {
   const body = await request.text();
   let payload: Record<string, unknown>;
   try {
     payload = JSON.parse(body) as Record<string, unknown>;
   } catch {
-    console.error("[paypal-webhook] invalid-json", { bodyLength: body.length, body });
+    console.error("[paypal-webhook] invalid-json", { bodyLength: body.length });
     return NextResponse.json({ error: "Invalid webhook payload." }, { status: 400 });
   }
   const eventId = payload.id as string | undefined;
   const eventType = payload.event_type as string | undefined;
   if (!eventId || !eventType) {
-    console.error("[paypal-webhook] missing-event-fields", { eventId, eventType, body });
+    console.error("[paypal-webhook] missing-event-fields", { eventId, eventType });
     return NextResponse.json({ error: "Invalid webhook." }, { status: 400 });
   }
 
@@ -52,7 +56,6 @@ export async function POST(request: Request) {
     resourceId,
     transmissionId: request.headers.get("paypal-transmission-id"),
     bodyLength: body.length,
-    body,
   });
 
   const valid = await verifyPaypalWebhook(request.headers, body).catch(() => false);
@@ -66,22 +69,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Webhook signature failed." }, { status: 400 });
   }
 
-  const existing = await prisma.webhookEvent.findUnique({ where: { paypalEventId: eventId } });
-  if (existing?.processed) {
-    logWebhook("duplicate", { eventId, eventType, resourceId });
-    return NextResponse.json({ ok: true, duplicate: true });
-  }
-
   await prisma.webhookEvent.upsert({
     where: { paypalEventId: eventId },
     update: { payload: body, resourceId },
     create: { paypalEventId: eventId, eventType, resourceId, payload: body },
   });
 
+  // Atomically claim this event. If another instance already processed it,
+  // updateMany will return count === 0.
+  const claim = await prisma.webhookEvent.updateMany({
+    where: { paypalEventId: eventId, processed: false },
+    data: { processed: true },
+  });
+
+  if (claim.count === 0) {
+    logWebhook("duplicate", { eventId, eventType, resourceId });
+    return NextResponse.json({ ok: true, duplicate: true });
+  }
+
   if (eventType === "PAYMENT.CAPTURE.COMPLETED") {
     const order = resourceId ? await prisma.order.findFirst({ where: { paypalOrderId: resourceId } }) : null;
     const amount = pickCaptureAmount(payload);
-    if (order && amount?.currency_code === order.currency && Number(amount.value) === order.totalAmount) {
+    if (order && amount?.currency_code === order.currency && amountsMatch(Number(amount.value), order.totalAmount)) {
       await markOrderPaid(order.id, pickCaptureId(payload), payload);
       logWebhook("marked-paid", {
         eventId,
@@ -110,7 +119,7 @@ export async function POST(request: Request) {
     if (
       paymentRequest &&
       amount?.currency_code === paymentRequest.currency &&
-      Math.abs(Number(amount.value) - paymentRequest.totalAmount) <= 0.001
+      amountsMatch(Number(amount.value), paymentRequest.totalAmount)
     ) {
       await prisma.paymentRequest.update({
         where: { id: paymentRequest.id },
@@ -122,7 +131,7 @@ export async function POST(request: Request) {
         },
       });
       revalidatePaymentRequest(paymentRequest.token);
-      await sendPaymentRequestPaidEmailForId(paymentRequest.id, appUrl("/", request).origin);
+      await sendPaymentRequestPaidEmailForId(paymentRequest.id, await requestBaseUrl());
       logWebhook("marked-payment-request-paid", {
         eventId,
         eventType,
@@ -148,7 +157,6 @@ export async function POST(request: Request) {
     logWebhook("ignored-event-type", { eventId, eventType, resourceId });
   }
 
-  await prisma.webhookEvent.update({ where: { paypalEventId: eventId }, data: { processed: true } });
   logWebhook("processed", { eventId, eventType, resourceId });
   return NextResponse.json({ ok: true });
 }

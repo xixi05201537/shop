@@ -3,7 +3,41 @@ import { basename, join } from "node:path";
 import { randomBytes } from "node:crypto";
 import ExcelJS from "exceljs";
 import { normalizeCurrency } from "@/lib/format";
-import { getUploadDir } from "@/lib/uploads";
+
+const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
+
+function isPrivateOrInternalIp(hostname: string) {
+  const lower = hostname.toLowerCase();
+  if (lower === "localhost" || lower.endsWith(".localhost")) return true;
+  if (lower === "metadata.google.internal") return true;
+
+  const ip = lower.replace(/^\[(.*)\]$/, "$1");
+  if (/^127\./.test(ip) || /^10\./.test(ip) || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip) || /^192\.168\./.test(ip)) {
+    return true;
+  }
+  if (ip === "0.0.0.0" || ip === "::" || ip === "::1") return true;
+  if (/^169\.254\./.test(ip)) return true;
+  return false;
+}
+
+function isSafeExternalUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    if (isPrivateOrInternalIp(parsed.hostname)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveUploadPath(url: string) {
+  const target = join(UPLOAD_DIR, basename(url));
+  if (!target.startsWith(UPLOAD_DIR + "\\") && !target.startsWith(UPLOAD_DIR + "/") && target !== UPLOAD_DIR) {
+    return null;
+  }
+  return target;
+}
 
 type SelectionItemExcelRow = {
   title: string;
@@ -51,13 +85,17 @@ export async function imageForWorkbook(imageUrl: string, baseUrl: string): Promi
 
   try {
     if (url.startsWith("/uploads/")) {
-      const buffer = await readFile(join(getUploadDir(), basename(url)));
+      const target = resolveUploadPath(url);
+      if (!target) return null;
+      const buffer = await readFile(target);
       const extension = imageExtensionFromBuffer(buffer) || extensionFromPath(url);
       return extension ? { buffer, extension } : null;
     }
 
     if (url.startsWith("/")) {
-      const response = await fetch(new URL(url, baseUrl));
+      const absolute = new URL(url, baseUrl).toString();
+      if (!isSafeExternalUrl(absolute)) return null;
+      const response = await fetch(absolute);
       if (!response.ok) return null;
       const buffer = Buffer.from(await response.arrayBuffer());
       const extension = imageExtensionFromBuffer(buffer) || extensionFromPath(url);
@@ -65,6 +103,7 @@ export async function imageForWorkbook(imageUrl: string, baseUrl: string): Promi
     }
 
     if (/^https?:\/\//i.test(url)) {
+      if (!isSafeExternalUrl(url)) return null;
       const response = await fetch(url);
       if (!response.ok) return null;
       const buffer = Buffer.from(await response.arrayBuffer());
@@ -139,11 +178,10 @@ export function imagesByRow(workbook: ExcelJS.Workbook, worksheet: ExcelJS.Works
 }
 
 export async function saveImportedSelectionImage(image: ExcelImage) {
-  const uploadDir = getUploadDir();
-  await mkdir(uploadDir, { recursive: true });
+  await mkdir(UPLOAD_DIR, { recursive: true });
   const fileExtension = image.extension === "jpeg" ? "jpg" : image.extension;
   const filename = `selection-import-${Date.now()}-${randomBytes(4).toString("hex")}.${fileExtension}`;
-  await writeFile(join(uploadDir, filename), image.buffer);
+  await writeFile(join(UPLOAD_DIR, filename), image.buffer);
   return `/uploads/${filename}`;
 }
 

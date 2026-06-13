@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
-import { appUrl } from "@/lib/redirect";
+import { appUrl, safeReturnTo } from "@/lib/redirect";
 import { selectionSubmissionNumber } from "@/lib/selection";
 import { normalizeSelectionSubmissionStatus, selectionSubmissionStatusLabel } from "@/lib/selection-status";
 import { prisma } from "@/lib/prisma";
@@ -34,5 +34,5 @@ export async function POST(request: Request) {
   revalidatePath(`/select/${submission.page.slug}/submission/${submission.id}`);
 
   const fallback = `/admin/selection-pages/${submission.page.id}/submissions/${submission.id}`;
-  return NextResponse.redirect(appUrl(returnTo || fallback, request), { status: 303 });
+  return NextResponse.redirect(appUrl(safeReturnTo(returnTo, fallback), request), { status: 303 });
 }

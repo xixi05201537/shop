@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const messages: Record<string, string> = {
@@ -31,34 +31,43 @@ function shipErrorMessage(value: string | null) {
 
 export function AdminToast() {
   const searchParams = useSearchParams();
-  const toast = useMemo(() => {
-    const resent = searchParams.get("resent");
-    const resentText = resentMessage(resent);
-    if (resentText) return { key: `resent:${resent}`, message: resentText };
-    const shipError = searchParams.get("shipError");
-    const shipErrorText = shipErrorMessage(shipError);
-    if (shipErrorText) return { key: `shipError:${shipError}`, message: shipErrorText };
-
-    for (const [key, text] of Object.entries(messages)) {
-      if (searchParams.get(key)) return { key, message: text };
-    }
-
-    return null;
-  }, [searchParams]);
   const [visibleMessage, setVisibleMessage] = useState<string | null>(null);
   const lastToastKeyRef = useRef<string | null>(null);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!toast || toast.key === lastToastKeyRef.current) return;
-    lastToastKeyRef.current = toast.key;
-    setVisibleMessage(toast.message);
+    const resent = searchParams.get("resent");
+    const shipError = searchParams.get("shipError");
+    const resentText = resentMessage(resent);
+    const shipErrorText = shipErrorMessage(shipError);
+
+    let key: string | null = null;
+    let message: string | null = null;
+    if (resentText) {
+      key = `resent:${resent}`;
+      message = resentText;
+    } else if (shipErrorText) {
+      key = `shipError:${shipError}`;
+      message = shipErrorText;
+    } else {
+      for (const [param, text] of Object.entries(messages)) {
+        if (searchParams.get(param)) {
+          key = param;
+          message = text;
+          break;
+        }
+      }
+    }
+
+    if (!message || key === lastToastKeyRef.current) return;
+    lastToastKeyRef.current = key;
+    setVisibleMessage(message);
     const url = new URL(window.location.href);
-    for (const key of toastParams) url.searchParams.delete(key);
+    for (const param of toastParams) url.searchParams.delete(param);
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => setVisibleMessage(null), 3200);
-  }, [toast]);
+  }, [searchParams]);
 
   useEffect(() => {
     return () => {

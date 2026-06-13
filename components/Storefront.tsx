@@ -6,6 +6,7 @@ import { CheckCircle, Gift, Heart, Mail, Minus, Plus, Receipt, ShieldCheck, Spar
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { formatUsd } from "@/lib/format";
+import { usePayPalButtons } from "@/lib/use-paypal-buttons";
 import type { PublicConfig } from "@/lib/config";
 
 type ProductView = {
@@ -22,26 +23,48 @@ type ProductView = {
   maxQuantity: number;
 };
 
-type PaypalButtonsInstance = {
-  close?: () => void;
-  render: (selector: string) => Promise<void>;
-};
-
-declare global {
-  interface Window {
-    paypal?: {
-      Buttons: (options: Record<string, unknown>) => PaypalButtonsInstance;
-    };
-  }
+function safeStorage() {
+  const read = (key: string) => {
+    try {
+      return typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  };
+  const write = (key: string, value: string) => {
+    try {
+      if (typeof window !== "undefined") window.localStorage.setItem(key, value);
+    } catch {
+      // ignore
+    }
+  };
+  const sessionRead = (key: string) => {
+    try {
+      return typeof window !== "undefined" ? window.sessionStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  };
+  const sessionWrite = (key: string, value: string) => {
+    try {
+      if (typeof window !== "undefined") window.sessionStorage.setItem(key, value);
+    } catch {
+      // ignore
+    }
+  };
+  return { read, write, sessionRead, sessionWrite };
 }
 
 export function Storefront({ product, config }: { product: ProductView; config: PublicConfig }) {
+  const storage = useMemo(() => safeStorage(), []);
   const [amountInput, setAmountInput] = useState(formatAmountInput(product.defaultAmount));
   const [quantity, setQuantity] = useState(product.defaultQuantity);
-  const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState(() => (typeof window !== "undefined" ? storage.read("pinkBuyerEmail") || "" : ""));
+  const [nickname, setNickname] = useState(() =>
+    typeof window !== "undefined" ? storage.read("pinkBuyerNickname") || "" : "",
+  );
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const amount = useMemo(() => {
     const parsed = Number(amountInput);
     return Number.isFinite(parsed) && parsed > 0 ? Number(parsed.toFixed(2)) : 0;
@@ -49,19 +72,13 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   const checkoutRef = useRef({ amount, quantity, email, nickname });
   const paypalBoxRef = useRef<HTMLDivElement | null>(null);
   const mobileCheckoutBarRef = useRef<HTMLDivElement | null>(null);
-  const paypalRenderedRef = useRef(false);
-  const paypalButtonsRef = useRef<PaypalButtonsInstance | null>(null);
+
   const total = useMemo(() => Number((amount * quantity).toFixed(2)), [amount, quantity]);
 
   const imageSrc =
     product.imageSource === "upload" && product.uploadedImagePath
       ? product.uploadedImagePath
-      : product.imageUrl || "/window.svg";
-
-  useEffect(() => {
-    setEmail(localStorage.getItem("pinkBuyerEmail") || "");
-    setNickname(localStorage.getItem("pinkBuyerNickname") || "");
-  }, []);
+      : product.imageUrl || "/sample-product.svg";
 
   useEffect(() => {
     checkoutRef.current = { amount, quantity, email, nickname };
@@ -89,101 +106,6 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     };
   }, []);
 
-  useEffect(() => {
-    if (!config.paypalClientId) return;
-    const existing = document.querySelector("script[data-paypal-sdk]");
-    if (existing) return;
-    const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${config.paypalClientId}&currency=USD&components=buttons&intent=capture&commit=true`;
-    script.dataset.paypalSdk = "true";
-    script.async = true;
-    document.body.appendChild(script);
-  }, [config.paypalClientId]);
-
-  useEffect(() => {
-    if (!config.paypalClientId) return;
-    const interval = window.setInterval(() => {
-      const container = document.querySelector("#paypal-buttons");
-      if (!window.paypal || !container || paypalRenderedRef.current) return;
-      window.clearInterval(interval);
-      paypalRenderedRef.current = true;
-      paypalButtonsRef.current = window.paypal.Buttons({
-        style: {
-          layout: "vertical",
-          shape: "pill",
-          height: 48,
-          tagline: false,
-        },
-        onClick: async (_data: unknown, actions?: { reject?: () => Promise<void> | void; resolve?: () => Promise<void> | void }) => {
-          setMessage("");
-          if (checkoutRef.current.amount <= 0) {
-            setMessage("Please enter an amount greater than 0.");
-            return actions?.reject ? actions.reject() : Promise.reject(new Error("Please enter an amount greater than 0."));
-          }
-          return actions?.resolve ? actions.resolve() : Promise.resolve();
-        },
-        createOrder: async () => {
-          const current = {
-            ...checkoutRef.current,
-            email: config.checkoutEmailEnabled ? checkoutRef.current.email : "",
-            nickname: config.checkoutNicknameEnabled ? checkoutRef.current.nickname : "",
-          };
-          setLoading(true);
-          try {
-            const response = await fetch("/api/checkout/create-order", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(current),
-            });
-            const data = await readJsonResponse(response);
-            if (!response.ok) throw new Error(data.error || "Unable to create PayPal order.");
-            localStorage.setItem("pinkBuyerEmail", current.email);
-            localStorage.setItem("pinkBuyerNickname", current.nickname);
-            sessionStorage.setItem("pinkLocalOrderId", data.localOrderId);
-            return data.paypalOrderId;
-          } catch (error) {
-            const text = error instanceof Error ? error.message : "Unable to create PayPal order.";
-            setMessage(text);
-            throw error;
-          } finally {
-            setLoading(false);
-          }
-        },
-        onApprove: async (data: { orderID: string }) => {
-          setLoading(true);
-          const response = await fetch("/api/checkout/capture-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              paypalOrderId: data.orderID,
-              localOrderId: sessionStorage.getItem("pinkLocalOrderId"),
-            }),
-          });
-          const result = await readJsonResponse(response);
-          setLoading(false);
-          if (!response.ok) {
-            setMessage(result.error || "Payment captured by PayPal, but local confirmation failed.");
-            return;
-          }
-          window.location.href = `/success/${result.orderId}`;
-        },
-        onCancel: () => setMessage("Payment was cancelled. Your order is still waiting here."),
-        onError: (error: unknown) => {
-          const readable = formatPaypalError(error);
-          setMessage(readable);
-        },
-      });
-      void paypalButtonsRef.current
-        .render("#paypal-buttons")
-        .catch((error: Error) => {
-          paypalRenderedRef.current = false;
-          setMessage(error.message || "Unable to render PayPal buttons.");
-        });
-    }, 250);
-
-    return () => window.clearInterval(interval);
-  }, [config.paypalClientId]);
-
   async function readJsonResponse(response: Response) {
     const text = await response.text();
     if (!text) {
@@ -207,6 +129,84 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     }
     return "PayPal reported an error. Please check the card form.";
   }
+
+  const paypalOptions = useMemo(
+    () => ({
+      style: {
+        layout: "vertical",
+        shape: "pill",
+        height: 48,
+        tagline: false,
+      },
+      onClick: async (_data: unknown, actions?: { reject?: () => Promise<void> | void; resolve?: () => Promise<void> | void }) => {
+        setMessage("");
+        if (checkoutRef.current.amount <= 0) {
+          setMessage("Please enter an amount greater than 0.");
+          return actions?.reject ? actions.reject() : Promise.reject(new Error("Please enter an amount greater than 0."));
+        }
+        return actions?.resolve ? actions.resolve() : Promise.resolve();
+      },
+      createOrder: async () => {
+        const current = {
+          ...checkoutRef.current,
+          email: config.checkoutEmailEnabled ? checkoutRef.current.email : "",
+          nickname: config.checkoutNicknameEnabled ? checkoutRef.current.nickname : "",
+        };
+        setLoading(true);
+        try {
+          const response = await fetch("/api/checkout/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(current),
+          });
+          const data = await readJsonResponse(response);
+          if (!response.ok) throw new Error(data.error || "Unable to create PayPal order.");
+          storage.write("pinkBuyerEmail", current.email);
+          storage.write("pinkBuyerNickname", current.nickname);
+          storage.sessionWrite("pinkLocalOrderId", data.localOrderId);
+          return data.paypalOrderId;
+        } catch (error) {
+          const text = error instanceof Error ? error.message : "Unable to create PayPal order.";
+          setMessage(text);
+          throw error;
+        } finally {
+          setLoading(false);
+        }
+      },
+      onApprove: async (data: { orderID: string }) => {
+        setLoading(true);
+        const response = await fetch("/api/checkout/capture-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paypalOrderId: data.orderID,
+            localOrderId: storage.sessionRead("pinkLocalOrderId"),
+          }),
+        });
+        const result = await readJsonResponse(response);
+        setLoading(false);
+        if (!response.ok) {
+          setMessage(result.error || "Payment captured by PayPal, but local confirmation failed.");
+          return;
+        }
+        window.location.href = `/success/${result.orderId}`;
+      },
+      onCancel: () => setMessage("Payment was cancelled. Your order is still waiting here."),
+      onError: (error: unknown) => {
+        const readable = formatPaypalError(error);
+        setMessage(readable);
+      },
+    }),
+    [config.checkoutEmailEnabled, config.checkoutNicknameEnabled, storage]
+  );
+
+  usePayPalButtons({
+    clientId: config.paypalClientId || "",
+    currency: "USD",
+    containerId: "paypal-buttons",
+    options: paypalOptions,
+    enabled: Boolean(config.paypalClientId),
+  });
 
   return (
     <main className="shop-page">
@@ -299,9 +299,11 @@ export function Storefront({ product, config }: { product: ProductView; config: 
                 <Minus size={17} />
               </button>
               <input
-                value={quantity}
+                value={String(quantity)}
                 onChange={(event) => {
-                  const next = Math.max(1, Math.min(product.maxQuantity, Number(event.target.value) || 1));
+                  const raw = event.target.value;
+                  if (raw === "") return;
+                  const next = Math.max(1, Math.min(product.maxQuantity, Number(raw) || 1));
                   setQuantity(next);
                 }}
                 inputMode="numeric"
@@ -329,13 +331,19 @@ export function Storefront({ product, config }: { product: ProductView; config: 
                       type="email"
                       inputMode="email"
                       autoComplete="email"
+                      maxLength={254}
                     />
                   </label>
                 ) : null}
                 {config.checkoutNicknameEnabled ? (
                   <label>
                     <span>Nickname</span>
-                    <input value={nickname} onChange={(event) => setNickname(event.target.value)} placeholder="Your name" />
+                    <input
+                      value={nickname}
+                      onChange={(event) => setNickname(event.target.value)}
+                      placeholder="Your name"
+                      maxLength={120}
+                    />
                   </label>
                 ) : null}
               </div>
@@ -365,9 +373,11 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           {loading ? <div className="notice">Preparing your PayPal checkout...</div> : null}
           {message ? <div className="notice">{message}</div> : null}
 
-          <a className="support-link" href={`mailto:${config.supportEmail}`}>
-            <Mail size={17} /> {config.supportEmail}
-          </a>
+          {config.supportEmail ? (
+            <a className="support-link" href={`mailto:${config.supportEmail}`}>
+              <Mail size={17} /> {config.supportEmail}
+            </a>
+          ) : null}
         </div>
       </section>
 

@@ -3,7 +3,7 @@ import { sendPaymentRequestPaidEmailForId } from "@/lib/email";
 import { capturePaypalOrder } from "@/lib/paypal";
 import { revalidatePaymentRequest } from "@/lib/payment-request";
 import { prisma } from "@/lib/prisma";
-import { appUrl } from "@/lib/redirect";
+import { requestBaseUrl } from "@/lib/request-url";
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -31,19 +31,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       return NextResponse.json({ error: "PayPal amount did not match this payment request." }, { status: 400 });
     }
 
-    await prisma.paymentRequest.update({
+    const paid = await prisma.paymentRequest.update({
       where: { id: paymentRequest.id },
       data: {
         status: "paid",
-        paidAt: new Date(),
+        paidAt: paymentRequest.paidAt || new Date(),
         paypalCaptureId: captureId || null,
         paypalRawSummary: JSON.stringify(capture).slice(0, 8000),
       },
     });
     revalidatePaymentRequest(paymentRequest.token);
-    await sendPaymentRequestPaidEmailForId(paymentRequest.id, appUrl("/", request).origin);
+    await sendPaymentRequestPaidEmailForId(paymentRequest.id, await requestBaseUrl());
 
-    return NextResponse.json({ status: "paid" });
+    return NextResponse.json({ status: paid.status });
   } catch (error) {
     const message = error instanceof Error ? error.message : "PayPal confirmation failed.";
     return NextResponse.json({ error: message }, { status: 500 });

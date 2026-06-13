@@ -5,15 +5,16 @@ import { getConfigMap } from "@/lib/config";
 import { DEFAULT_DISPLAY_TIME_ZONE, formatDateTimeWithOffset, formatUsd, normalizeDisplayTimeZone } from "@/lib/format";
 import { displayOrderEmail, displayOrderNickname } from "@/lib/paypal-order-details";
 import { prisma } from "@/lib/prisma";
+import type { EmailStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminHome() {
   const emailIssueWhere = {
     OR: [
-      { buyerEmailStatus: "failed" },
-      { adminEmailStatus: "failed" },
-      { shipmentEmailStatus: "failed" },
+      { buyerEmailStatus: "failed" as EmailStatus },
+      { adminEmailStatus: "failed" as EmailStatus },
+      { shipmentEmailStatus: "failed" as EmailStatus },
     ],
   };
   const [

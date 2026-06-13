@@ -14,20 +14,26 @@ export function CopyLinkButton({
   const [copied, setCopied] = useState(false);
 
   async function copy() {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-    } else {
-      const textarea = document.createElement("textarea");
-      textarea.value = value;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
+    let success = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        success = true;
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        success = document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+    } catch {
+      success = false;
     }
-    setCopied(true);
+    setCopied(success);
     window.setTimeout(() => setCopied(false), 1400);
   }
 

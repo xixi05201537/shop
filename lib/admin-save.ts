@@ -4,12 +4,48 @@ import { normalizeDisplayTimeZone } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { sanitizeEmailHtml } from "@/lib/sanitize";
 
+function isSafeUrl(value: string) {
+  if (!value) return true;
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:";
+  } catch {
+    return false;
+  }
+}
+
+function isSafeImageUrl(value: string) {
+  if (!value) return true;
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export async function saveProductForm(formData: FormData) {
   const imageUrl = String(formData.get("imageUrl") || "") || null;
   const enabledAmounts = String(formData.get("enabledAmounts") || "0.1,1,10,30,50")
     .split(",")
     .map((item) => Number(item.trim()))
     .filter((item) => Number.isFinite(item) && item > 0);
+
+  const defaultAmount = Number(formData.get("defaultAmount") || 1);
+  const defaultQuantity = Number(formData.get("defaultQuantity") || 1);
+  const maxQuantity = Number(formData.get("maxQuantity") || 99);
+
+  if (!Number.isFinite(defaultAmount) || defaultAmount <= 0) {
+    throw new Error("Default amount must be a positive number.");
+  }
+  if (!Number.isFinite(defaultQuantity) || defaultQuantity < 1) {
+    throw new Error("Default quantity must be at least 1.");
+  }
+  if (!Number.isFinite(maxQuantity) || maxQuantity < 1) {
+    throw new Error("Max quantity must be at least 1.");
+  }
 
   await prisma.product.upsert({
     where: { id: "single-product" },
@@ -21,9 +57,9 @@ export async function saveProductForm(formData: FormData) {
       shortDescription: String(formData.get("shortDescription") || ""),
       longDescriptionMarkdown: String(formData.get("longDescriptionMarkdown") || ""),
       enabledAmounts: JSON.stringify(enabledAmounts),
-      defaultAmount: Number(formData.get("defaultAmount") || 1),
-      defaultQuantity: Number(formData.get("defaultQuantity") || 1),
-      maxQuantity: Number(formData.get("maxQuantity") || 99),
+      defaultAmount,
+      defaultQuantity,
+      maxQuantity,
       isActive: formData.get("isActive") === "on",
     },
     create: {
@@ -35,9 +71,9 @@ export async function saveProductForm(formData: FormData) {
       shortDescription: String(formData.get("shortDescription") || ""),
       longDescriptionMarkdown: String(formData.get("longDescriptionMarkdown") || ""),
       enabledAmounts: JSON.stringify(enabledAmounts),
-      defaultAmount: Number(formData.get("defaultAmount") || 1),
-      defaultQuantity: Number(formData.get("defaultQuantity") || 1),
-      maxQuantity: Number(formData.get("maxQuantity") || 99),
+      defaultAmount,
+      defaultQuantity,
+      maxQuantity,
       isActive: formData.get("isActive") === "on",
     },
   });
@@ -53,7 +89,10 @@ export async function saveEmailForm(formData: FormData) {
   const values: Record<string, string> = {};
 
   if (formData.has("smtpHost")) values.smtpHost = String(formData.get("smtpHost") || "");
-  if (formData.has("smtpPort")) values.smtpPort = String(formData.get("smtpPort") || "587");
+  if (formData.has("smtpPort")) {
+    const port = Number(formData.get("smtpPort"));
+    values.smtpPort = Number.isFinite(port) && port >= 1 && port <= 65535 ? String(port) : "587";
+  }
   if (formData.has("smtpUser")) values.smtpUser = String(formData.get("smtpUser") || "");
   if (formData.has("smtpPassword")) values.smtpPassword = nextPassword || currentPassword;
   if (formData.has("smtpFromEmail")) values.smtpFromEmail = String(formData.get("smtpFromEmail") || "");
@@ -110,14 +149,24 @@ export async function saveEmailForm(formData: FormData) {
 }
 
 export async function saveFloatingForm(formData: FormData) {
+  const floatingUrl = String(formData.get("floatingUrl") || "/article/about");
+  const floatingImageUrl = String(formData.get("floatingImageUrl") || "");
+
+  if (!isSafeUrl(floatingUrl)) {
+    throw new Error("Floating link URL is not allowed.");
+  }
+  if (!isSafeImageUrl(floatingImageUrl)) {
+    throw new Error("Floating image URL is not allowed.");
+  }
+
   await setConfigValues({
     floatingEnabled: formData.get("floatingEnabled") === "on" ? "true" : "false",
-    floatingUrl: String(formData.get("floatingUrl") || "/article/about"),
+    floatingUrl,
     floatingOpenMode: String(formData.get("floatingOpenMode") || "current"),
     floatingSize: String(formData.get("floatingSize") || "medium"),
     floatingPosition: String(formData.get("floatingPosition") || "right-bottom"),
     floatingLabel: String(formData.get("floatingLabel") || "i"),
-    floatingImageUrl: String(formData.get("floatingImageUrl") || ""),
+    floatingImageUrl,
   });
   revalidatePath("/");
 }
@@ -131,13 +180,18 @@ export async function saveSettingsForm(formData: FormData) {
   const nextSandboxSecret = String(formData.get("paypalSandboxClientSecret") || "");
   const nextLiveSecret = String(formData.get("paypalLiveClientSecret") || "");
 
+  const paypalEnv = String(formData.get("paypalEnv") || "sandbox");
+  if (paypalEnv !== "sandbox" && paypalEnv !== "live") {
+    throw new Error("PayPal environment must be 'sandbox' or 'live'.");
+  }
+
   await setConfigValues(
     {
       paypalSandboxClientId: String(formData.get("paypalSandboxClientId") || ""),
       paypalSandboxClientSecret: nextSandboxSecret || existing.paypalSandboxClientSecret || existing.paypalClientSecret,
       paypalLiveClientId: String(formData.get("paypalLiveClientId") || ""),
       paypalLiveClientSecret: nextLiveSecret || existing.paypalLiveClientSecret,
-      paypalEnv: String(formData.get("paypalEnv") || "sandbox"),
+      paypalEnv,
       paypalSandboxWebhookId: String(formData.get("paypalSandboxWebhookId") || ""),
       paypalLiveWebhookId: String(formData.get("paypalLiveWebhookId") || ""),
       checkoutCustomAmountEnabled: formData.get("checkoutCustomAmountEnabled") === "on" ? "true" : "false",
@@ -152,12 +206,22 @@ export async function saveSettingsForm(formData: FormData) {
 
 export async function saveArticleForm(formData: FormData) {
   const id = String(formData.get("id") || "");
+  const slug = String(formData.get("slug") || "").trim();
   const data = {
-    slug: String(formData.get("slug") || "").trim(),
+    slug,
     title: String(formData.get("title") || ""),
     content: String(formData.get("content") || ""),
     published: formData.get("published") === "on",
   };
+
+  if (!slug) {
+    throw new Error("Slug is required.");
+  }
+
+  const existing = await prisma.article.findUnique({ where: { slug } });
+  if (existing && existing.id !== id) {
+    throw new Error("An article with this slug already exists.");
+  }
 
   if (id) {
     await prisma.article.update({ where: { id }, data });

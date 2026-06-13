@@ -1,6 +1,6 @@
 export const editableSelectionSubmissionStatus = "pending";
 
-export const selectionSubmissionStatuses = ["pending", "confirmed", "paid", "completed", "canceled"] as const;
+export const selectionSubmissionStatuses = ["pending", "confirmed", "paid", "completed", "cancelled"] as const;
 
 export type SelectionSubmissionStatus = (typeof selectionSubmissionStatuses)[number];
 
@@ -31,10 +31,10 @@ const selectionSubmissionStatusMeta: Record<SelectionSubmissionStatus, Selection
     publicLabel: "Completed",
     publicMessage: "This selection has been completed and can no longer be edited.",
   },
-  canceled: {
+  cancelled: {
     label: "已取消",
-    publicLabel: "Canceled",
-    publicMessage: "This selection has been canceled and can no longer be edited.",
+    publicLabel: "Cancelled",
+    publicMessage: "This selection has been cancelled and can no longer be edited.",
   },
 };
 

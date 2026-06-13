@@ -9,6 +9,7 @@ export const templateVariables = [
   "{{currency}}",
   "{{paidAt}}",
   "{{trackingNumber}}",
+  "{{supportEmail}}",
 ];
 
 export const selectionTemplateVariables = [
@@ -111,7 +112,7 @@ export const defaultBuyerEmailHtml = [
   '<tr><td style="padding:8px 12px 18px;">',
   '<div style="background-color:#f3fff9;border:1px solid #c7f1e4;border-radius:20px;padding:18px;">',
   '<p style="margin:0px 0px 8px;color:#352331;font-size:16px;line-height:1.45;font-weight:900;">Need help with your order?</p>',
-  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:diy@misaki.im" style="color:#cf2f6c;text-decoration:none;font-weight:900;">diy@misaki.im</a>.</p>',
+  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:{{supportEmail}}" style="color:#cf2f6c;text-decoration:none;font-weight:900;">{{supportEmail}}</a>.</p>',
   '</div>',
   '<p style="margin:14px 0px 0px;color:#776471;font-size:12px;line-height:1.5;text-align:center;"><span style="color:#98244f;font-weight:900;">Misaki Shop</span> · Secure PayPal checkout</p>',
   '</td></tr>',
@@ -216,7 +217,7 @@ export const defaultShipmentEmailHtml = [
   '<tr><td style="padding:8px 12px 18px;">',
   '<div style="background-color:#f3fff9;border:1px solid #c7f1e4;border-radius:20px;padding:18px;">',
   '<p style="margin:0px 0px 8px;color:#352331;font-size:16px;line-height:1.45;font-weight:900;">Thank you for supporting Misaki Shop</p>',
-  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:diy@misaki.im" style="color:#cf2f6c;text-decoration:none;font-weight:900;">diy@misaki.im</a>.</p>',
+  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:{{supportEmail}}" style="color:#cf2f6c;text-decoration:none;font-weight:900;">{{supportEmail}}</a>.</p>',
   '</div>',
   '<p style="margin:14px 0px 0px;color:#776471;font-size:12px;line-height:1.5;text-align:center;"><span style="color:#98244f;font-weight:900;">Misaki Shop</span> · Shipment notification</p>',
   '</td></tr>',

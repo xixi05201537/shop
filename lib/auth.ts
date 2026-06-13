@@ -9,7 +9,7 @@ export async function createSession(adminId: string) {
   const secure = await isSecureRequest();
   jar.set(adminCookieName, token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure,
     path: "/",
     maxAge: 60 * 60 * 24 * 7,

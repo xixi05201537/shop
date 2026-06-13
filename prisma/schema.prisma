@@ -7,6 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrderStatus {
+  created
+  paying
+  paid
+  cancelled
+  refunded
+  failed
+}
+
+enum PaymentRequestStatus {
+  pending
+  confirmed
+  deferred
+  paying
+  paid
+  cancelled
+}
+
+enum SelectionSubmissionStatus {
+  pending
+  confirmed
+  paying
+  paid
+  cancelled
+  completed
+}
+
+enum SelectionCheckoutStatus {
+  pending
+  paying
+  paid
+  cancelled
+}
+
+enum EmailStatus {
+  pending
+  sending
+  sent
+  failed
+  skipped
+  disabled
+}
+
 model Admin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -41,9 +84,9 @@ model SelectionPage {
   isPublished    Boolean               @default(true)
   showPrices     Boolean               @default(true)
   allowQuantity  Boolean               @default(true)
-  showName        Boolean               @default(true)
-  showEmail       Boolean               @default(true)
-  showContact     Boolean               @default(true)
+  showName       Boolean               @default(true)
+  showEmail      Boolean               @default(true)
+  showContact    Boolean               @default(true)
   requireName    Boolean               @default(false)
   requireEmail   Boolean               @default(false)
   requireContact Boolean               @default(false)
@@ -74,20 +117,20 @@ model SelectionItem {
 }
 
 model SelectionSubmission {
-  id            String                    @id @default(cuid())
-  pageId        String
-  page          SelectionPage             @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  customerName  String?
-  customerEmail String?
+  id              String                    @id @default(cuid())
+  pageId          String
+  page            SelectionPage             @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  customerName    String?
+  customerEmail   String?
   customerContact String?
-  note          String?                   @db.LongText
-  status        String                    @default("pending")
-  totalQuantity Int
-  totalAmount   Float?
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  items         SelectionSubmissionItem[]
-  checkouts     SelectionCheckoutSubmission[]
+  note            String?                   @db.LongText
+  status          SelectionSubmissionStatus @default(pending)
+  totalQuantity   Int
+  totalAmount     Float?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  items           SelectionSubmissionItem[]
+  checkouts       SelectionCheckoutSubmission[]
 
   @@index([pageId, createdAt])
   @@index([status])
@@ -114,18 +157,18 @@ model SelectionSubmissionItem {
 model SelectionCheckout {
   id              String                        @id @default(cuid())
   token           String                        @unique
-  status          String                        @default("pending")
+  status          SelectionCheckoutStatus       @default(pending)
   customerName    String?
   customerEmail   String?
   customerContact String?
   totalQuantity   Int
-  subtotalAmount   Float                         @default(0)
+  subtotalAmount  Float                         @default(0)
   totalAmount     Float
   currency        String                        @default("USD")
-  emailRecipient   String?
-  emailStatus      String                        @default("pending")
-  emailError       String?                       @db.LongText
-  emailedAt        DateTime?
+  emailRecipient  String?
+  emailStatus     EmailStatus                   @default(pending)
+  emailError      String?                       @db.LongText
+  emailedAt       DateTime?
   paypalOrderId   String?                       @unique
   paypalCaptureId String?
   paypalRawSummary String?                      @db.LongText
@@ -156,13 +199,13 @@ model PaymentRequest {
   description      String                @db.LongText
   totalAmount      Float
   currency         String                @default("USD")
-  status           String                @default("pending")
+  status           PaymentRequestStatus  @default(pending)
   adminNote        String?               @db.LongText
   emailRecipient   String?
-  emailStatus      String                @default("pending")
+  emailStatus      EmailStatus           @default(pending)
   emailError       String?               @db.LongText
   emailedAt        DateTime?
-  paidEmailStatus  String                @default("pending")
+  paidEmailStatus  EmailStatus           @default(pending)
   paidEmailError   String?               @db.LongText
   paidEmailedAt    DateTime?
   paypalOrderId    String?               @unique
@@ -210,37 +253,42 @@ model SiteConfig {
 }
 
 model Order {
-  id                  String    @id @default(cuid())
-  orderNumber         String    @unique
-  paypalOrderId       String?   @unique
-  paypalCaptureId     String?
-  productNameSnapshot String
-  productImageSnapshot String?   @db.VarChar(2048)
-  buyerEmail          String?
-  buyerNickname       String?
-  paypalBuyerEmail    String?
-  paypalBuyerNickname String?
-  paypalPayerId       String?
-  paypalShippingName  String?
-  paypalShippingAddress String?  @db.LongText
-  unitAmount          Float
-  quantity            Int
-  totalAmount         Float
-  currency            String    @default("USD")
-  status              String    @default("created")
-  paypalRawSummary    String?   @db.LongText
-  buyerEmailStatus    String    @default("pending")
-  buyerEmailError     String?   @db.LongText
-  adminEmailStatus    String    @default("pending")
-  adminEmailError     String?   @db.LongText
-  trackingNumber      String?
-  shippedAt           DateTime?
-  shipmentEmailStatus String    @default("pending")
-  shipmentEmailError  String?   @db.LongText
-  internalNote        String?   @db.LongText
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  paidAt              DateTime?
+  id                    String      @id @default(cuid())
+  orderNumber           String      @unique
+  paypalOrderId         String?     @unique
+  paypalCaptureId       String?
+  productNameSnapshot   String
+  productImageSnapshot  String?     @db.VarChar(2048)
+  buyerEmail            String?
+  buyerNickname         String?
+  paypalBuyerEmail      String?
+  paypalBuyerNickname   String?
+  paypalPayerId         String?
+  paypalShippingName    String?
+  paypalShippingAddress String?     @db.LongText
+  unitAmount            Float
+  quantity              Int
+  totalAmount           Float
+  currency              String      @default("USD")
+  status                OrderStatus @default(created)
+  paypalRawSummary      String?     @db.LongText
+  buyerEmailStatus      EmailStatus @default(pending)
+  buyerEmailError       String?     @db.LongText
+  adminEmailStatus      EmailStatus @default(pending)
+  adminEmailError       String?     @db.LongText
+  trackingNumber        String?
+  shippedAt             DateTime?
+  shipmentEmailStatus   EmailStatus @default(pending)
+  shipmentEmailError    String?     @db.LongText
+  internalNote          String?     @db.LongText
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  paidAt                DateTime?
+
+  @@index([status, createdAt])
+  @@index([buyerEmail])
+  @@index([paypalBuyerEmail])
+  @@index([createdAt])
 }
 
 model PayerNote {
@@ -270,7 +318,11 @@ model AuditLog {
   summary    String   @db.VarChar(512)
   metadata   String?  @db.LongText
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([createdAt])
   @@index([targetType, targetId])
+  @@index([adminId])
+  @@index([action])
+  @@index([adminId, createdAt])
 }

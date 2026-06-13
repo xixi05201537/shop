@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Clipboard, Download, FileSpreadsheet, ImagePlus, Plus, Trash2, Upload, X } from "lucide-react";
 import type { UploadedImageOption } from "@/app/admin/product/ProductAdminForm";
 
@@ -51,7 +51,16 @@ export function PaymentRequestFormDialog({
       ? initialValue.images.map((image) => ({ ...image, quantity: image.quantity || "1" }))
       : [{ imageUrl: "", caption: "", price: "", quantity: "1" }],
   );
-  const [imageOptions, setImageOptions] = useState<UploadedImageOption[]>(uploadedImages);
+  const [localAddedImages, setLocalAddedImages] = useState<UploadedImageOption[]>([]);
+  const imageOptions = useMemo<UploadedImageOption[]>(() => {
+    const combined = [...localAddedImages, ...uploadedImages];
+    const seen = new Set<string>();
+    return combined.filter((image) => {
+      if (seen.has(image.path)) return false;
+      seen.add(image.path);
+      return true;
+    });
+  }, [localAddedImages, uploadedImages]);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
   const [localUploadIndex, setLocalUploadIndex] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -71,17 +80,13 @@ export function PaymentRequestFormDialog({
     [images],
   );
 
-  useEffect(() => {
-    setImageOptions(uploadedImages);
-  }, [uploadedImages]);
-
   function updateImage(index: number, next: Partial<PaymentImage>) {
     setImages((current) => current.map((image, itemIndex) => (itemIndex === index ? { ...image, ...next } : image)));
   }
 
   function addUploadedOption(path: string) {
     const name = path.split("/").pop() || path;
-    setImageOptions((current) => {
+    setLocalAddedImages((current) => {
       if (current.some((image) => image.path === path)) return current;
       return [{ name, path, fullUrl: path }, ...current];
     });

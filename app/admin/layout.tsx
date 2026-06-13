@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Sparkles } from "lucide-react";
 import { AdminToast } from "@/components/AdminToast";
@@ -8,7 +9,7 @@ import "./admin.css";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession();
-  if (!session) return children;
+  if (!session) redirect("/admin/login");
 
   return (
     <div className="admin-shell">

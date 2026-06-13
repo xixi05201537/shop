@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       return NextResponse.json({ error: "PayPal amount did not match this checkout." }, { status: 400 });
     }
 
-    const paidAt = new Date();
+    const paidAt = checkout.paidAt || new Date();
     await prisma.$transaction([
       prisma.selectionCheckout.update({
         where: { id: checkout.id },
@@ -41,7 +41,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
         },
       }),
       prisma.selectionSubmission.updateMany({
-        where: { id: { in: checkout.submissions.map((entry) => entry.submissionId) } },
+        where: {
+          id: { in: checkout.submissions.map((entry) => entry.submissionId) },
+          status: { not: "paid" },
+        },
         data: { status: "paid" },
       }),
     ]);

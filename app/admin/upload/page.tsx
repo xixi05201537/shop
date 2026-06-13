@@ -24,12 +24,12 @@ export default async function UploadPage({ searchParams }: { searchParams: Promi
                 className="file-input"
                 name="image"
                 type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                accept="image/png,image/jpeg,image/webp,image/gif"
                 required
               />
             </label>
             <div className="upload-dropzone">
-              <strong>支持 PNG、JPG、WebP、GIF 或 SVG</strong>
+              <strong>支持 PNG、JPG、WebP、GIF</strong>
               <span>最大文件大小 5MB，上传后的文件会保存在 public/uploads。</span>
             </div>
             {query.error ? <div className="notice">{query.error}</div> : null}
@@ -48,7 +48,7 @@ export default async function UploadPage({ searchParams }: { searchParams: Promi
         <div className="section-title-row">
           <div>
             <h2>已上传图片列表</h2>
-            <p>这些图片来自 .env 里的 UPLOAD_DIR，对外访问路径为 /uploads/文件名。</p>
+            <p>这些图片来自 public/uploads，对外访问路径为 /uploads/文件名。</p>
           </div>
           <Link className="secondary-button" href="/admin/product">
             返回商品选择

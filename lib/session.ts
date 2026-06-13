@@ -1,9 +1,13 @@
 import { SignJWT, jwtVerify } from "jose";
 
-export const adminCookieName = "pink_admin_session";
+export const adminCookieName = process.env.ADMIN_COOKIE_NAME || "pink_admin_session";
 
 function secret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret-change-me");
+  const value = process.env.JWT_SECRET?.trim();
+  if (!value || value.length < 32) {
+    throw new Error("JWT_SECRET must be set and at least 32 characters long.");
+  }
+  return new TextEncoder().encode(value);
 }
 
 export async function createAdminToken(adminId: string) {

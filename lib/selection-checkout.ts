@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { selectionSubmissionNumber } from "@/lib/selection";
 import { normalizeSelectionSubmissionStatus } from "@/lib/selection-status";
 
-export const selectionCheckoutStatuses = ["pending", "paid", "canceled"] as const;
+export const selectionCheckoutStatuses = ["pending", "paid", "cancelled"] as const;
 
 export type SelectionCheckoutStatus = (typeof selectionCheckoutStatuses)[number];
 
@@ -23,7 +23,7 @@ export function normalizeSelectionCheckoutStatus(status: string | null | undefin
 export function selectionCheckoutStatusLabel(status: string | null | undefined) {
   const normalized = normalizeSelectionCheckoutStatus(status);
   if (normalized === "paid") return "已付款";
-  if (normalized === "canceled") return "已取消";
+  if (normalized === "cancelled") return "已取消";
   return "待付款";
 }
 

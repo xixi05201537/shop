@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const captureId = captures?.[0]?.id as string | undefined;
     const amount = captures?.[0]?.amount as { value?: string; currency_code?: string } | undefined;
 
-    if (amount?.currency_code !== "USD" || Number(amount.value) !== order.totalAmount) {
+    if (amount?.currency_code !== order.currency || Math.abs(Number(amount.value) - order.totalAmount) > 0.001) {
       return NextResponse.json({ error: "PayPal amount did not match local order." }, { status: 400 });
     }
 

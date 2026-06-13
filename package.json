@@ -4,27 +4,31 @@
   "description": "",
   "scripts": {
     "dev": "next dev -p 4000",
-    "build": "node node_modules/prisma/build/index.js generate && next build && node scripts/prepare-standalone.mjs",
+    "build": "prisma generate && next build && node scripts/prepare-standalone.mjs",
     "start": "node scripts/start.mjs",
-    "lint": "next lint",
-    "db:push": "node node_modules/prisma/build/index.js db push",
+    "lint": "eslint . --ext .ts,.tsx,.mjs,.js",
+    "db:push": "prisma db push",
     "db:seed": "node prisma/seed.mjs",
     "db:seed:if-empty": "node prisma/seed-if-empty.mjs",
-    "postinstall": "node node_modules/prisma/build/index.js generate"
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
     "@prisma/client": "^6.19.0",
     "@tiptap/extension-link": "^3.24.0",
     "@tiptap/react": "^3.24.0",
     "@tiptap/starter-kit": "^3.24.0",
-    "@types/sanitize-html": "^2.16.1",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
     "exceljs": "^4.4.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.17.0",
@@ -41,6 +45,9 @@
   "devDependencies": {
     "@types/node": "25.9.1",
     "@types/nodemailer": "^8.0.0",
+    "@types/sanitize-html": "^2.16.1",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "^16.2.6",
     "typescript": "6.0.3"
   }
 }

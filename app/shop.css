@@ -1578,7 +1578,7 @@
   color: #4e579c;
 }
 
-.selection-public-status.is-canceled {
+.selection-public-status.is-cancelled {
   border-color: rgba(152, 36, 79, 0.2);
   background: rgba(255, 231, 240, 0.78);
   color: var(--cherry);
@@ -2867,7 +2867,7 @@
   color: #247a57;
 }
 
-.selection-checkout-head .selection-public-status.is-canceled {
+.selection-checkout-head .selection-public-status.is-cancelled {
   border-color: rgba(152, 36, 79, 0.2);
   background: rgba(255, 231, 240, 0.78);
   color: var(--cherry);

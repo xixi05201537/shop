@@ -84,7 +84,7 @@ export default async function PublicSelectionCheckoutPage({ params }: { params: 
 
         <section className="selection-checkout-groups">
           {checkout.submissions.map(({ submission }, submissionIndex) => {
-            const pageTitle = englishOnlyText(submission.page.title, `Selection ${submissionIndex + 1}`);
+            const pageTitle = publicText(submission.page.title, `Selection ${submissionIndex + 1}`);
 
             return (
             <article className="selection-checkout-group" key={submission.id}>
@@ -97,8 +97,8 @@ export default async function PublicSelectionCheckoutPage({ params }: { params: 
               </div>
               <div className="selection-public-items">
                 {submission.items.map((item, itemIndex) => {
-                  const itemTitle = englishOnlyText(item.titleSnapshot, `Item ${itemIndex + 1}`);
-                  const itemDescription = item.descriptionSnapshot ? englishOnlyText(item.descriptionSnapshot, "") : "";
+                  const itemTitle = publicText(item.titleSnapshot, `Item ${itemIndex + 1}`);
+                  const itemDescription = item.descriptionSnapshot ? publicText(item.descriptionSnapshot, "") : "";
 
                   return (
                     <article className="selection-public-item selection-checkout-item" key={item.id}>
@@ -157,12 +157,11 @@ export default async function PublicSelectionCheckoutPage({ params }: { params: 
 function publicCheckoutStatusLabel(status: string | null | undefined) {
   const normalized = normalizeSelectionCheckoutStatus(status);
   if (normalized === "paid") return "Paid";
-  if (normalized === "canceled") return "Canceled";
+  if (normalized === "cancelled") return "Cancelled";
   return "Pending payment";
 }
 
-function englishOnlyText(value: string | null | undefined, fallback: string) {
+function publicText(value: string | null | undefined, fallback: string) {
   const text = (value || "").trim();
-  if (!text || /[\u4e00-\u9fff]/.test(text)) return fallback;
-  return text;
+  return text || fallback;
 }

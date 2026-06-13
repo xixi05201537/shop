@@ -47,7 +47,7 @@ export function RichTemplateEditor({
     onChange?.(nextHtml);
   }
 
-  function usePreset(preset: TemplatePreset) {
+  function applyPreset(preset: TemplatePreset) {
     setMode("html");
     updateHtml(preset.value);
   }
@@ -71,7 +71,7 @@ export function RichTemplateEditor({
             type="button"
             className="rich-toolbar-preset"
             key={preset.label}
-            onClick={() => usePreset(preset)}
+            onClick={() => applyPreset(preset)}
             aria-label={preset.label}
             title={preset.label}
           >

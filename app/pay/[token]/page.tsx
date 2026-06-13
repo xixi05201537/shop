@@ -2,7 +2,7 @@ import { CheckCircle2, Mail, ReceiptText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getPublicConfig } from "@/lib/config";
 import { formatCurrency, formatDateTimeWithOffset } from "@/lib/format";
-import { normalizePaymentRequestStatus, paymentRequestNumber, paymentRequestStatusLabel } from "@/lib/payment-request";
+import { normalizePaymentRequestStatus, paymentRequestNumber } from "@/lib/payment-request";
 import { prisma } from "@/lib/prisma";
 import "../../shop.css";
 import { PaymentRequestClient } from "./PaymentRequestClient";
@@ -72,8 +72,8 @@ export default async function PublicPaymentRequestPage({ params }: { params: Pro
             id: image.id,
             imageUrl: image.imageUrl,
             caption: image.caption,
-            captionText: englishOnlyText(image.caption, ""),
-            label: englishOnlyText(image.caption, `Payment image ${index + 1}`),
+            captionText: publicText(image.caption, ""),
+            label: publicText(image.caption, `Payment image ${index + 1}`),
             price: formatCurrency(image.price, paymentRequest.currency),
             quantity: image.quantity,
             lineTotal: formatCurrency(image.price * image.quantity, paymentRequest.currency),
@@ -120,12 +120,6 @@ function publicPaymentStatusLabel(status: string | null | undefined) {
   if (normalized === "paying") return "Payment in progress";
   if (normalized === "paid") return "Paid";
   return "Pending confirmation";
-}
-
-function englishOnlyText(value: string | null | undefined, fallback: string) {
-  const text = (value || "").trim();
-  if (!text || /[\u4e00-\u9fff]/.test(text)) return fallback;
-  return text;
 }
 
 function publicText(value: string | null | undefined, fallback: string) {

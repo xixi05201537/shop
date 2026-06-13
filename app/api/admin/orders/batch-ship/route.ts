@@ -4,30 +4,39 @@ import { writeAuditLog } from "@/lib/audit-log";
 import { sendShipmentEmail } from "@/lib/email";
 import { emailErrorMessage } from "@/lib/order-service";
 import { prisma } from "@/lib/prisma";
-import { appUrl } from "@/lib/redirect";
+import { appUrl, safeReturnTo } from "@/lib/redirect";
+import type { EmailStatus } from "@prisma/client";
+
+const MAX_BATCH_SHIP = 100;
+
+function redirectWithQuery(returnTo: string, query: string, request: Request) {
+  const safe = safeReturnTo(returnTo, "/admin/orders");
+  const separator = safe.includes("?") ? "&" : "?";
+  return NextResponse.redirect(appUrl(`${safe}${separator}${query}`, request), { status: 303 });
+}
 
 export async function POST(request: Request) {
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
 
   const formData = await request.formData();
-  const orderIds = formData.getAll("orderIds").map((value) => String(value)).filter(Boolean);
+  const orderIds = formData.getAll("orderIds").map((value) => String(value)).filter(Boolean).slice(0, MAX_BATCH_SHIP);
   const trackingNumber = String(formData.get("trackingNumber") || "").trim();
   const returnTo = String(formData.get("returnTo") || "/admin/orders");
   const confirmReship = String(formData.get("confirmReship") || "") === "true";
 
-  if (!orderIds.length) return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}shipError=empty`, request), { status: 303 });
-  if (!trackingNumber) return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}shipError=tracking`, request), { status: 303 });
+  if (!orderIds.length) return redirectWithQuery(returnTo, "shipError=empty", request);
+  if (!trackingNumber) return redirectWithQuery(returnTo, "shipError=tracking", request);
 
   const orders = await prisma.order.findMany({
     where: { id: { in: orderIds }, status: "paid" },
     orderBy: { createdAt: "asc" },
   });
 
-  if (!orders.length) return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}shipError=paid`, request), { status: 303 });
+  if (!orders.length) return redirectWithQuery(returnTo, "shipError=paid", request);
   const alreadyShipped = orders.filter((order) => order.trackingNumber || order.shippedAt);
   if (alreadyShipped.length && !confirmReship) {
-    return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}shipError=reship`, request), { status: 303 });
+    return redirectWithQuery(returnTo, "shipError=reship", request);
   }
 
   const shippedAt = new Date();
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
 
   for (const groupOrders of groups.values()) {
     const representative = groupOrders.find((order) => order.buyerEmail || order.paypalBuyerEmail) || groupOrders[0];
-    const representativeWithTracking = { ...representative, trackingNumber, shippedAt, shipmentEmailStatus: "pending", shipmentEmailError: null };
+    const representativeWithTracking = { ...representative, trackingNumber, shippedAt, shipmentEmailStatus: "pending" as EmailStatus, shipmentEmailError: null };
     try {
       const shipmentEmailStatus = await sendShipmentEmail(representativeWithTracking);
       await prisma.order.update({
@@ -85,5 +94,5 @@ export async function POST(request: Request) {
     metadata: { trackingNumber, orderCount: orders.length, payerCount: groups.size, sentCount, failedCount },
   });
 
-  return NextResponse.redirect(appUrl(`${returnTo}${returnTo.includes("?") ? "&" : "?"}batchShipped=1`, request), { status: 303 });
+  return redirectWithQuery(returnTo, "batchShipped=1", request);
 }

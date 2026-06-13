@@ -1,7 +1,11 @@
 import bcrypt from "bcryptjs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+
+const isMain = path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1] || "");
 
 const defaultBuyerEmailSubject = "Thank you for your purchase";
 const defaultBuyerEmailHtml = [
@@ -45,7 +49,7 @@ const defaultBuyerEmailHtml = [
   '<tr><td style="padding:8px 12px 18px;">',
   '<div style="background-color:#f3fff9;border:1px solid #c7f1e4;border-radius:20px;padding:18px;">',
   '<p style="margin:0px 0px 8px;color:#352331;font-size:16px;line-height:1.45;font-weight:900;">Need help with your order?</p>',
-  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:diy@misaki.im" style="color:#cf2f6c;text-decoration:none;font-weight:900;">diy@misaki.im</a>.</p>',
+  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:{{supportEmail}}" style="color:#cf2f6c;text-decoration:none;font-weight:900;">{{supportEmail}}</a>.</p>',
   '</div>',
   '<p style="margin:14px 0px 0px;color:#776471;font-size:12px;line-height:1.5;text-align:center;"><span style="color:#98244f;font-weight:900;">Misaki Shop</span> · Secure PayPal checkout</p>',
   '</td></tr>',
@@ -146,7 +150,7 @@ const defaultShipmentEmailHtml = [
   '<tr><td style="padding:8px 12px 18px;">',
   '<div style="background-color:#f3fff9;border:1px solid #c7f1e4;border-radius:20px;padding:18px;">',
   '<p style="margin:0px 0px 8px;color:#352331;font-size:16px;line-height:1.45;font-weight:900;">Thank you for supporting Misaki Shop</p>',
-  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:diy@misaki.im" style="color:#cf2f6c;text-decoration:none;font-weight:900;">diy@misaki.im</a>.</p>',
+  '<p style="margin:0;color:#776471;font-size:14px;line-height:1.65;">If you have any questions, please contact <a href="mailto:{{supportEmail}}" style="color:#cf2f6c;text-decoration:none;font-weight:900;">{{supportEmail}}</a>.</p>',
   '</div>',
   '<p style="margin:14px 0px 0px;color:#776471;font-size:12px;line-height:1.5;text-align:center;"><span style="color:#98244f;font-weight:900;">Misaki Shop</span> · Shipment notification</p>',
   '</td></tr>',
@@ -162,9 +166,8 @@ const defaultConfigs = {
   smtpPassword: "",
   smtpFromEmail: "",
   smtpFromName: "Misaki Shop",
-  supportEmail: "diy@misaki.im",
-  adminNotifyEmail: "diy@misaki.im",
-  uploadDir: "./public/uploads",
+  supportEmail: "support@example.com",
+  adminNotifyEmail: "owner@example.com",
   buyerEmailEnabled: "true",
   adminEmailEnabled: "true",
   buyerEmailSubject: defaultBuyerEmailSubject,
@@ -194,9 +197,15 @@ const defaultConfigs = {
   checkoutNicknameEnabled: "true",
 };
 
-async function main() {
-  const email = process.env.ADMIN_EMAIL || "admin@example.com";
-  const password = process.env.ADMIN_PASSWORD || "admin123456";
+export async function seedAdmin() {
+  const email = process.env.ADMIN_EMAIL?.trim();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) {
+    throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set to seed the default admin.");
+  }
+  if (password.length < 12) {
+    throw new Error("ADMIN_PASSWORD must be at least 12 characters long.");
+  }
   const passwordHash = await bcrypt.hash(password, 12);
 
   await prisma.admin.upsert({
@@ -204,13 +213,15 @@ async function main() {
     update: {},
     create: { email, passwordHash },
   });
+}
 
+export async function seedProduct() {
   await prisma.product.upsert({
     where: { id: "single-product" },
     update: {},
     create: {
       id: "single-product",
-      name: "Live Stream Depoist",
+      name: "Live Stream Deposit",
       imageUrl: "/sample-product.svg",
       imageSource: "url",
       shortDescription:
@@ -223,7 +234,9 @@ async function main() {
       maxQuantity: 99,
     },
   });
+}
 
+export async function seedArticle() {
   await prisma.article.upsert({
     where: { slug: "about" },
     update: {},
@@ -235,7 +248,9 @@ async function main() {
       published: true,
     },
   });
+}
 
+export async function seedConfigs() {
   for (const [key, value] of Object.entries(defaultConfigs)) {
     await prisma.siteConfig.upsert({
       where: { key },
@@ -249,12 +264,25 @@ async function main() {
   }
 }
 
-main()
-  .finally(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (error) => {
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+export async function seedAll() {
+  await seedAdmin();
+  await seedProduct();
+  await seedArticle();
+  await seedConfigs();
+}
+
+async function main() {
+  await seedAll();
+}
+
+if (isMain) {
+  main()
+    .finally(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (error) => {
+      console.error(error);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}

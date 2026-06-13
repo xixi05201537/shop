@@ -3400,7 +3400,7 @@ button.uploaded-image-card {
   color: #4e579c;
 }
 
-.status-selection-canceled {
+.status-selection-cancelled {
   border-color: rgba(152, 36, 79, 0.2);
   background: rgba(255, 231, 240, 0.78);
   color: var(--cherry);

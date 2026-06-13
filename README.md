@@ -91,8 +91,6 @@ SMTP_FROM_EMAIL=
 SMTP_FROM_NAME=Misaki Shop
 SUPPORT_EMAIL=support@example.com
 ADMIN_NOTIFY_EMAIL=owner@example.com
-
-UPLOAD_DIR=./public/uploads
 ```
 
 配置优先级：
@@ -392,8 +390,8 @@ npm run db:seed
 
 默认上传目录：
 
-```env
-UPLOAD_DIR=./public/uploads
+```text
+public/uploads
 ```
 
 Docker 部署推荐挂载：
@@ -458,7 +456,6 @@ DATABASE_URL=mysql://misaki:misaki@mysql:3306/misaki
 检查：
 
 - Docker 是否挂载 `/app/public/uploads`。
-- `UPLOAD_DIR` 是否仍指向 `./public/uploads`。
 - 上传文件是否在容器内存在。
 - 页面上使用的路径是否是 `/uploads/文件名`。
 

@@ -2,26 +2,46 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function main() {
-  const [adminCount, productCount, configCount, articleCount, orderCount] = await Promise.all([
+async function seedIfNeeded() {
+  const [adminCount, productCount, configCount, articleCount] = await Promise.all([
     prisma.admin.count(),
     prisma.product.count(),
     prisma.siteConfig.count(),
     prisma.article.count(),
-    prisma.order.count(),
   ]);
 
-  const hasExistingData = adminCount + productCount + configCount + articleCount + orderCount > 0;
-  if (hasExistingData) {
-    console.log("Database already has data. Skipping seed.");
+  if (adminCount === 0 && productCount === 0 && configCount === 0 && articleCount === 0) {
+    console.log("Database is empty. Running initial seed.");
+    const { seedAll } = await import("./seed.mjs");
+    await seedAll();
     return;
   }
 
-  console.log("Database is empty. Running initial seed.");
-  await import("./seed.mjs");
+  if (adminCount === 0) {
+    console.log("Admin table is empty. Running seed for default admin.");
+    const { seedAdmin } = await import("./seed.mjs");
+    await seedAdmin();
+  }
+  if (productCount === 0) {
+    console.log("Product table is empty. Running seed for default product.");
+    const { seedProduct } = await import("./seed.mjs");
+    await seedProduct();
+  }
+  if (articleCount === 0) {
+    console.log("Article table is empty. Running seed for default article.");
+    const { seedArticle } = await import("./seed.mjs");
+    await seedArticle();
+  }
+  if (configCount === 0) {
+    console.log("SiteConfig table is empty. Running seed for default configs.");
+    const { seedConfigs } = await import("./seed.mjs");
+    await seedConfigs();
+  }
+
+  console.log("Seed check complete.");
 }
 
-main()
+seedIfNeeded()
   .finally(async () => {
     await prisma.$disconnect();
   })

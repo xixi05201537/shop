@@ -137,13 +137,20 @@ function clearSelectionDraft(slug: string) {
   window.localStorage.removeItem(selectionDraftStorageKey(slug));
 }
 
+function getInitialSelectionDraft(page: SelectionPageView) {
+  if (typeof window === "undefined") return null;
+  const itemIds = new Set(page.items.map((item) => item.id));
+  return readSelectionDraft(page.slug, itemIds);
+}
+
 export function SelectionClient({ page }: { page: SelectionPageView }) {
-  const [selected, setSelected] = useState<SelectedMap>({});
+  const initialDraft = useMemo(() => getInitialSelectionDraft(page), [page]);
+  const [selected, setSelected] = useState<SelectedMap>(() => initialDraft?.selected ?? {});
   const [preview, setPreview] = useState<SelectionItemView | null>(null);
-  const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [customerContact, setCustomerContact] = useState("");
-  const [note, setNote] = useState("");
+  const [customerName, setCustomerName] = useState(() => initialDraft?.customerName ?? "");
+  const [customerEmail, setCustomerEmail] = useState(() => initialDraft?.customerEmail ?? "");
+  const [customerContact, setCustomerContact] = useState(() => initialDraft?.customerContact ?? "");
+  const [note, setNote] = useState(() => initialDraft?.note ?? "");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
@@ -152,9 +159,10 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   const [cartClosing, setCartClosing] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyClosing, setHistoryClosing] = useState(false);
-  const [history, setHistory] = useState<SelectionHistoryRecord[]>([]);
+  const [history, setHistory] = useState<SelectionHistoryRecord[]>(() =>
+    typeof window !== "undefined" ? readSelectionHistory() : [],
+  );
   const mobileBarRef = useRef<HTMLDivElement | null>(null);
-  const draftHydratedRef = useRef(false);
   const cartVisibleRef = useRef(false);
   const historyVisibleRef = useRef(false);
   const cartCloseTimerRef = useRef<number | null>(null);
@@ -192,12 +200,6 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   }, [itemIds, page.slug]);
 
   useEffect(() => {
-    restoreDraft();
-    draftHydratedRef.current = true;
-  }, [restoreDraft]);
-
-  useEffect(() => {
-    if (!draftHydratedRef.current) return;
     writeSelectionDraft(page.slug, {
       selected,
       customerName,
@@ -209,8 +211,6 @@ export function SelectionClient({ page }: { page: SelectionPageView }) {
   }, [customerContact, customerEmail, customerName, note, page.slug, selected]);
 
   useEffect(() => {
-    refreshHistorySoon();
-
     const syncVisibleHistory = () => {
       if (document.visibilityState === "visible") {
         restoreDraft();

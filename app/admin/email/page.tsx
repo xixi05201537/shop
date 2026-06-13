@@ -3,14 +3,25 @@ import { EmailTabs } from "./EmailTabs";
 
 export const dynamic = "force-dynamic";
 
+const secretEmailKeys = new Set([
+  "smtpPassword",
+  "paypalSandboxClientSecret",
+  "paypalLiveClientSecret",
+  "paypalClientSecret",
+]);
+
 export default async function EmailAdmin({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string; test?: string }>;
 }) {
   const query = await searchParams;
-  const config = await getConfigMap();
+  const fullConfig = await getConfigMap();
   const initialTab = query.tab || query.test;
+
+  const clientConfig = Object.fromEntries(
+    Object.entries(fullConfig).filter(([key]) => !secretEmailKeys.has(key))
+  );
 
   return (
     <>
@@ -21,9 +32,9 @@ export default async function EmailAdmin({
         </div>
       </header>
       <EmailTabs
-        config={config}
+        config={clientConfig}
         initialTab={initialTab}
-        maskedPassword={maskSecret(config.smtpPassword)}
+        maskedPassword={maskSecret(fullConfig.smtpPassword)}
       />
     </>
   );

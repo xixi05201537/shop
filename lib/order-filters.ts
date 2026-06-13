@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import type { OrderStatus } from "@prisma/client";
 
 export type OrderFilterQuery = {
   status?: string;
@@ -30,6 +31,13 @@ function dateValue(value?: string, endOfDay = false) {
   return date;
 }
 
+const orderStatuses = ["created", "paying", "paid", "cancelled", "refunded", "failed"] as const;
+
+function orderStatusValue(value?: string): OrderStatus | undefined {
+  if (!value) return undefined;
+  return orderStatuses.includes(value as OrderStatus) ? (value as OrderStatus) : undefined;
+}
+
 export function orderWhereFromQuery(query: OrderFilterQuery, payerNotePayerIds: string[] = []): Prisma.OrderWhereInput {
   const minAmount = numberValue(query.minAmount);
   const maxAmount = numberValue(query.maxAmount);
@@ -59,7 +67,7 @@ export function orderWhereFromQuery(query: OrderFilterQuery, payerNotePayerIds: 
   }
 
   return {
-    status: query.status || undefined,
+    status: orderStatusValue(query.status),
     paypalOrderId: query.paypalOrderId ? { contains: query.paypalOrderId } : undefined,
     buyerNickname: query.nickname ? { contains: query.nickname } : undefined,
     totalAmount:
@@ -103,6 +111,6 @@ export function queryStringFromObject(query: OrderFilterQuery) {
 }
 
 export function queryStringWithoutPage(query: OrderFilterQuery) {
-  const { page: _page, ...rest } = query;
+  const rest = Object.fromEntries(Object.entries(query).filter(([key]) => key !== "page"));
   return queryStringFromObject(rest);
 }

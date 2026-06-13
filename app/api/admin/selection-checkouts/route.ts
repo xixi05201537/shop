@@ -4,6 +4,7 @@ import { writeAuditLog } from "@/lib/audit-log";
 import { sendSelectionCheckoutEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { appUrl } from "@/lib/redirect";
+import type { EmailStatus } from "@prisma/client";
 import {
   createSelectionCheckout,
   normalizeEmailRecipients,
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       manualTotalAmount,
       emailRecipient,
     });
-    let emailStatus = "skipped";
+    let emailStatus: EmailStatus = "skipped";
     let emailError: string | null = null;
     if (sendEmail) {
       const checkoutForEmail = await prisma.selectionCheckout.findUnique({

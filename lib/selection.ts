@@ -106,6 +106,12 @@ export async function saveSelectionPageForm(formData: FormData) {
 export async function saveSelectionItemForm(formData: FormData) {
   const id = textValue(formData, "id");
   const pageId = textValue(formData, "pageId");
+  let minQuantity = Math.max(1, Math.floor(numberValue(formData, "minQuantity", 1)));
+  let maxQuantity = Math.max(1, Math.floor(numberValue(formData, "maxQuantity", 99)));
+  if (minQuantity > maxQuantity) {
+    [minQuantity, maxQuantity] = [maxQuantity, minQuantity];
+  }
+
   const data = {
     pageId,
     title: textValue(formData, "title"),
@@ -114,8 +120,8 @@ export async function saveSelectionItemForm(formData: FormData) {
     price: optionalPrice(formData),
     currency: normalizeCurrency(textValue(formData, "currency", "USD")),
     sortOrder: Math.floor(numberValue(formData, "sortOrder", 0)),
-    minQuantity: Math.max(1, Math.floor(numberValue(formData, "minQuantity", 1))),
-    maxQuantity: Math.max(1, Math.floor(numberValue(formData, "maxQuantity", 99))),
+    minQuantity,
+    maxQuantity,
     isActive: formData.get("isActive") === "on",
   };
 

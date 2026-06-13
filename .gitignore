@@ -8,3 +8,8 @@ data
 /uploads
 /public/uploads
 npm-debug.log*
+*.log
+*.tsbuildinfo
+.tmp*/
+.DS_Store
+Thumbs.db

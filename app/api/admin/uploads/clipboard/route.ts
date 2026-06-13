@@ -3,19 +3,8 @@ import { join } from "node:path";
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit-log";
+import { generateUploadFilename, validateImageFile } from "@/lib/upload-security";
 import { getUploadDir } from "@/lib/uploads";
-
-const allowed = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"]);
-
-function extensionFor(file: File) {
-  const byName = file.name.split(".").pop()?.toLowerCase();
-  if (byName && byName.length <= 5) return byName;
-  if (file.type === "image/jpeg") return "jpg";
-  if (file.type === "image/webp") return "webp";
-  if (file.type === "image/gif") return "gif";
-  if (file.type === "image/svg+xml") return "svg";
-  return "png";
-}
 
 export async function POST(request: Request) {
   const unauthorized = await requireAdminApi();
@@ -24,11 +13,12 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("image");
   if (!(file instanceof File)) return NextResponse.json({ error: "请先选择图片。" }, { status: 400 });
-  if (!allowed.has(file.type)) return NextResponse.json({ error: "不支持这种图片格式。" }, { status: 400 });
-  if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "图片大小不能超过 5MB。" }, { status: 400 });
+
+  const validation = validateImageFile(file);
+  if (validation) return NextResponse.json({ error: validation.error }, { status: 400 });
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${extensionFor(file)}`;
+  const filename = generateUploadFilename(file);
   const uploadDir = getUploadDir();
   await mkdir(uploadDir, { recursive: true });
   await writeFile(join(uploadDir, filename), bytes);
