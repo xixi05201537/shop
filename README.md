@@ -339,7 +339,7 @@ docker pull aoizzz/misakishop:latest
 容器启动命令：
 
 ```bash
-node node_modules/prisma/build/index.js db push && node prisma/seed-if-empty.mjs && node server.js
+node scripts/db-push-safe.mjs && node prisma/seed-if-empty.mjs && node server.js
 ```
 
 含义：
