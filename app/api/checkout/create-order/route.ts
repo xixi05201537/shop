@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createPaypalOrder } from "@/lib/paypal";
 import { orderNumber, parseAmounts } from "@/lib/format";
 import { getConfigMap } from "@/lib/config";
+import { appUrl } from "@/lib/redirect";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -54,12 +55,19 @@ export async function POST(request: Request) {
     });
     orderIdToFail = order.id;
 
-    const paypalOrder = await createPaypalOrder(totalAmount, number);
+    const paypalOrder = await createPaypalOrder(totalAmount, number, "USD", {
+      returnUrl: appUrl(`/checkout/return?localOrderId=${encodeURIComponent(order.id)}`, request).toString(),
+      cancelUrl: appUrl("/?payment=cancelled", request).toString(),
+    });
     await prisma.order.update({
       where: { id: order.id },
       data: { paypalOrderId: paypalOrder.id, paypalRawSummary: JSON.stringify(paypalOrder).slice(0, 8000) },
     });
-    return NextResponse.json({ localOrderId: order.id, paypalOrderId: paypalOrder.id });
+    return NextResponse.json({
+      localOrderId: order.id,
+      paypalOrderId: paypalOrder.id,
+      paypalApproveUrl: paypalOrder.links?.find((link) => link.rel === "approve")?.href || "",
+    });
   } catch (error) {
     if (orderIdToFail) {
       await prisma.order.update({ where: { id: orderIdToFail }, data: { status: "failed" } }).catch(() => null);

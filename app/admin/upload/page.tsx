@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SubmitButton } from "@/components/SubmitButton";
 import { listUploadedImages } from "@/lib/uploads";
+import { ClipboardUploadButton } from "./ClipboardUploadButton";
 
 export default async function UploadPage({ searchParams }: { searchParams: Promise<{ path?: string; error?: string }> }) {
   const query = await searchParams;
@@ -30,13 +31,12 @@ export default async function UploadPage({ searchParams }: { searchParams: Promi
             </label>
             <div className="upload-dropzone">
               <strong>支持 PNG、JPG、WebP、GIF</strong>
-              <span>最大文件大小 5MB，上传后的文件会保存在 public/uploads。</span>
+              <span>最大文件大小 5MB，上传后的文件会保存到 public/uploads。</span>
             </div>
             {query.error ? <div className="notice">{query.error}</div> : null}
-            <div className="admin-actions">
-              <SubmitButton loadingText="上传中...">
-                上传图片
-              </SubmitButton>
+            <div className="admin-actions upload-actions-row">
+              <SubmitButton loadingText="上传中...">上传图片</SubmitButton>
+              <ClipboardUploadButton />
               <Link className="secondary-button" href="/admin/product">
                 取消
               </Link>

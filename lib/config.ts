@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_DISPLAY_TIME_ZONE, normalizeDisplayTimeZone } from "@/lib/format";
+import { listEnabledFloatingWidgets, type FloatingWidgetView } from "@/lib/floating-widgets";
 
 export type PublicConfig = {
   paypalClientId: string;
   paypalEnv: string;
   supportEmail: string;
+  floatingWidgets: FloatingWidgetView[];
   floatingEnabled: boolean;
   floatingUrl: string;
   floatingOpenMode: string;
@@ -51,7 +53,7 @@ export async function getConfigValues(keys: string[]) {
 }
 
 export async function getPublicConfig(): Promise<PublicConfig> {
-  const config = await getConfigMap();
+  const [config, floatingWidgets] = await Promise.all([getConfigMap(), listEnabledFloatingWidgets()]);
   const paypalEnv = firstValue(config.paypalEnv, process.env.PAYPAL_ENV, "sandbox");
   const legacyClientId = firstValue(config.paypalClientId, process.env.PAYPAL_CLIENT_ID);
   const paypalClientId =
@@ -63,6 +65,7 @@ export async function getPublicConfig(): Promise<PublicConfig> {
     paypalClientId,
     paypalEnv,
     supportEmail: config.supportEmail || "support@example.com",
+    floatingWidgets,
     floatingEnabled: (config.floatingEnabled || "false") === "true",
     floatingUrl: config.floatingUrl || "/article/about",
     floatingOpenMode: config.floatingOpenMode || "current",

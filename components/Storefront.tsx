@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { CheckCircle, Gift, Heart, Mail, Minus, Plus, Receipt, ShieldCheck, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -57,6 +57,12 @@ function safeStorage() {
 
 export function Storefront({ product, config }: { product: ProductView; config: PublicConfig }) {
   const storage = useMemo(() => safeStorage(), []);
+  const paypalRedirectMode = useSyncExternalStore(
+    noopSubscribe,
+    () => isTikTokBrowser(),
+    () => null,
+  );
+  const paymentReturnMessage = useSyncExternalStore(noopSubscribe, paymentStatusMessage, () => "");
   const [amountInput, setAmountInput] = useState(formatAmountInput(product.defaultAmount));
   const [quantity, setQuantity] = useState(product.defaultQuantity);
   const [email, setEmail] = useState(() => (typeof window !== "undefined" ? storage.read("pinkBuyerEmail") || "" : ""));
@@ -74,6 +80,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   const mobileCheckoutBarRef = useRef<HTMLDivElement | null>(null);
 
   const total = useMemo(() => Number((amount * quantity).toFixed(2)), [amount, quantity]);
+  const displayMessage = message || paymentReturnMessage;
 
   const imageSrc =
     product.imageSource === "upload" && product.uploadedImagePath
@@ -83,6 +90,19 @@ export function Storefront({ product, config }: { product: ProductView; config: 
   useEffect(() => {
     checkoutRef.current = { amount, quantity, email, nickname };
   }, [amount, quantity, email, nickname]);
+
+  useEffect(() => {
+    logUserAgentOnce(storage, paypalRedirectMode);
+  }, [paypalRedirectMode, storage]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("payment")) {
+      params.delete("payment");
+      const query = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+    }
+  }, []);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -130,6 +150,43 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     return "PayPal reported an error. Please check the card form.";
   }
 
+  const currentCheckoutDetails = useCallback(() => {
+    return {
+      ...checkoutRef.current,
+      email: config.checkoutEmailEnabled ? checkoutRef.current.email : "",
+      nickname: config.checkoutNicknameEnabled ? checkoutRef.current.nickname : "",
+    };
+  }, [config.checkoutEmailEnabled, config.checkoutNicknameEnabled]);
+
+  async function startRedirectCheckout() {
+    setMessage("");
+    if (checkoutRef.current.amount <= 0) {
+      setMessage("Please enter an amount greater than 0.");
+      return;
+    }
+
+    const current = currentCheckoutDetails();
+    setLoading(true);
+    try {
+      const response = await fetch("/api/checkout/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(current),
+      });
+      const data = await readJsonResponse(response);
+      if (!response.ok) throw new Error(data.error || "Unable to create PayPal order.");
+      if (!data.paypalApproveUrl) throw new Error("PayPal did not return a checkout link. Please try again.");
+
+      storage.write("pinkBuyerEmail", current.email);
+      storage.write("pinkBuyerNickname", current.nickname);
+      storage.sessionWrite("pinkLocalOrderId", data.localOrderId);
+      window.location.assign(data.paypalApproveUrl);
+    } catch (error) {
+      setLoading(false);
+      setMessage(error instanceof Error ? error.message : "Unable to create PayPal order.");
+    }
+  }
+
   const paypalOptions = useMemo(
     () => ({
       style: {
@@ -147,11 +204,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
         return actions?.resolve ? actions.resolve() : Promise.resolve();
       },
       createOrder: async () => {
-        const current = {
-          ...checkoutRef.current,
-          email: config.checkoutEmailEnabled ? checkoutRef.current.email : "",
-          nickname: config.checkoutNicknameEnabled ? checkoutRef.current.nickname : "",
-        };
+        const current = currentCheckoutDetails();
         setLoading(true);
         try {
           const response = await fetch("/api/checkout/create-order", {
@@ -197,7 +250,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
         setMessage(readable);
       },
     }),
-    [config.checkoutEmailEnabled, config.checkoutNicknameEnabled, storage]
+    [currentCheckoutDetails, storage]
   );
 
   usePayPalButtons({
@@ -205,7 +258,7 @@ export function Storefront({ product, config }: { product: ProductView; config: 
     currency: "USD",
     containerId: "paypal-buttons",
     options: paypalOptions,
-    enabled: Boolean(config.paypalClientId),
+    enabled: Boolean(config.paypalClientId) && paypalRedirectMode === false,
   });
 
   return (
@@ -363,15 +416,22 @@ export function Storefront({ product, config }: { product: ProductView; config: 
           </div>
 
           <div className="paypal-box" ref={paypalBoxRef}>
-            {config.paypalClientId ? (
+            {config.paypalClientId && paypalRedirectMode ? (
+              <div className="paypal-redirect-checkout">
+                <button className="primary-button" type="button" onClick={startRedirectCheckout} disabled={loading}>
+                  Continue to secure PayPal
+                </button>
+                <p className="paypal-hint">TikTok&apos;s browser can block PayPal popups, so checkout opens as a full page here.</p>
+              </div>
+            ) : config.paypalClientId && paypalRedirectMode === false ? (
               <div id="paypal-buttons" />
             ) : (
-              <div className="notice">PayPal checkout is not configured.</div>
+              <div className="notice">{config.paypalClientId ? "Preparing PayPal checkout..." : "PayPal checkout is not configured."}</div>
             )}
           </div>
 
           {loading ? <div className="notice">Preparing your PayPal checkout...</div> : null}
-          {message ? <div className="notice">{message}</div> : null}
+          {displayMessage ? <div className="notice">{displayMessage}</div> : null}
 
           {config.supportEmail ? (
             <a className="support-link" href={`mailto:${config.supportEmail}`}>
@@ -399,4 +459,52 @@ export function Storefront({ product, config }: { product: ProductView; config: 
 
 function formatAmountInput(value: number) {
   return Number(value.toFixed(2)).toString();
+}
+
+function noopSubscribe() {
+  return () => undefined;
+}
+
+function isTikTokBrowser() {
+  if (typeof window === "undefined") return null;
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return (
+    userAgent.includes("tiktok") ||
+    userAgent.includes("musical_ly") ||
+    userAgent.includes("bytedance") ||
+    userAgent.includes("trill")
+  );
+}
+
+function paymentStatusMessage() {
+  if (typeof window === "undefined") return "";
+  const paymentStatus = new URLSearchParams(window.location.search).get("payment");
+  if (paymentStatus === "cancelled") return "Payment was cancelled. Your order is still waiting here.";
+  if (paymentStatus) return "PayPal could not complete this payment. Please try again or open this page in Safari.";
+  return "";
+}
+
+function logUserAgentOnce(storage: ReturnType<typeof safeStorage>, paypalRedirectMode: boolean | null) {
+  if (typeof window === "undefined" || paypalRedirectMode === null) return;
+  const logKey = "pinkUserAgentLogged";
+  if (storage.sessionRead(logKey)) return;
+
+  const userAgent = window.navigator.userAgent;
+  console.info("[checkout-user-agent]", {
+    userAgent,
+    paypalRedirectMode,
+    path: window.location.pathname,
+  });
+  storage.sessionWrite(logKey, "true");
+
+  fetch("/api/debug/user-agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    body: JSON.stringify({
+      userAgent,
+      paypalRedirectMode,
+      path: window.location.pathname,
+    }),
+  }).catch(() => null);
 }

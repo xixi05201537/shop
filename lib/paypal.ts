@@ -4,6 +4,21 @@ function paypalBase(env: string) {
   return env === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 }
 
+type PaypalExperienceContext = {
+  returnUrl?: string;
+  cancelUrl?: string;
+};
+
+export type PaypalOrderSummary = {
+  id: string;
+  status: string;
+  links?: Array<{
+    href?: string;
+    rel?: string;
+    method?: string;
+  }>;
+};
+
 export async function getPaypalSettings() {
   const config = await getConfigValues([
     "paypalClientId",
@@ -74,7 +89,12 @@ export async function checkPaypalHealth() {
   };
 }
 
-export async function createPaypalOrder(totalAmount: number, orderNumber: string, currency = "USD") {
+export async function createPaypalOrder(
+  totalAmount: number,
+  orderNumber: string,
+  currency = "USD",
+  experienceContext: PaypalExperienceContext = {},
+) {
   const { token, settings } = await accessToken();
   const response = await fetch(`${paypalBase(settings.env)}/v2/checkout/orders`, {
     method: "POST",
@@ -88,6 +108,9 @@ export async function createPaypalOrder(totalAmount: number, orderNumber: string
         paypal: {
           experience_context: {
             shipping_preference: "GET_FROM_FILE",
+            user_action: "PAY_NOW",
+            ...(experienceContext.returnUrl ? { return_url: experienceContext.returnUrl } : {}),
+            ...(experienceContext.cancelUrl ? { cancel_url: experienceContext.cancelUrl } : {}),
           },
         },
       },
@@ -107,7 +130,7 @@ export async function createPaypalOrder(totalAmount: number, orderNumber: string
     throw new Error("Unable to create PayPal order.");
   }
 
-  return (await response.json()) as { id: string; status: string };
+  return (await response.json()) as PaypalOrderSummary;
 }
 
 export async function capturePaypalOrder(paypalOrderId: string) {

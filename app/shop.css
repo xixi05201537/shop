@@ -488,8 +488,11 @@
   z-index: 60;
   display: grid;
   place-items: center;
+  --floating-gap: 12px;
+  --floating-offset: calc(var(--floating-offset-index, 0) * (100% + var(--floating-gap)));
+  width: var(--floating-width, 64px);
+  height: var(--floating-height, 64px);
   border: 2px solid rgba(255, 255, 255, 0.9);
-  border-radius: 18px;
   background: var(--cherry);
   color: #fff;
   box-shadow: 0 14px 32px rgba(152, 36, 79, 0.28);
@@ -504,37 +507,64 @@
   object-fit: cover;
 }
 
-.float-small {
-  width: 38px;
-  height: 38px;
+.float-shape-rounded {
+  border-radius: 18px;
 }
 
-.float-medium {
-  width: 64px;
-  height: 64px;
-  font-size: 1.3rem;
+.float-shape-circle {
+  border-radius: 999px;
+}
+
+.float-shape-square {
+  border-radius: 0;
+}
+
+.float-shape-pill {
+  border-radius: 999px;
+}
+
+.float-shape-bookmark {
+  border-radius: 18px 0 0 18px;
+  border-right: 0;
+}
+
+.float-left-bottom.float-shape-bookmark,
+.float-left-middle.float-shape-bookmark {
+  border-radius: 0 18px 18px 0;
+  border-right: 2px solid rgba(255, 255, 255, 0.9);
+  border-left: 0;
 }
 
 .float-right-bottom {
   right: 22px;
-  bottom: 22px;
+  bottom: calc(22px + var(--floating-offset));
 }
 
 .float-left-bottom {
   left: 22px;
-  bottom: 22px;
+  bottom: calc(22px + var(--floating-offset));
 }
 
 .float-right-middle {
-  right: 22px;
+  right: calc(22px + var(--floating-offset));
   top: 50%;
   transform: translateY(-50%);
 }
 
 .float-left-middle {
-  left: 22px;
+  left: calc(22px + var(--floating-offset));
   top: 50%;
   transform: translateY(-50%);
+}
+
+.float-right-bottom.float-shape-bookmark,
+.float-right-middle.float-shape-bookmark {
+  right: var(--floating-offset);
+}
+
+.float-left-bottom.float-shape-bookmark,
+.float-left-middle.float-shape-bookmark {
+  left: var(--floating-offset);
 }
 
 .empty-page {
@@ -2370,20 +2400,20 @@
 
   .float-right-bottom {
     right: 16px;
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px) + var(--floating-offset));
   }
 
   .float-left-bottom {
     left: 16px;
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px) + var(--floating-offset));
   }
 
   .float-right-middle {
-    right: 14px;
+    right: calc(14px + var(--floating-offset));
   }
 
   .float-left-middle {
-    left: 14px;
+    left: calc(14px + var(--floating-offset));
   }
 
   .details-section {
@@ -2424,10 +2454,6 @@
     width: 100%;
   }
 
-  .float-medium {
-    width: 52px;
-    height: 52px;
-  }
 }
 
 @media (max-width: 1180px) {

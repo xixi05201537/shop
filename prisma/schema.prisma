@@ -252,6 +252,27 @@ model SiteConfig {
   updatedAt DateTime @updatedAt
 }
 
+model FloatingWidget {
+  id          String   @id @default(cuid())
+  url         String   @db.VarChar(2048)
+  displayType String   @default("text")
+  label       String   @default("i") @db.VarChar(120)
+  imageUrl    String?  @db.VarChar(2048)
+  openMode    String   @default("current")
+  size        String   @default("medium")
+  width       Int      @default(64)
+  height      Int      @default(64)
+  shape       String   @default("rounded")
+  position    String   @default("right-bottom")
+  enabled     Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
+  @@index([position, sortOrder])
+}
+
 model Order {
   id                    String      @id @default(cuid())
   orderNumber           String      @unique
