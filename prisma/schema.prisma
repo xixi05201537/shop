@@ -339,7 +339,7 @@ model AuditLog {
   summary    String   @db.VarChar(512)
   metadata   String?  @db.LongText
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([createdAt])
   @@index([targetType, targetId])
