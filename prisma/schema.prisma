@@ -149,6 +149,46 @@ model SelectionCheckoutSubmission {
   @@index([submissionId])
 }
 
+model PaymentRequest {
+  id               String                @id @default(cuid())
+  token            String                @unique
+  title            String
+  description      String                @db.LongText
+  totalAmount      Float
+  currency         String                @default("USD")
+  status           String                @default("pending")
+  adminNote        String?               @db.LongText
+  emailRecipient   String?
+  emailStatus      String                @default("pending")
+  emailError       String?               @db.LongText
+  emailedAt        DateTime?
+  paidEmailStatus  String                @default("pending")
+  paidEmailError   String?               @db.LongText
+  paidEmailedAt    DateTime?
+  paypalOrderId    String?               @unique
+  paypalCaptureId  String?
+  paypalRawSummary String?               @db.LongText
+  paidAt           DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  images           PaymentRequestImage[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PaymentRequestImage {
+  id               String         @id @default(cuid())
+  paymentRequestId String
+  paymentRequest   PaymentRequest @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
+  imageUrl         String         @db.VarChar(2048)
+  caption          String?        @db.VarChar(255)
+  price            Float          @default(0)
+  sortOrder        Int            @default(0)
+
+  @@index([paymentRequestId, sortOrder])
+}
+
 model Article {
   id        String   @id @default(cuid())
   slug      String   @unique

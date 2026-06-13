@@ -6,6 +6,10 @@ import {
   defaultAdminEmailSubject,
   defaultBuyerEmailHtml,
   defaultBuyerEmailSubject,
+  defaultPaymentRequestEmailHtml,
+  defaultPaymentRequestPaidEmailHtml,
+  defaultPaymentRequestPaidEmailSubject,
+  defaultPaymentRequestEmailSubject,
   defaultSelectionEmailHtml,
   defaultSelectionEmailSubject,
   defaultSelectionCheckoutEmailHtml,
@@ -15,10 +19,14 @@ import {
 } from "@/lib/email-defaults";
 import { DEFAULT_DISPLAY_TIME_ZONE, formatCurrency, formatDateTimeWithOffset, normalizeDisplayTimeZone } from "@/lib/format";
 import { orderEmailRecipients } from "@/lib/paypal-order-details";
+import { paymentRequestNumber } from "@/lib/payment-request";
+import { prisma } from "@/lib/prisma";
 import { selectionSubmissionNumber } from "@/lib/selection";
 import { selectionCheckoutNumber } from "@/lib/selection-checkout";
 import type {
   Order,
+  PaymentRequest,
+  PaymentRequestImage,
   SelectionCheckout,
   SelectionPage,
   SelectionSubmission,
@@ -37,6 +45,10 @@ type SelectionCheckoutForEmail = SelectionCheckout & {
       items: SelectionSubmissionItem[];
     };
   }>;
+};
+
+type PaymentRequestForEmail = PaymentRequest & {
+  images: PaymentRequestImage[];
 };
 
 function renderTemplate(template: string, order: Order, timeZone?: string | null) {
@@ -112,6 +124,25 @@ function renderSelectionCheckoutItems(checkout: SelectionCheckoutForEmail) {
     .join("");
 }
 
+function renderPaymentRequestImages(paymentRequest: PaymentRequestForEmail, baseUrl: string) {
+  if (!paymentRequest.images.length) return "No images attached";
+  return paymentRequest.images
+    .map((image) => {
+      const imageUrl = new URL(image.imageUrl, baseUrl).toString();
+      const caption = image.caption?.trim() || paymentRequest.title;
+      const price = formatCurrency(image.price, paymentRequest.currency);
+      return [
+        '<div style="margin:0 0 12px;">',
+        `<a href="${escapeHtml(imageUrl)}" style="display:block;color:#cf2f6c;text-decoration:none;font-weight:900;">`,
+        `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(caption)}" style="display:block;width:100%;max-width:520px;border:1px solid #f3d5df;border-radius:16px;background-color:#ffffff;" />`,
+        "</a>",
+        `<div style="margin:6px 0 0;color:#776471;font-size:13px;font-weight:800;">${escapeHtml(caption)} · <span style="color:#98244f;font-weight:900;">${escapeHtml(price)}</span></div>`,
+        "</div>",
+      ].join("");
+    })
+    .join("");
+}
+
 function renderSelectionTemplate(
   template: string,
   submission: SelectionSubmissionForEmail,
@@ -174,6 +205,37 @@ function renderSelectionCheckoutTemplate(
 
   return Object.entries(values).reduce((content, [key, value]) => {
     const rendered = key === "items" || !escapeValues ? value : escapeHtml(value);
+    return content.replaceAll(`{{${key}}}`, rendered);
+  }, template);
+}
+
+function renderPaymentRequestTemplate(
+  template: string,
+  paymentRequest: PaymentRequestForEmail,
+  paymentLink: string,
+  baseUrl: string,
+  supportEmail: string,
+  timeZone?: string | null,
+  escapeValues = true,
+) {
+  const displayTimeZone = normalizeDisplayTimeZone(timeZone || DEFAULT_DISPLAY_TIME_ZONE);
+  const values: Record<string, string> = {
+    paymentReference: paymentRequestNumber(paymentRequest.token),
+    paymentLink,
+    title: paymentRequest.title,
+    description: paymentRequest.description || "",
+    supportEmail,
+    totalAmount: formatCurrency(paymentRequest.totalAmount, paymentRequest.currency),
+    currency: paymentRequest.currency,
+    images: renderPaymentRequestImages(paymentRequest, baseUrl),
+    adminNote: paymentRequest.adminNote || "",
+    createdAt: formatDateTimeWithOffset(paymentRequest.createdAt, displayTimeZone),
+    paidAt: formatDateTimeWithOffset(paymentRequest.paidAt, displayTimeZone),
+    paypalCaptureId: paymentRequest.paypalCaptureId || "",
+  };
+
+  return Object.entries(values).reduce((content, [key, value]) => {
+    const rendered = key === "images" || !escapeValues ? value : escapeHtml(value);
     return content.replaceAll(`{{${key}}}`, rendered);
   }, template);
 }
@@ -342,6 +404,102 @@ export async function sendSelectionCheckoutEmail(checkout: SelectionCheckoutForE
   return "sent";
 }
 
+export async function sendPaymentRequestEmail(paymentRequest: PaymentRequestForEmail, baseUrl: string, recipients?: string) {
+  const { config, mailer } = await transporter();
+  const to = recipients || paymentRequest.emailRecipient || "";
+  if (!to.trim()) return "skipped";
+  if (config.paymentRequestEmailEnabled === "false") return "disabled";
+  const paymentLink = new URL(`/pay/${paymentRequest.token}`, baseUrl).toString();
+  await sendHtmlMail(mailer, {
+    from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
+    to,
+    subject: renderPaymentRequestTemplate(
+      config.paymentRequestEmailSubject || defaultPaymentRequestEmailSubject,
+      paymentRequest,
+      paymentLink,
+      baseUrl,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+      false,
+    ),
+    html: renderPaymentRequestTemplate(
+      config.paymentRequestEmailHtml || defaultPaymentRequestEmailHtml,
+      paymentRequest,
+      paymentLink,
+      baseUrl,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+    ),
+  });
+  return "sent";
+}
+
+export async function sendPaymentRequestPaidEmail(paymentRequest: PaymentRequestForEmail, baseUrl: string) {
+  const { config, mailer } = await transporter();
+  const to = paymentRequest.emailRecipient || "";
+  if (!to.trim()) return "skipped";
+  if (config.paymentRequestPaidEmailEnabled === "false") return "disabled";
+  const paymentLink = new URL(`/pay/${paymentRequest.token}`, baseUrl).toString();
+  await sendHtmlMail(mailer, {
+    from: `"${config.smtpFromName || "Pink Pay Shop"}" <${config.smtpFromEmail}>`,
+    to,
+    subject: renderPaymentRequestTemplate(
+      config.paymentRequestPaidEmailSubject || defaultPaymentRequestPaidEmailSubject,
+      paymentRequest,
+      paymentLink,
+      baseUrl,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+      false,
+    ),
+    html: renderPaymentRequestTemplate(
+      config.paymentRequestPaidEmailHtml || defaultPaymentRequestPaidEmailHtml,
+      paymentRequest,
+      paymentLink,
+      baseUrl,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+    ),
+  });
+  return "sent";
+}
+
+export async function sendPaymentRequestPaidEmailForId(paymentRequestId: string, baseUrl: string) {
+  const paymentRequest = await prisma.paymentRequest.findUnique({
+    where: { id: paymentRequestId },
+    include: { images: { orderBy: { sortOrder: "asc" } } },
+  });
+  if (!paymentRequest || paymentRequest.paidEmailStatus === "sent") return paymentRequest?.paidEmailStatus || "skipped";
+
+  await prisma.paymentRequest.update({
+    where: { id: paymentRequestId },
+    data: { paidEmailStatus: "sending", paidEmailError: null },
+  });
+
+  try {
+    const paidEmailStatus = await sendPaymentRequestPaidEmail(paymentRequest, baseUrl);
+    await prisma.paymentRequest.update({
+      where: { id: paymentRequestId },
+      data: {
+        paidEmailStatus,
+        paidEmailError: null,
+        paidEmailedAt: paidEmailStatus === "sent" ? new Date() : null,
+      },
+    });
+    return paidEmailStatus;
+  } catch (error) {
+    const paidEmailError = error instanceof Error ? error.message.slice(0, 2000) : "Unable to send payment confirmation email.";
+    await prisma.paymentRequest.update({
+      where: { id: paymentRequestId },
+      data: {
+        paidEmailStatus: "failed",
+        paidEmailError,
+      },
+    });
+    return "failed";
+  }
+}
+
 function testOrder(): Order {
   const now = new Date();
   return {
@@ -454,6 +612,43 @@ function testSelectionCheckout(): SelectionCheckoutForEmail {
   };
 }
 
+function testPaymentRequest(): PaymentRequestForEmail {
+  const now = new Date();
+  return {
+    id: "test-payment-request",
+    token: "testpaymenttoken",
+    title: "Reserved goods payment",
+    description: "A tiny set of reserved products prepared for your confirmation.",
+    totalAmount: 28,
+    currency: "USD",
+    status: "confirmed",
+    adminNote: "Please check the images before paying.",
+    emailRecipient: "buyer@example.com",
+    emailStatus: "pending",
+    emailError: null,
+    emailedAt: null,
+    paidEmailStatus: "pending",
+    paidEmailError: null,
+    paidEmailedAt: null,
+    paypalOrderId: null,
+    paypalCaptureId: null,
+    paypalRawSummary: null,
+    paidAt: null,
+    createdAt: now,
+    updatedAt: now,
+    images: [
+      {
+        id: "test-payment-image-1",
+        paymentRequestId: "test-payment-request",
+        imageUrl: "/sample-product.svg",
+        caption: "Reserved item",
+        price: 28,
+        sortOrder: 0,
+      },
+    ],
+  };
+}
+
 export async function sendTestEmail(target: string, to: string) {
   const { config, mailer } = await transporter();
   const order = testOrder();
@@ -525,6 +720,69 @@ export async function sendTestEmail(target: string, to: string) {
       config.selectionCheckoutEmailHtml || defaultSelectionCheckoutEmailHtml,
       checkout,
       checkoutLink,
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+    );
+    const info = await sendHtmlMail(mailer, {
+      from,
+      to,
+      subject,
+      html,
+    });
+    return info;
+  }
+
+  if (target === "payment-request") {
+    const paymentRequest = testPaymentRequest();
+    const paymentLink = "https://example.com/pay/testpaymenttoken";
+    const subject = `[Test] ${renderPaymentRequestTemplate(
+      config.paymentRequestEmailSubject || defaultPaymentRequestEmailSubject,
+      paymentRequest,
+      paymentLink,
+      "https://example.com",
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+      false,
+    )}`;
+    const html = renderPaymentRequestTemplate(
+      config.paymentRequestEmailHtml || defaultPaymentRequestEmailHtml,
+      paymentRequest,
+      paymentLink,
+      "https://example.com",
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+    );
+    const info = await sendHtmlMail(mailer, {
+      from,
+      to,
+      subject,
+      html,
+    });
+    return info;
+  }
+
+  if (target === "payment-request-paid") {
+    const paymentRequest = {
+      ...testPaymentRequest(),
+      status: "paid",
+      paidAt: new Date(),
+      paypalCaptureId: "PAYPAL-TEST-CAPTURE",
+    };
+    const paymentLink = "https://example.com/pay/testpaymenttoken";
+    const subject = `[Test] ${renderPaymentRequestTemplate(
+      config.paymentRequestPaidEmailSubject || defaultPaymentRequestPaidEmailSubject,
+      paymentRequest,
+      paymentLink,
+      "https://example.com",
+      config.supportEmail || config.smtpFromEmail,
+      config.displayTimeZone,
+      false,
+    )}`;
+    const html = renderPaymentRequestTemplate(
+      config.paymentRequestPaidEmailHtml || defaultPaymentRequestPaidEmailHtml,
+      paymentRequest,
+      paymentLink,
+      "https://example.com",
       config.supportEmail || config.smtpFromEmail,
       config.displayTimeZone,
     );

@@ -75,6 +75,12 @@ export async function saveEmailForm(formData: FormData) {
   if (formData.has("selectionCheckoutEmailSubject") || formData.has("selectionCheckoutEmailHtml")) {
     values.selectionCheckoutEmailEnabled = formData.get("selectionCheckoutEmailEnabled") === "on" ? "true" : "false";
   }
+  if (formData.has("paymentRequestEmailSubject") || formData.has("paymentRequestEmailHtml")) {
+    values.paymentRequestEmailEnabled = formData.get("paymentRequestEmailEnabled") === "on" ? "true" : "false";
+  }
+  if (formData.has("paymentRequestPaidEmailSubject") || formData.has("paymentRequestPaidEmailHtml")) {
+    values.paymentRequestPaidEmailEnabled = formData.get("paymentRequestPaidEmailEnabled") === "on" ? "true" : "false";
+  }
   if (formData.has("buyerEmailSubject")) values.buyerEmailSubject = String(formData.get("buyerEmailSubject") || "");
   if (formData.has("buyerEmailHtml")) values.buyerEmailHtml = sanitizeEmailHtml(String(formData.get("buyerEmailHtml") || ""));
   if (formData.has("adminEmailSubject")) values.adminEmailSubject = String(formData.get("adminEmailSubject") || "");
@@ -90,6 +96,14 @@ export async function saveEmailForm(formData: FormData) {
   if (formData.has("selectionCheckoutEmailSubject")) values.selectionCheckoutEmailSubject = String(formData.get("selectionCheckoutEmailSubject") || "");
   if (formData.has("selectionCheckoutEmailHtml")) {
     values.selectionCheckoutEmailHtml = sanitizeEmailHtml(String(formData.get("selectionCheckoutEmailHtml") || ""));
+  }
+  if (formData.has("paymentRequestEmailSubject")) values.paymentRequestEmailSubject = String(formData.get("paymentRequestEmailSubject") || "");
+  if (formData.has("paymentRequestEmailHtml")) {
+    values.paymentRequestEmailHtml = sanitizeEmailHtml(String(formData.get("paymentRequestEmailHtml") || ""));
+  }
+  if (formData.has("paymentRequestPaidEmailSubject")) values.paymentRequestPaidEmailSubject = String(formData.get("paymentRequestPaidEmailSubject") || "");
+  if (formData.has("paymentRequestPaidEmailHtml")) {
+    values.paymentRequestPaidEmailHtml = sanitizeEmailHtml(String(formData.get("paymentRequestPaidEmailHtml") || ""));
   }
 
   await setConfigValues(values, ["smtpPassword"]);

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { sendPaymentRequestPaidEmailForId } from "@/lib/email";
 import { markOrderPaid } from "@/lib/order-service";
 import { verifyPaypalWebhook } from "@/lib/paypal";
+import { revalidatePaymentRequest } from "@/lib/payment-request";
 import { prisma } from "@/lib/prisma";
+import { appUrl } from "@/lib/redirect";
 
 function pickResourceId(payload: Record<string, unknown>) {
   const resource = payload.resource as Record<string, unknown> | undefined;
@@ -98,6 +101,45 @@ export async function POST(request: Request) {
         orderId: order?.id,
         expectedAmount: order?.totalAmount,
         expectedCurrency: order?.currency,
+        receivedAmount: amount?.value,
+        receivedCurrency: amount?.currency_code,
+      });
+    }
+
+    const paymentRequest = !order && resourceId ? await prisma.paymentRequest.findFirst({ where: { paypalOrderId: resourceId } }) : null;
+    if (
+      paymentRequest &&
+      amount?.currency_code === paymentRequest.currency &&
+      Math.abs(Number(amount.value) - paymentRequest.totalAmount) <= 0.001
+    ) {
+      await prisma.paymentRequest.update({
+        where: { id: paymentRequest.id },
+        data: {
+          status: "paid",
+          paidAt: paymentRequest.paidAt || new Date(),
+          paypalCaptureId: pickCaptureId(payload) || paymentRequest.paypalCaptureId,
+          paypalRawSummary: body.slice(0, 8000),
+        },
+      });
+      revalidatePaymentRequest(paymentRequest.token);
+      await sendPaymentRequestPaidEmailForId(paymentRequest.id, appUrl("/", request).origin);
+      logWebhook("marked-payment-request-paid", {
+        eventId,
+        eventType,
+        resourceId,
+        paymentRequestId: paymentRequest.id,
+        captureId: pickCaptureId(payload),
+        amount: amount.value,
+        currency: amount.currency_code,
+      });
+    } else if (!order && paymentRequest) {
+      console.error("[paypal-webhook] payment-request-capture-not-applied", {
+        eventId,
+        eventType,
+        resourceId,
+        paymentRequestId: paymentRequest.id,
+        expectedAmount: paymentRequest.totalAmount,
+        expectedCurrency: paymentRequest.currency,
         receivedAmount: amount?.value,
         receivedCurrency: amount?.currency_code,
       });

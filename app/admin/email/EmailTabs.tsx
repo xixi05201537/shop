@@ -10,12 +10,18 @@ import {
   defaultAdminEmailSubject,
   defaultBuyerEmailHtml,
   defaultBuyerEmailSubject,
+  defaultPaymentRequestEmailHtml,
+  defaultPaymentRequestPaidEmailHtml,
+  defaultPaymentRequestPaidEmailSubject,
+  defaultPaymentRequestEmailSubject,
   defaultSelectionEmailHtml,
   defaultSelectionEmailSubject,
   defaultSelectionCheckoutEmailHtml,
   defaultSelectionCheckoutEmailSubject,
   defaultShipmentEmailHtml,
   defaultShipmentEmailSubject,
+  paymentRequestTemplateVariables,
+  paymentRequestPaidTemplateVariables,
   selectionCheckoutTemplateVariables,
   selectionTemplateVariables,
   templateVariables,
@@ -30,6 +36,8 @@ const tabs = [
   { id: "shipment", label: "发货邮件配置" },
   { id: "selection", label: "选品邮件配置" },
   { id: "selection-checkout", label: "选品付款邮件" },
+  { id: "payment-request", label: "付款单邮件" },
+  { id: "payment-request-paid", label: "付款成功邮件" },
 ] as const;
 type EmailTabId = (typeof tabs)[number]["id"];
 
@@ -54,11 +62,17 @@ export function EmailTabs({
   const selectionHtml = config.selectionEmailHtml || defaultSelectionEmailHtml;
   const selectionCheckoutSubject = config.selectionCheckoutEmailSubject || defaultSelectionCheckoutEmailSubject;
   const selectionCheckoutHtml = config.selectionCheckoutEmailHtml || defaultSelectionCheckoutEmailHtml;
+  const paymentRequestSubject = config.paymentRequestEmailSubject || defaultPaymentRequestEmailSubject;
+  const paymentRequestHtml = config.paymentRequestEmailHtml || defaultPaymentRequestEmailHtml;
+  const paymentRequestPaidSubject = config.paymentRequestPaidEmailSubject || defaultPaymentRequestPaidEmailSubject;
+  const paymentRequestPaidHtml = config.paymentRequestPaidEmailHtml || defaultPaymentRequestPaidEmailHtml;
   const [buyerPreview, setBuyerPreview] = useState(buyerHtml);
   const [adminPreview, setAdminPreview] = useState(adminHtml);
   const [shipmentPreview, setShipmentPreview] = useState(shipmentHtml);
   const [selectionPreview, setSelectionPreview] = useState(selectionHtml);
   const [selectionCheckoutPreview, setSelectionCheckoutPreview] = useState(selectionCheckoutHtml);
+  const [paymentRequestPreview, setPaymentRequestPreview] = useState(paymentRequestHtml);
+  const [paymentRequestPaidPreview, setPaymentRequestPaidPreview] = useState(paymentRequestPaidHtml);
 
   function handleTabClick(tabId: EmailTabId) {
     setActive(tabId);
@@ -326,6 +340,90 @@ export function EmailTabs({
           <TestEmailForm target="selection-checkout" />
         </>
       ) : null}
+
+      {active === "payment-request" ? (
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="payment-request" />
+            <label className="checkbox-row">
+              <span>
+                <input
+                  name="paymentRequestEmailEnabled"
+                  type="checkbox"
+                  defaultChecked={config.paymentRequestEmailEnabled !== "false"}
+                />{" "}
+                启用付款单邮件
+              </span>
+            </label>
+            <label>
+              付款单邮件标题
+              <input name="paymentRequestEmailSubject" defaultValue={paymentRequestSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                付款单富文本邮件模板
+                <RichTemplateEditor
+                  name="paymentRequestEmailHtml"
+                  defaultValue={paymentRequestHtml}
+                  onChange={setPaymentRequestPreview}
+                  presets={[{ label: "使用精致模板", value: defaultPaymentRequestEmailHtml }]}
+                />
+              </label>
+              <section className="email-preview-panel" aria-label="付款单邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: paymentRequestPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp variables={paymentRequestTemplateVariables} />
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">保存付款单邮件</SubmitButton>
+            </div>
+          </form>
+          <TestEmailForm target="payment-request" />
+        </>
+      ) : null}
+
+      {active === "payment-request-paid" ? (
+        <>
+          <form className="admin-form" action="/api/admin/email" method="post">
+            <input type="hidden" name="tab" value="payment-request-paid" />
+            <label className="checkbox-row">
+              <span>
+                <input
+                  name="paymentRequestPaidEmailEnabled"
+                  type="checkbox"
+                  defaultChecked={config.paymentRequestPaidEmailEnabled !== "false"}
+                />{" "}
+                启用付款成功邮件
+              </span>
+            </label>
+            <label>
+              付款成功邮件标题
+              <input name="paymentRequestPaidEmailSubject" defaultValue={paymentRequestPaidSubject} />
+            </label>
+            <div className="email-template-layout">
+              <label>
+                付款成功富文本邮件模板
+                <RichTemplateEditor
+                  name="paymentRequestPaidEmailHtml"
+                  defaultValue={paymentRequestPaidHtml}
+                  onChange={setPaymentRequestPaidPreview}
+                  presets={[{ label: "使用精致模板", value: defaultPaymentRequestPaidEmailHtml }]}
+                />
+              </label>
+              <section className="email-preview-panel" aria-label="付款成功邮件预览">
+                <span>预览</span>
+                <div className="rich-preview" dangerouslySetInnerHTML={{ __html: paymentRequestPaidPreview }} />
+              </section>
+            </div>
+            <TemplateVariableHelp variables={paymentRequestPaidTemplateVariables} />
+            <div className="admin-save-bar">
+              <SubmitButton loadingText="保存中...">保存付款成功邮件</SubmitButton>
+            </div>
+          </form>
+          <TestEmailForm target="payment-request-paid" />
+        </>
+      ) : null}
     </section>
   );
 }
@@ -333,7 +431,7 @@ export function EmailTabs({
 function TestEmailForm({
   target,
 }: {
-  target: "buyer" | "seller" | "shipment" | "selection" | "selection-checkout";
+  target: "buyer" | "seller" | "shipment" | "selection" | "selection-checkout" | "payment-request" | "payment-request-paid";
 }) {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [loading, setLoading] = useState(false);
