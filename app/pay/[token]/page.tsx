@@ -32,8 +32,8 @@ export default async function PublicPaymentRequestPage({ params }: { params: Pro
         <header className="selection-submission-public-head selection-checkout-head payment-request-public-head">
           <div>
             <span className="eyebrow">Payment request</span>
-            <h1 className="display">{englishOnlyText(paymentRequest.title, "Confirm and pay")}</h1>
-            <p>{englishOnlyText(paymentRequest.description, "Please review the details and total before paying with PayPal.")}</p>
+            <h1 className="display">{publicText(paymentRequest.title, "Confirm and pay")}</h1>
+            <p>{publicText(paymentRequest.description, "Please review the details and total before paying with PayPal.")}</p>
           </div>
           <span className={`selection-public-status is-${status}`}>{publicStatus}</span>
         </header>
@@ -126,4 +126,9 @@ function englishOnlyText(value: string | null | undefined, fallback: string) {
   const text = (value || "").trim();
   if (!text || /[\u4e00-\u9fff]/.test(text)) return fallback;
   return text;
+}
+
+function publicText(value: string | null | undefined, fallback: string) {
+  const text = (value || "").trim();
+  return text || fallback;
 }

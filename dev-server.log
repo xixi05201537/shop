@@ -80,3 +80,17 @@ Email accepted by SMTP {
 ✓ Compiled in 56ms
  GET /admin/payment-requests?sent=xLRb1U7OMBJkCOXRbB8CnJBO&emailStatus=sent 200 in 168ms (next.js: 5ms, proxy.ts: 8ms, application-code: 155ms)
  GET /pay/xLRb1U7OMBJkCOXRbB8CnJBO 200 in 84ms (next.js: 35ms, application-code: 48ms)
+ GET /pay/h2z4UqlcLBbkbjOxZjz2HuSF 200 in 107ms (next.js: 43ms, application-code: 64ms)
+ GET /pay/h2z4UqlcLBbkbjOxZjz2HuSF 200 in 88ms (next.js: 34ms, application-code: 53ms)
+ GET /pay/h2z4UqlcLBbkbjOxZjz2HuSF 200 in 83ms (next.js: 33ms, application-code: 50ms)
+ GET /pay/xLRb1U7OMBJkCOXRbB8CnJBO 200 in 83ms (next.js: 45ms, application-code: 38ms)
+ GET /admin/payment-requests?sent=xLRb1U7OMBJkCOXRbB8CnJBO&emailStatus=sent 200 in 184ms (next.js: 6ms, proxy.ts: 7ms, application-code: 172ms)
+ GET /pay/xLRb1U7OMBJkCOXRbB8CnJBO 200 in 121ms (next.js: 56ms, application-code: 65ms)
+✓ Compiled in 19ms
+ GET /pay/xLRb1U7OMBJkCOXRbB8CnJBO 200 in 208ms (next.js: 119ms, application-code: 89ms)
+ GET /pay/xLRb1U7OMBJkCOXRbB8CnJBO 200 in 31ms (next.js: 1849µs, application-code: 29ms)
+ GET /admin 200 in 353ms (next.js: 40ms, proxy.ts: 48ms, application-code: 266ms)
+ GET /admin/payment-requests 200 in 67ms (next.js: 17ms, proxy.ts: 5ms, application-code: 46ms)
+ POST /api/admin/payment-requests 303 in 114ms (next.js: 43ms, proxy.ts: 7ms, application-code: 64ms)
+ GET /admin/payment-requests?saved=xLRb1U7OMBJkCOXRbB8CnJBO 200 in 100ms (next.js: 7ms, proxy.ts: 3ms, application-code: 90ms)
+ GET /pay/xLRb1U7OMBJkCOXRbB8CnJBO 200 in 92ms (next.js: 36ms, application-code: 56ms)
