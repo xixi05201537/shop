@@ -400,6 +400,13 @@ Docker 部署推荐挂载：
 -v /opt/misakishop/uploads:/app/public/uploads
 ```
 
+如果宿主机挂载目录不允许容器执行 `chown`，启动日志里可能出现 `unable to chown /app/public/uploads` 的 warning。应用会继续尝试写入；如果仍然无法上传，请在宿主机上给挂载目录加写权限：
+
+```bash
+mkdir -p /opt/misakishop/uploads
+chmod -R 777 /opt/misakishop/uploads
+```
+
 上传后的公开路径为：
 
 ```text

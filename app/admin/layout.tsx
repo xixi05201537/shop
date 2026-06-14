@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Sparkles } from "lucide-react";
@@ -8,6 +9,10 @@ import { AdminNav } from "./AdminNav";
 import "./admin.css";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const headerStore = await headers();
+  const pathname = headerStore.get("x-pathname");
+  if (pathname === "/admin/login" || pathname?.startsWith("/admin/login/")) return children;
+
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
 
