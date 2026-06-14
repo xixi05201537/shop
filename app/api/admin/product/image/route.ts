@@ -15,11 +15,11 @@ export async function POST(request: Request) {
   const file = formData.get("image");
   if (!(file instanceof File)) return NextResponse.json({ error: "请先选择图片。" }, { status: 400 });
 
-  const validation = validateImageFile(file);
-  if (validation) return NextResponse.json({ error: validation.error }, { status: 400 });
-
   const bytes = Buffer.from(await file.arrayBuffer());
-  const filename = generateUploadFilename(file);
+  const validation = validateImageFile(file, bytes);
+  if (!validation.ok) return NextResponse.json({ error: validation.error }, { status: 400 });
+
+  const filename = generateUploadFilename(file, validation.mimeType);
   const uploadDir = getUploadDir();
   await mkdir(uploadDir, { recursive: true });
   await writeFile(join(uploadDir, filename), bytes);
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     targetType: "upload",
     targetId: publicPath,
     summary: `上传图片：${file.name}`,
-    metadata: { publicPath, size: file.size, type: file.type },
+    metadata: { publicPath, size: file.size, type: validation.mimeType },
   });
 
   const returnTo = String(formData.get("returnTo") || "");
