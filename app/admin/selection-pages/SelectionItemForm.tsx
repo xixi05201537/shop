@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { SubmitButton } from "@/components/SubmitButton";
+import { readClipboardImageFile } from "@/lib/clipboard-image";
 import { formatCurrency } from "@/lib/format";
 import { SelectionImagePickerDialog } from "./SelectionImagePickerDialog";
 
@@ -100,27 +101,9 @@ export function SelectionItemForm({
 
   async function uploadFromClipboard() {
     setUploadMessage("");
-    if (!navigator.clipboard?.read) {
-      setUploadMessage("当前浏览器不支持读取剪贴板图片。");
-      return;
-    }
-
     setUploading(true);
     try {
-      const items = await navigator.clipboard.read();
-      let blob: Blob | null = null;
-      let mimeType = "";
-      for (const clipboardItem of items) {
-        const type = clipboardItem.types.find((itemType) => itemType.startsWith("image/"));
-        if (!type) continue;
-        blob = await clipboardItem.getType(type);
-        mimeType = type;
-        break;
-      }
-      if (!blob) throw new Error("剪贴板里没有图片。");
-
-      const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
-      const file = new File([blob], `clipboard.${ext}`, { type: mimeType });
+      const file = await readClipboardImageFile();
       await uploadImageFile(file);
       setUploadMessage("已上传并填入图片路径。");
     } catch (error) {
@@ -129,7 +112,6 @@ export function SelectionItemForm({
       setUploading(false);
     }
   }
-
   return (
     <>
       <form className="selection-item-form" action="/api/admin/selection-items" method="post">

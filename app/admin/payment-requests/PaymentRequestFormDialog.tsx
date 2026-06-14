@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Clipboard, Download, FileSpreadsheet, ImagePlus, Plus, Trash2, Upload, X } from "lucide-react";
 import type { UploadedImageOption } from "@/app/admin/product/ProductAdminForm";
+import { readClipboardImageFile } from "@/lib/clipboard-image";
 
 type PaymentImage = {
   imageUrl: string;
@@ -132,27 +133,9 @@ export function PaymentRequestFormDialog({
 
   async function uploadFromClipboard(index: number) {
     setUploadMessage("");
-    if (!navigator.clipboard?.read) {
-      setUploadMessage("当前浏览器不支持读取剪贴板图片。");
-      return;
-    }
-
     setUploading(true);
     try {
-      const items = await navigator.clipboard.read();
-      let blob: Blob | null = null;
-      let mimeType = "";
-      for (const clipboardItem of items) {
-        const type = clipboardItem.types.find((itemType) => itemType.startsWith("image/"));
-        if (!type) continue;
-        blob = await clipboardItem.getType(type);
-        mimeType = type;
-        break;
-      }
-      if (!blob) throw new Error("剪贴板里没有图片。");
-
-      const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
-      const file = new File([blob], `clipboard.${ext}`, { type: mimeType });
+      const file = await readClipboardImageFile();
       await uploadImageFile(file, index);
       setUploadMessage("已上传剪贴板图片并填入图片地址。");
     } catch (error) {
@@ -161,7 +144,6 @@ export function PaymentRequestFormDialog({
       setUploading(false);
     }
   }
-
   async function importExcelFile(file?: File | null) {
     if (!file) return;
     setUploadMessage("");
@@ -266,7 +248,7 @@ export function PaymentRequestFormDialog({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     hidden
                     onChange={(event) => void handleLocalImage(event.target.files?.[0])}
                   />

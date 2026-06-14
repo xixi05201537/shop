@@ -3,6 +3,7 @@
 import { Clipboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { readClipboardImageFile } from "@/lib/clipboard-image";
 
 export function ClipboardUploadButton() {
   const router = useRouter();
@@ -11,29 +12,9 @@ export function ClipboardUploadButton() {
 
   async function uploadFromClipboard() {
     setMessage("");
-    if (!navigator.clipboard?.read) {
-      setMessage("当前浏览器不支持读取剪贴板图片。");
-      return;
-    }
-
     setUploading(true);
     try {
-      const items = await navigator.clipboard.read();
-      let blob: Blob | null = null;
-      let mimeType = "";
-
-      for (const clipboardItem of items) {
-        const type = clipboardItem.types.find((itemType) => itemType.startsWith("image/"));
-        if (!type) continue;
-        blob = await clipboardItem.getType(type);
-        mimeType = type;
-        break;
-      }
-
-      if (!blob) throw new Error("剪贴板里没有图片。");
-
-      const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
-      const file = new File([blob], `clipboard.${ext}`, { type: mimeType });
+      const file = await readClipboardImageFile();
       const formData = new FormData();
       formData.append("image", file);
 
@@ -42,7 +23,7 @@ export function ClipboardUploadButton() {
         body: formData,
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "上传失败。");
+      if (!response.ok) throw new Error(data.error || "Upload failed.");
 
       setMessage("已从剪贴板上传图片。");
       router.refresh();
@@ -52,7 +33,6 @@ export function ClipboardUploadButton() {
       setUploading(false);
     }
   }
-
   return (
     <div className="clipboard-upload-control">
       <button className="secondary-button" type="button" onClick={uploadFromClipboard} disabled={uploading}>
