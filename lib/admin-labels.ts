@@ -7,6 +7,7 @@ const orderStatusMap: Record<string, string> = {
 
 const emailStatusMap: Record<string, string> = {
   pending: "待发送",
+  sending: "发送中",
   sent: "已发送",
   failed: "发送失败",
   skipped: "已跳过",

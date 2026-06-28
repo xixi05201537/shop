@@ -471,15 +471,22 @@ export async function sendPaymentRequestPaidEmailForId(paymentRequestId: string,
     where: { id: paymentRequestId },
     include: { images: { orderBy: { sortOrder: "asc" } } },
   });
-  if (!paymentRequest || paymentRequest.paidEmailStatus === "sent") return paymentRequest?.paidEmailStatus || "skipped";
+  if (!paymentRequest) return "skipped";
 
-  await prisma.paymentRequest.update({
-    where: { id: paymentRequestId },
+  const claim = await prisma.paymentRequest.updateMany({
+    where: { id: paymentRequestId, paidEmailStatus: { notIn: ["sent", "sending"] } },
     data: { paidEmailStatus: "sending", paidEmailError: null },
   });
+  if (claim.count === 0) return paymentRequest.paidEmailStatus;
+
+  const latestPaymentRequest = await prisma.paymentRequest.findUnique({
+    where: { id: paymentRequestId },
+    include: { images: { orderBy: { sortOrder: "asc" } } },
+  });
+  if (!latestPaymentRequest) return "skipped";
 
   try {
-    const paidEmailStatus = await sendPaymentRequestPaidEmail(paymentRequest, baseUrl);
+    const paidEmailStatus = await sendPaymentRequestPaidEmail(latestPaymentRequest, baseUrl);
     await prisma.paymentRequest.update({
       where: { id: paymentRequestId },
       data: {

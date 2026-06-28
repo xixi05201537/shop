@@ -1,6 +1,66 @@
 import { prisma } from "@/lib/prisma";
 import { sendAdminEmail, sendBuyerEmail } from "@/lib/email";
-import { paypalDetailsFromCapture } from "@/lib/paypal-order-details";
+import { orderEmailRecipients, paypalDetailsFromCapture } from "@/lib/paypal-order-details";
+import type { Order } from "@prisma/client";
+
+const claimedEmailStatuses = ["sent", "sending"] as const;
+
+async function sendClaimedBuyerEmail(order: Order) {
+  const recipients = orderEmailRecipients(order);
+  if (!recipients.to) {
+    await prisma.order.updateMany({
+      where: { id: order.id, buyerEmailStatus: { notIn: [...claimedEmailStatuses] } },
+      data: { buyerEmailStatus: "skipped", buyerEmailError: null },
+    });
+    return;
+  }
+
+  const claim = await prisma.order.updateMany({
+    where: { id: order.id, buyerEmailStatus: { notIn: [...claimedEmailStatuses] } },
+    data: { buyerEmailStatus: "sending", buyerEmailError: null },
+  });
+  if (claim.count === 0) return;
+
+  const latestOrder = await prisma.order.findUnique({ where: { id: order.id } });
+  if (!latestOrder) throw new Error("Order not found.");
+
+  try {
+    const buyerEmailStatus = await sendBuyerEmail(latestOrder);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { buyerEmailStatus, buyerEmailError: null },
+    });
+  } catch (error) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { buyerEmailStatus: "failed", buyerEmailError: emailErrorMessage(error) },
+    });
+  }
+}
+
+async function sendClaimedAdminEmail(order: Order) {
+  const claim = await prisma.order.updateMany({
+    where: { id: order.id, adminEmailStatus: { notIn: [...claimedEmailStatuses] } },
+    data: { adminEmailStatus: "sending", adminEmailError: null },
+  });
+  if (claim.count === 0) return;
+
+  const latestOrder = await prisma.order.findUnique({ where: { id: order.id } });
+  if (!latestOrder) throw new Error("Order not found.");
+
+  try {
+    const adminEmailStatus = await sendAdminEmail(latestOrder);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { adminEmailStatus, adminEmailError: null },
+    });
+  } catch (error) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { adminEmailStatus: "failed", adminEmailError: emailErrorMessage(error) },
+    });
+  }
+}
 
 export async function markOrderPaid(orderId: string, paypalCaptureId?: string, raw?: unknown) {
   const rawRecord = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : null;
@@ -32,35 +92,12 @@ export async function markOrderPaid(orderId: string, paypalCaptureId?: string, r
     return existing;
   });
 
-  let buyerEmailStatus = order.buyerEmailStatus;
-  let adminEmailStatus = order.adminEmailStatus;
-  let buyerEmailError: string | null = order.buyerEmailError;
-  let adminEmailError: string | null = order.adminEmailError;
+  await sendClaimedBuyerEmail(order);
+  await sendClaimedAdminEmail(order);
 
-  if (buyerEmailStatus !== "sent") {
-    try {
-      buyerEmailStatus = await sendBuyerEmail(order);
-      buyerEmailError = null;
-    } catch (error) {
-      buyerEmailStatus = "failed";
-      buyerEmailError = emailErrorMessage(error);
-    }
-  }
-
-  if (adminEmailStatus !== "sent") {
-    try {
-      adminEmailStatus = await sendAdminEmail(order);
-      adminEmailError = null;
-    } catch (error) {
-      adminEmailStatus = "failed";
-      adminEmailError = emailErrorMessage(error);
-    }
-  }
-
-  return prisma.order.update({
-    where: { id: order.id },
-    data: { buyerEmailStatus, buyerEmailError, adminEmailStatus, adminEmailError },
-  });
+  const paidOrder = await prisma.order.findUnique({ where: { id: order.id } });
+  if (!paidOrder) throw new Error("Order not found.");
+  return paidOrder;
 }
 
 export function emailErrorMessage(error: unknown) {
